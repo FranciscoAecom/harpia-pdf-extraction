@@ -89,7 +89,21 @@ def linha_header(row: list) -> bool:
 
 
 def tabela_resultado(rows: list, estado: dict) -> bool:
-    return any(linha_header(row) for row in rows[:2])
+    if any(linha_header(row) for row in rows[:2]):
+        return True
+
+    if not estado.get("categoria") or estado.get("tipo_registro") != "AMOSTRA":
+        return False
+
+    data_rows = 0
+    for row in rows[:5]:
+        if len(row) < 5:
+            continue
+        parametro = normalizar(str(row[0] or ""))
+        resultado = str(row[1] or "").strip()
+        if parametro and re.search(r"(^[<>]=?|[+-]?\d)", resultado):
+            data_rows += 1
+    return data_rows >= 2
 
 
 def inferir_qaqc_continuacao(tabela: list, estado: dict, config) -> bool:

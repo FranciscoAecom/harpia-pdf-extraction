@@ -22,6 +22,15 @@ class SectionClassifierTest(unittest.TestCase):
 
         self.assertTrue(tabela_resultado(rows, estado))
 
+    def test_result_table_continuation_without_header_is_result_table(self):
+        rows = [
+            ["Nitrato", "< 0,23 mg/L (como N)", "18/01/2025", "Max. 0,4 mg/L", "0,23 mg/L"],
+            ["Nitrito", "< 0,015 mg/L (como N)", "18/01/2025", "Max. 0,07 mg/L", "0,015 mg/L"],
+        ]
+        estado = {"tipo_registro": "AMOSTRA", "categoria": "Constituintes inorganicos nao metalicos"}
+
+        self.assertTrue(tabela_resultado(rows, estado))
+
 
 if __name__ == "__main__":
     unittest.main()
