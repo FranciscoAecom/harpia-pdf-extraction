@@ -14,6 +14,7 @@ O projeto gera um Excel de saída com as abas definidas por template na taxonomi
 
 ```text
 Harpia_Testes/
+├─ run_batch.py
 ├─ run_pipeline.py
 ├─ README.md
 ├─ config/
@@ -65,6 +66,12 @@ cd "C:\Temp\Repositórios\harpia-pdf-extraction"
 py .\run_batch.py classify
 ```
 
+No modo `classify`, por padrao o script le as 3 primeiras paginas de cada PDF para acelerar a auditoria. Para ler todas as paginas:
+
+```powershell
+py .\run_batch.py classify --classify-pages 0
+```
+
 Para extrair todos os PDFs da pasta padrao:
 
 ```powershell
@@ -83,6 +90,17 @@ Exemplos:
 - `output/laudo_agua/extracted_data.xlsx`
 - `output/laudo_fito/extracted_data.xlsx`
 - `output/laudo_sedimento/extracted_data.xlsx`
+- `output/laudo_mps/extracted_data.xlsx`
+- `output/laudo_ect/extracted_data.xlsx`
+- `output/laudo_zbt/extracted_data.xlsx`
+- `output/laudo_dsl/extracted_data.xlsx`
+- `output/laudo_dss/extracted_data.xlsx`
+- `output/ficha_coleta_tommasi/extracted_data.xlsx`
+- `output/ficha_recebimento_ethica/extracted_data.xlsx`
+- `output/ficha_recebimento_labmar/extracted_data.xlsx`
+- `output/ficha_recebimento_aplysia/extracted_data.xlsx`
+- `output/ficha_subcontratacao_als/extracted_data.xlsx`
+- `output/ficha_recebimento_bioagri/extracted_data.xlsx`
 
 Para rodar um PDF único manualmente:
 
@@ -127,6 +145,8 @@ Depois que o template do PDF e identificado, o parser filtra as abas relacionais
 - `client_output_schema`: Contrato completo da aba de saida `client`.
 
 ### Campos das Abas de Configuracao
+
+Templates cadastrados atualmente: `laudo_agua`, `laudo_fito`, `laudo_sedimento`, `laudo_mps`, `laudo_ect`, `laudo_zbt`, `laudo_dsl`, `laudo_dss`, `ficha_coleta_tommasi`, `ficha_recebimento_ethica`, `ficha_recebimento_labmar`, `ficha_recebimento_aplysia`, `ficha_subcontratacao_als` e `ficha_recebimento_bioagri`.
 
 #### `templates`
 Registro dos templates/modelos de documento reconhecidos pela taxonomia. O template vencedor e escolhido antes da extracao.

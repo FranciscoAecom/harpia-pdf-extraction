@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 
 import pandas as pd
+import pdfplumber
 
 
 ROOT = Path(__file__).resolve().parent
@@ -14,7 +15,6 @@ if str(SRC) not in sys.path:
 from harpia_parser.config.loader import load_config, output_sheets_for_template  # noqa: E402
 from harpia_parser.core.pipeline import run_pipeline_document  # noqa: E402
 from harpia_parser.core.scope import classify_document  # noqa: E402
-from harpia_parser.extraction.pdf_reader import read_pdf  # noqa: E402
 from harpia_parser.formatting.output_writer import salvar  # noqa: E402
 
 
@@ -37,7 +37,16 @@ def _list_pdfs(input_dir: Path) -> list[Path]:
     return sorted(input_dir.rglob("*.pdf"))
 
 
-def classify_batch(input_dir: Path, output_path: Path) -> None:
+def _read_pdf_text(pdf_path: Path, max_pages: int | None = None) -> str:
+    texts = []
+    with pdfplumber.open(pdf_path) as pdf:
+        pages = pdf.pages[:max_pages] if max_pages else pdf.pages
+        for page in pages:
+            texts.append(page.extract_text() or "")
+    return "\n".join(texts)
+
+
+def classify_batch(input_dir: Path, output_path: Path, max_pages: int | None = 3) -> None:
     config = load_config(ROOT)
     rows = []
     pdfs = _list_pdfs(input_dir)
@@ -45,7 +54,7 @@ def classify_batch(input_dir: Path, output_path: Path) -> None:
     for index, pdf in enumerate(pdfs, start=1):
         log.info("[%d/%d] Classificando %s", index, len(pdfs), pdf.name)
         try:
-            texto, _ = read_pdf(pdf)
+            texto = _read_pdf_text(pdf, max_pages=max_pages)
             result = classify_document(texto, config, pdf)
             rows.append({
                 "arquivo": pdf.name,
@@ -174,10 +183,17 @@ def main(argv=None) -> int:
         default=ROOT / "output",
         help="Pasta de saida.",
     )
+    parser.add_argument(
+        "--classify-pages",
+        type=int,
+        default=3,
+        help="Numero de paginas lidas por PDF no modo classify. Use 0 para ler todas.",
+    )
     args = parser.parse_args(argv)
 
     if args.mode == "classify":
-        classify_batch(args.input, args.output / "template_classification_audit.xlsx")
+        max_pages = args.classify_pages if args.classify_pages > 0 else None
+        classify_batch(args.input, args.output / "template_classification_audit.xlsx", max_pages=max_pages)
     else:
         extract_batch(args.input, args.output)
     return 0
