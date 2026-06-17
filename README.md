@@ -40,7 +40,10 @@ Harpia_Testes/
       │  ├─ section_classifier.py
       │  └─ row_parser.py
       ├─ formatting/
-      │  ├─ formatters.py
+      │  ├─ common.py
+      │  ├─ laudo_agua.py
+      │  ├─ laudo_fito.py
+      │  ├─ laudo_sedimento.py
       │  └─ output_writer.py
       ├─ normalization/
       │  ├─ common.py
@@ -357,7 +360,10 @@ Erros encontrados pela validacao final com Pydantic. Quando a extracao esta cons
 - `extraction/metadata_extractor.py`: extrai metadata e abas `sample` e `client`.
 - `extraction/section_classifier.py`: identifica seções, categorias, tipos e continuação de tabela entre páginas.
 - `extraction/row_parser.py`: extrai dados crus de cada linha conforme layout da taxonomia.
-- `formatting/formatters.py`: monta o contrato tabular da aba `results_extract`.
+- `formatting/common.py`: direciona a formatacao para o formatter do tema identificado.
+- `formatting/laudo_agua.py`: monta o contrato tabular da aba `results_extract` para o tema agua.
+- `formatting/laudo_fito.py`: ponto preparado para o contrato de saida do tema fito.
+- `formatting/laudo_sedimento.py`: ponto preparado para o contrato de saida do tema sedimento.
 - `formatting/output_writer.py`: grava o arquivo final respeitando as abas configuradas por template em `output_sheets`.
 - `normalization/common.py`: aplica normalizacoes comuns sem alterar os textos originais preservados do PDF.
 - `normalization/laudo_agua.py`: ponto central para normalizacoes especificas do tema agua, incluindo resultado, unidade, pH, LQ, incerteza e faixa de aceitacao.

@@ -9,7 +9,7 @@ import pandas as pd
 from ..config.loader import filter_config_for_template, load_config, output_sheets_for_template
 from ..constants import CLIENT_COLUMNS, RESULTS_EXTRACT_COLUMNS, SAMPLE_COLUMNS
 from .context import DocumentContext
-from ..formatting.formatters import format_results_extract
+from ..formatting.common import format_results_extract
 from ..extraction.metadata_extractor import extract_client, extract_metadata, extract_sample, relatorio_from_text
 from ..normalization import normalize_outputs
 from ..formatting.output_writer import salvar
@@ -164,7 +164,7 @@ def run_pipeline_document(pdf_path, config=None) -> tuple[pd.DataFrame, pd.DataF
         extraction_config,
     )
 
-    df = format_results_extract(raw_results_df, extraction_config)
+    df = format_results_extract(raw_results_df, extraction_config, context)
     if pd.notna(dh_inicio_atividade):
         sample_df.loc[0, "dh_inicio_atividade"] = dh_inicio_atividade
     sample_df = sample_df.reindex(columns=SAMPLE_COLUMNS)

@@ -3,7 +3,7 @@ import pandas as pd
 from ..constants import RESULTS_EXTRACT_COLUMNS, TIPO_LABELS
 
 
-def format_results_extract(df: pd.DataFrame, config) -> pd.DataFrame:
+def format_results_extract(df: pd.DataFrame, config, context=None) -> pd.DataFrame:
     if df.empty:
         return pd.DataFrame(columns=RESULTS_EXTRACT_COLUMNS)
 
