@@ -80,6 +80,26 @@ Para escolher o arquivo de saída:
 py .\run_pipeline.py ".\data\input\arquivo.pdf" --out ".\output\resultado.xlsx"
 ```
 
+Para auditar a identificacao de template de todos os PDFs da pasta padrao:
+
+```powershell
+py .\run_batch.py classify
+```
+
+Para extrair todos os PDFs da pasta padrao:
+
+```powershell
+py .\run_batch.py extract
+```
+
+Para informar outra pasta de PDFs:
+
+```powershell
+py .\run_batch.py extract --input "L:\Secure_DCS\BRBLH1PINFW001\COE_Digital\others\harpia_rd"
+```
+
+As saidas em lote sao salvas em `output/`, separadas por tema, e o resumo geral fica em `output/batch_extraction_summary.xlsx`.
+
 ## Configuracao
 
 As regras ficam em `config/taxonomy_config_v5.xlsx`. A taxonomy separa abas de regras de extracao, catalogos auxiliares e contratos de saida.
