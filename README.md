@@ -58,11 +58,21 @@ Harpia_Testes/
 
 ## Como Rodar
 
+Para auditar a identificacao de template de todos os PDFs da pasta padrao:
+
 ```powershell
-py .\run_pipeline.py ".\data\input\17.01.2025_EBN 01R_3911-1-2025-0_Agua_P50.pdf"
+cd "C:\Temp\Repositórios\harpia-pdf-extraction"
+py .\run_batch.py classify
 ```
 
-Por padrão, a saída é salva em um arquivo por tema:
+Para extrair todos os PDFs da pasta padrao:
+
+```powershell
+cd "C:\Temp\Repositórios\harpia-pdf-extraction"
+py .\run_batch.py extract
+```
+
+Por padrão, as saídas são salvas em arquivos por tema:
 
 ```text
 output/<tipo_laudo>/extracted_data.xlsx
@@ -74,22 +84,16 @@ Exemplos:
 - `output/laudo_fito/extracted_data.xlsx`
 - `output/laudo_sedimento/extracted_data.xlsx`
 
-Para escolher o arquivo de saída:
+Para rodar um PDF único manualmente:
+
+```powershell
+py .\run_pipeline.py ".\data\input\arquivo.pdf"
+```
+
+Para escolher manualmente o arquivo de saída de um PDF único:
 
 ```powershell
 py .\run_pipeline.py ".\data\input\arquivo.pdf" --out ".\output\resultado.xlsx"
-```
-
-Para auditar a identificacao de template de todos os PDFs da pasta padrao:
-
-```powershell
-py .\run_batch.py classify
-```
-
-Para extrair todos os PDFs da pasta padrao:
-
-```powershell
-py .\run_batch.py extract
 ```
 
 Para informar outra pasta de PDFs:
