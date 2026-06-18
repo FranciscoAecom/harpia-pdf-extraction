@@ -1,6 +1,8 @@
 ﻿import unittest
 from pathlib import Path
 
+import pandas as pd
+
 from harpia_parser.config.loader import filter_config_for_template, load_config
 from harpia_parser.constants import CLIENT_COLUMNS, RESULTS_EXTRACT_COLUMNS, SAMPLE_COLUMNS
 
@@ -49,6 +51,19 @@ class ConfigLoaderTest(unittest.TestCase):
         config = load_config(Path.cwd())
 
         self.assertNotIn("document_type_id", config.df_templates.columns)
+
+    def test_boolean_columns_are_real_booleans(self):
+        workbook = pd.ExcelFile(Path.cwd() / "config" / "taxonomy_config_v5.xlsx")
+        boolean_columns = {"ativo", "obrigatorio", "extrair_subcategoria"}
+
+        try:
+            for sheet_name in workbook.sheet_names:
+                df = pd.read_excel(workbook, sheet_name=sheet_name)
+                for column in boolean_columns & set(df.columns):
+                    with self.subTest(sheet_name=sheet_name, column=column):
+                        self.assertTrue(pd.api.types.is_bool_dtype(df[column]))
+        finally:
+            workbook.close()
 
     def test_result_layouts_use_relational_format(self):
         config = load_config(Path.cwd())

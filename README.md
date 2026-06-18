@@ -128,6 +128,8 @@ As regras ficam em `config/taxonomy_config_v5.xlsx`. A taxonomy separa abas de r
 
 Depois que o template do PDF e identificado, o parser filtra as abas relacionais por `template_id`. Cada regra deve estar vinculada explicitamente a um template cadastrado; a taxonomy nao usa mais `template_id = *` como coringa. No estado atual, as regras de `metadata_schema`, `client_schema` e `sample_schema` estao cadastradas para `template_laudo_agua_v1`, `template_laudo_fito_v1` e `template_laudo_sedimento_v1`; as demais matrizes ainda precisam de curadoria propria.
 
+Campos booleanos da taxonomy, como `ativo`, `obrigatorio` e `extrair_subcategoria`, devem usar valores booleanos reais do Excel (`VERDADEIRO`/`FALSO`), sem misturar textos como `sim` ou `nao`.
+
 ### Abas da Taxonomy
 
 - `templates`: Registro dos templates/modelos de documento reconhecidos pela taxonomia, com prioridade, score minimo e status ativo.

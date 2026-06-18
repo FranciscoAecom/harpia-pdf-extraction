@@ -106,6 +106,15 @@ def _validate_detection_sources(sheet_name: str, df: pd.DataFrame) -> None:
         )
 
 
+def _validate_boolean_columns(sheet_name: str, df: pd.DataFrame) -> None:
+    for column in {"ativo", "obrigatorio", "extrair_subcategoria"} & set(df.columns):
+        if not pd.api.types.is_bool_dtype(df[column]):
+            raise ValueError(
+                f"Aba {sheet_name} contem valores nao booleanos na coluna '{column}'. "
+                "Use booleano verdadeiro/falso no Excel, nao textos como sim/nao."
+            )
+
+
 def _build_section_rules(df_section_aliases: pd.DataFrame) -> list[dict[str, Any]]:
     rules: list[dict[str, Any]] = []
 
@@ -352,6 +361,9 @@ def load_config(base_dir: Path, taxonomy_file: str = "config/taxonomy_config_v5.
     _validate_detection_sources("template_detection_rules", df_template_detection_rules)
     template_ids = set(templates)
     for sheet_name, df in {
+        "templates": df_templates,
+        "template_detection_rules": df_template_detection_rules,
+        "output_sheets": df_output_sheets,
         "metadata_schema": df_metadata,
         "client_schema": df_client_schema,
         "sample_schema": df_sample_schema,
@@ -359,9 +371,11 @@ def load_config(base_dir: Path, taxonomy_file: str = "config/taxonomy_config_v5.
         "section_aliases": df_section_aliases,
         "result_layouts": df_result_layouts,
         "continuation_rules": df_continuation_rules,
-        "template_detection_rules": df_template_detection_rules,
-        "output_sheets": df_output_sheets,
+        "results_extract_schema": df_results_extract_schema,
+        "sample_output_schema": df_sample_output_schema,
+        "client_output_schema": df_client_output_schema,
     }.items():
+        _validate_boolean_columns(sheet_name, df)
         _validate_template_ids(sheet_name, df, template_ids)
     template_detection_rules = _build_template_detection_rules(df_template_detection_rules)
     output_sheets = _build_output_sheets(df_output_sheets)
