@@ -1,0 +1,173 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="880" viewBox="0 0 1280 880" role="img" aria-labelledby="title desc">
+  <title id="title">Modelo relacional para laudos de fitoplancton</title>
+  <desc id="desc">Diagrama entidade relacionamento para laudos de fitoplancton com document, client, sample, result_section, community_result, taxonomic_occurrence, taxon_abundance e field_measurement.</desc>
+  <defs>
+    <style>
+      .canvas { fill: #f8fafc; }
+      .entity { fill: #ffffff; stroke: #334155; stroke-width: 1.4; rx: 8; }
+      .header { fill: #0f766e; }
+      .header.blue { fill: #1d4ed8; }
+      .header.green { fill: #166534; }
+      .header.purple { fill: #6d28d9; }
+      .header.gold { fill: #a16207; }
+      .header.slate { fill: #475569; }
+      .title { fill: #ffffff; font: 700 14px Arial, sans-serif; letter-spacing: 0; }
+      .field { fill: #0f172a; font: 11.5px Arial, sans-serif; letter-spacing: 0; }
+      .key { fill: #0f766e; font: 700 11.5px Arial, sans-serif; letter-spacing: 0; }
+      .note { fill: #475569; font: 12px Arial, sans-serif; letter-spacing: 0; }
+      .label { fill: #334155; font: 700 12px Arial, sans-serif; letter-spacing: 0; }
+      .line { stroke: #475569; stroke-width: 1.6; fill: none; }
+      .badge { fill: #e2e8f0; stroke: #94a3b8; stroke-width: 1; }
+      .badge-text { fill: #334155; font: 700 11px Arial, sans-serif; letter-spacing: 0; }
+    </style>
+    <marker id="many" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M1,1 L10,6 L1,11 M1,6 L10,6" stroke="#475569" stroke-width="1.4" fill="none"/>
+    </marker>
+  </defs>
+
+  <rect class="canvas" x="0" y="0" width="1280" height="880"/>
+  <text x="40" y="42" style="fill:#0f172a;font:700 24px Arial,sans-serif;letter-spacing:0">Modelo relacional para laudos de fitoplancton</text>
+  <text x="40" y="66" class="note">Separa indicadores da comunidade, lista taxonomica, quantitativo por taxon e medicoes auxiliares de amostragem.</text>
+
+  <g id="document">
+    <rect class="entity" x="60" y="105" width="255" height="180"/>
+    <rect class="header" x="60" y="105" width="255" height="34" rx="8"/>
+    <text class="title" x="80" y="127">DOCUMENT</text>
+    <text class="key" x="80" y="160">PK document_id</text>
+    <text class="field" x="80" y="182">nome_do_arquivo</text>
+    <text class="field" x="80" y="204">template_id</text>
+    <text class="field" x="80" y="226">tipo_laudo</text>
+    <text class="field" x="80" y="248">numero_relatorio</text>
+    <text class="field" x="80" y="270">data_publicacao</text>
+  </g>
+
+  <g id="client">
+    <rect class="entity" x="405" y="95" width="250" height="198"/>
+    <rect class="header blue" x="405" y="95" width="250" height="34" rx="8"/>
+    <text class="title" x="425" y="117">CLIENT</text>
+    <text class="key" x="425" y="150">PK client_id</text>
+    <text class="key" x="425" y="172">FK document_id</text>
+    <text class="field" x="425" y="194">proposta_comercial</text>
+    <text class="field" x="425" y="216">cliente</text>
+    <text class="field" x="425" y="238">cnpj_cpf</text>
+    <text class="field" x="425" y="260">contato</text>
+    <text class="field" x="425" y="282">telefone / endereco</text>
+  </g>
+
+  <g id="sample">
+    <rect class="entity" x="405" y="355" width="280" height="260"/>
+    <rect class="header" x="405" y="355" width="280" height="34" rx="8"/>
+    <text class="title" x="425" y="377">SAMPLE</text>
+    <text class="key" x="425" y="410">PK sample_id</text>
+    <text class="key" x="425" y="432">FK document_id</text>
+    <text class="key" x="425" y="454">FK client_id</text>
+    <text class="field" x="425" y="476">id_amostra</text>
+    <text class="field" x="425" y="498">ponto_amostragem</text>
+    <text class="field" x="425" y="520">matriz / classe_agua</text>
+    <text class="field" x="425" y="542">data_coleta / data_recebimento</text>
+    <text class="field" x="425" y="564">localizacao</text>
+    <text class="field" x="425" y="586">latitude / longitude</text>
+    <text class="field" x="425" y="608">planejamento_amostragem</text>
+  </g>
+
+  <g id="section">
+    <rect class="entity" x="780" y="330" width="270" height="210"/>
+    <rect class="header slate" x="780" y="330" width="270" height="34" rx="8"/>
+    <text class="title" x="800" y="352">RESULT_SECTION</text>
+    <text class="key" x="800" y="385">PK section_id</text>
+    <text class="key" x="800" y="407">FK document_id</text>
+    <text class="key" x="800" y="429">FK sample_id</text>
+    <text class="field" x="800" y="451">categoria</text>
+    <text class="field" x="800" y="473">tipo_secao</text>
+    <text class="field" x="800" y="495">tipo_registro</text>
+    <text class="field" x="800" y="517">pagina_inicio / ordem</text>
+  </g>
+
+  <g id="community">
+    <rect class="entity" x="60" y="390" width="285" height="250"/>
+    <rect class="header green" x="60" y="390" width="285" height="34" rx="8"/>
+    <text class="title" x="80" y="412">COMMUNITY_RESULT</text>
+    <text class="key" x="80" y="445">PK community_result_id</text>
+    <text class="key" x="80" y="467">FK section_id</text>
+    <text class="key" x="80" y="489">FK sample_id</text>
+    <text class="field" x="80" y="511">parametro</text>
+    <text class="field" x="80" y="533">resultado / resultado_tratado</text>
+    <text class="field" x="80" y="555">unidade</text>
+    <text class="field" x="80" y="577">data_inicio</text>
+    <text class="field" x="80" y="599">lq_minimo / lq_maximo</text>
+    <text class="field" x="80" y="621">referencia / incerteza</text>
+  </g>
+
+  <g id="occurrence">
+    <rect class="entity" x="60" y="690" width="285" height="150"/>
+    <rect class="header purple" x="60" y="690" width="285" height="34" rx="8"/>
+    <text class="title" x="80" y="712">TAXONOMIC_OCCURRENCE</text>
+    <text class="key" x="80" y="745">PK occurrence_id</text>
+    <text class="key" x="80" y="767">FK section_id / sample_id</text>
+    <text class="field" x="80" y="789">classe_taxonomica</text>
+    <text class="field" x="80" y="811">taxon / contagem_ocorrencia</text>
+    <text class="field" x="80" y="833">indicador_classe</text>
+  </g>
+
+  <g id="abundance">
+    <rect class="entity" x="780" y="630" width="285" height="165"/>
+    <rect class="header gold" x="780" y="630" width="285" height="34" rx="8"/>
+    <text class="title" x="800" y="652">TAXON_ABUNDANCE</text>
+    <text class="key" x="800" y="685">PK abundance_id</text>
+    <text class="key" x="800" y="707">FK section_id / sample_id</text>
+    <text class="field" x="800" y="729">classe_taxonomica</text>
+    <text class="field" x="800" y="751">taxon</text>
+    <text class="field" x="800" y="773">abundancia / unidade</text>
+  </g>
+
+  <g id="field">
+    <rect class="entity" x="930" y="95" width="285" height="205"/>
+    <rect class="header blue" x="930" y="95" width="285" height="34" rx="8"/>
+    <text class="title" x="950" y="117">FIELD_MEASUREMENT</text>
+    <text class="key" x="950" y="150">PK field_measurement_id</text>
+    <text class="key" x="950" y="172">FK section_id / sample_id</text>
+    <text class="field" x="950" y="194">parametro</text>
+    <text class="field" x="950" y="216">resultado / resultado_tratado</text>
+    <text class="field" x="950" y="238">unidade</text>
+    <text class="field" x="950" y="260">data_inicio</text>
+    <text class="field" x="950" y="282">lq_original / referencia</text>
+  </g>
+
+  <path class="line" d="M315 165 C360 165 365 155 405 155" marker-end="url(#many)"/>
+  <text class="label" x="346" y="145">1:N</text>
+
+  <path class="line" d="M315 240 C365 330 355 470 405 500" marker-end="url(#many)"/>
+  <text class="label" x="335" y="360">1:N</text>
+
+  <path class="line" d="M530 293 L530 355" marker-end="url(#many)"/>
+  <text class="label" x="548" y="330">1:N</text>
+
+  <path class="line" d="M685 490 C720 490 745 455 780 430" marker-end="url(#many)"/>
+  <text class="label" x="715" y="462">1:N</text>
+
+  <path class="line" d="M780 460 C635 575 500 590 345 535" marker-end="url(#many)"/>
+  <text class="label" x="575" y="600">1:N</text>
+  <text class="note" x="440" y="620">indicadores da comunidade</text>
+
+  <path class="line" d="M805 540 C625 700 510 760 345 775" marker-end="url(#many)"/>
+  <text class="label" x="555" y="760">1:N</text>
+  <text class="note" x="430" y="780">lista taxonomica</text>
+
+  <path class="line" d="M920 540 L920 630" marker-end="url(#many)"/>
+  <text class="label" x="940" y="590">1:N</text>
+  <text class="note" x="965" y="590">quantitativo</text>
+
+  <path class="line" d="M960 330 L1045 300" marker-end="url(#many)"/>
+  <text class="label" x="985" y="312">1:N</text>
+  <text class="note" x="1030" y="328">amostragem</text>
+
+  <g id="legend">
+    <rect class="badge" x="60" y="860" width="28" height="18" rx="4"/>
+    <text class="badge-text" x="67" y="873">PK</text>
+    <text class="note" x="96" y="873">chave primaria</text>
+    <rect class="badge" x="220" y="860" width="28" height="18" rx="4"/>
+    <text class="badge-text" x="228" y="873">FK</text>
+    <text class="note" x="256" y="873">chave estrangeira</text>
+    <text class="note" x="410" y="873">Fitoplancton separa resumo da comunidade, lista qualitativa e abundancia quantitativa por taxon.</text>
+  </g>
+</svg>
