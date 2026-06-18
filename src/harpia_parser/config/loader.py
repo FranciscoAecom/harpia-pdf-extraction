@@ -75,9 +75,26 @@ def _filter_rules_dataframe(df: pd.DataFrame, template_id: str) -> pd.DataFrame:
     if "ativo" in filtered.columns:
         filtered = filtered[~filtered["ativo"].map(_is_disabled)]
     if "template_id" in filtered.columns:
-        template_values = filtered["template_id"].fillna("*").astype(str).str.strip()
-        filtered = filtered[(template_values == template_id) | (template_values == "*") | (template_values == "")]
+        template_values = filtered["template_id"].fillna("").astype(str).str.strip()
+        filtered = filtered[template_values == template_id]
     return filtered.copy()
+
+
+def _validate_template_ids(sheet_name: str, df: pd.DataFrame, template_ids: set[str]) -> None:
+    if df.empty or "template_id" not in df.columns:
+        return
+
+    values = df["template_id"].fillna("").astype(str).str.strip()
+    invalid_scope = sorted({value for value in values if not value or value == "*"})
+    unknown = sorted({value for value in values if value and value != "*" and value not in template_ids})
+
+    details = []
+    if invalid_scope:
+        details.append(f"template_id vazio/coringa={invalid_scope}")
+    if unknown:
+        details.append(f"template_id nao cadastrado={unknown}")
+    if details:
+        raise ValueError(f"Aba {sheet_name} contem vinculo de template invalido: {'; '.join(details)}")
 
 
 def _build_section_rules(df_section_aliases: pd.DataFrame) -> list[dict[str, Any]]:
@@ -361,6 +378,19 @@ def load_config(base_dir: Path, taxonomy_file: str = "config/taxonomy_config_v5.
     document_types = _build_document_types(df_document_types)
     document_type_detection_rules = _build_document_type_detection_rules(df_document_type_detection_rules)
     templates = _build_templates(df_templates)
+    template_ids = set(templates)
+    for sheet_name, df in {
+        "metadata_schema": df_metadata,
+        "client_schema": df_client_schema,
+        "sample_schema": df_sample_schema,
+        "section_config": df_sections,
+        "section_aliases": df_section_aliases,
+        "result_layouts": df_result_layouts,
+        "continuation_rules": df_continuation_rules,
+        "template_detection_rules": df_template_detection_rules,
+        "output_sheets": df_output_sheets,
+    }.items():
+        _validate_template_ids(sheet_name, df, template_ids)
     template_detection_rules = _build_template_detection_rules(df_template_detection_rules)
     output_sheets = _build_output_sheets(df_output_sheets)
 

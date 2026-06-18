@@ -126,7 +126,7 @@ As saidas em lote sao salvas em `output/`, separadas por tema, e o resumo geral 
 
 As regras ficam em `config/taxonomy_config_v5.xlsx`. A taxonomy separa abas de regras de extracao, catalogos auxiliares e contratos de saida.
 
-Depois que o template do PDF e identificado, o parser filtra as abas relacionais por `template_id`. Linhas com `template_id = *` sao regras comuns. No estado atual, as regras de cabecalho/metadados/cliente/amostra estao como comuns, enquanto as regras de resultado, secao, layout e continuacao estao cadastradas para `template_laudo_agua_v1`, pois o esforco de extracao foi concentrado no laudo de agua.
+Depois que o template do PDF e identificado, o parser filtra as abas relacionais por `template_id`. Cada regra deve estar vinculada explicitamente a um template cadastrado; a taxonomy nao usa mais `template_id = *` como coringa.
 
 ### Abas da Taxonomy
 
@@ -135,9 +135,9 @@ Depois que o template do PDF e identificado, o parser filtra as abas relacionais
 - `templates`: Registro dos templates/modelos de documento reconhecidos pela taxonomia, com prioridade, score minimo e status ativo.
 - `template_detection_rules`: Regras de identificacao por template; avaliam regexes obrigatorias, positivas e negativas antes da extracao.
 - `output_sheets`: Define quais abas cada template deve gerar no arquivo Excel final.
-- `metadata_schema`: Regex para extrair metadados globais do PDF; usa `template_id` para regras por template ou `*` para regra comum.
-- `client_schema`: Regex para extrair campos brutos da aba `client`; aceita regra comum com `template_id = *`.
-- `sample_schema`: Regex para extrair campos brutos da aba `sample`; aceita regra comum com `template_id = *`.
+- `metadata_schema`: Regex para extrair metadados globais do PDF, sempre vinculada a um `template_id` especifico.
+- `client_schema`: Regex para extrair campos brutos da aba `client`, sempre vinculada a um `template_id` especifico.
+- `sample_schema`: Regex para extrair campos brutos da aba `sample`, sempre vinculada a um `template_id` especifico.
 - `section_config`: Regras por template para reconhecer secoes e tipos de registro.
 - `section_aliases`: Aliases por template de titulos/secoes do PDF para categoria, subcategoria e local.
 - `result_layouts`: Mapa por template de posicoes das colunas extraidas das tabelas do PDF por tipo de registro.
@@ -208,7 +208,7 @@ Define as abas que cada template deve gerar no arquivo Excel final. Cada tema po
 #### `metadata_schema`
 Regex para extrair metadados globais do PDF.
 
-- `template_id`: Template ao qual a regra pertence. Use `*` para regra comum a todos os templates.
+- `template_id`: Template ao qual a regra pertence; deve existir na aba `templates`.
 - `campo`: Nome do metadado.
 - `regex`: Expressao regular usada para extrair o metadado do PDF.
 - `ativo`: Indica se a regra esta ativa.
@@ -216,7 +216,7 @@ Regex para extrair metadados globais do PDF.
 #### `client_schema`
 Regex para extrair campos brutos da aba `client`.
 
-- `template_id`: Template ao qual a regra pertence. Use `*` para regra comum a todos os templates.
+- `template_id`: Template ao qual a regra pertence; deve existir na aba `templates`.
 - `campo`: Nome do campo bruto da aba `client`.
 - `regex`: Regex usada para extrair o campo do PDF. `DERIVADO_DO_NOME_DO_PDF` indica campo calculado pelo codigo.
 - `descricao`: Descricao funcional do campo.
@@ -225,7 +225,7 @@ Regex para extrair campos brutos da aba `client`.
 #### `sample_schema`
 Regex para extrair campos brutos da aba `sample`.
 
-- `template_id`: Template ao qual a regra pertence. Use `*` para regra comum a todos os templates.
+- `template_id`: Template ao qual a regra pertence; deve existir na aba `templates`.
 - `campo`: Nome do campo bruto da aba `sample`.
 - `regex`: Regex usada para extrair o campo do PDF. `DERIVADO_DO_NOME_DO_PDF` indica campo calculado pelo codigo.
 - `ativo`: Indica se a regra esta ativa.

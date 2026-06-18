@@ -13,7 +13,7 @@ class ConfigLoaderTest(unittest.TestCase):
         self.assertEqual(config.df_sample_output_schema["campo"].tolist(), SAMPLE_COLUMNS)
         self.assertEqual(config.df_client_output_schema["campo"].tolist(), CLIENT_COLUMNS)
 
-    def test_template_filter_keeps_common_rules_and_excludes_other_templates(self):
+    def test_template_filter_keeps_only_explicit_template_rules(self):
         config = load_config(Path.cwd())
 
         water_config = filter_config_for_template(config, "template_laudo_agua_v1")
@@ -22,6 +22,18 @@ class ConfigLoaderTest(unittest.TestCase):
         self.assertGreater(len(water_config.section_config_rules), 0)
         self.assertEqual(len(fito_config.section_config_rules), 0)
         self.assertGreater(len(fito_config.metadata_rules), 0)
+
+    def test_relational_config_sheets_do_not_use_template_wildcard(self):
+        config = load_config(Path.cwd())
+
+        for sheet_name, df in {
+            "metadata_schema": config.df_metadata,
+            "client_schema": config.df_client_schema,
+            "sample_schema": config.df_sample_schema,
+        }.items():
+            template_values = df["template_id"].fillna("").astype(str).str.strip()
+            with self.subTest(sheet_name=sheet_name):
+                self.assertFalse(template_values.isin(["", "*"]).any())
 
     def test_output_sheets_are_loaded_by_template(self):
         config = load_config(Path.cwd())
