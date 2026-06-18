@@ -50,6 +50,17 @@ class ConfigLoaderTest(unittest.TestCase):
 
         self.assertNotIn("document_type_id", config.df_templates.columns)
 
+    def test_result_layouts_use_relational_format(self):
+        config = load_config(Path.cwd())
+
+        self.assertEqual(
+            config.df_result_layouts.columns.tolist(),
+            ["template_id", "tipo_registro", "campo", "coluna_origem", "ativo"],
+        )
+        self.assertEqual(config.result_layouts["AMOSTRA"]["resultado_col"], 1)
+        self.assertEqual(config.result_layouts["AMOSTRA"]["lq_col"], 4)
+        self.assertEqual(config.result_layouts["DUPLICATA"]["faixa_aceitacao_col"], 5)
+
     def test_header_rules_are_limited_to_curated_laudo_templates(self):
         config = load_config(Path.cwd())
         expected_templates = {

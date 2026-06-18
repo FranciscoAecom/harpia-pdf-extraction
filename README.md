@@ -138,7 +138,7 @@ Depois que o template do PDF e identificado, o parser filtra as abas relacionais
 - `sample_schema`: Regex para extrair campos brutos da aba `sample`, sempre vinculada a um `template_id` especifico.
 - `section_config`: Regras por template para reconhecer secoes e tipos de registro.
 - `section_aliases`: Aliases por template de titulos/secoes do PDF para categoria, subcategoria e local.
-- `result_layouts`: Mapa por template de posicoes das colunas extraidas das tabelas do PDF por tipo de registro.
+- `result_layouts`: Mapa relacional por template, tipo de registro e campo, indicando a posicao da coluna na tabela extraida do PDF.
 - `continuation_rules`: Padroes por template para detectar continuacao de tabelas de QA/QC entre paginas.
 - `results_extract_schema`: Contrato completo da aba de saida `results_extract`.
 - `sample_output_schema`: Contrato completo da aba de saida `sample`.
@@ -227,23 +227,12 @@ Aliases de titulos/secoes do PDF para categoria, subcategoria e local.
 - `ativo`: Indica se a regra esta ativa.
 
 #### `result_layouts`
-Mapa de posicoes das colunas extraidas das tabelas do PDF por tipo de registro.
+Mapa relacional de posicoes das colunas extraidas das tabelas do PDF. Cada linha representa um campo de um tipo de registro.
 
 - `template_id`: Template ao qual o layout pertence.
 - `tipo_registro`: Tipo de tabela/registro ao qual o layout se aplica.
-- `resultado_col`: Indice da coluna da tabela PDF que contem o resultado.
-- `unidade_col`: Indice da coluna que contem unidade separada, quando existir.
-- `data_inicio_col`: Indice da coluna que contem data de inicio.
-- `criterio_conformidade_col`: Indice da coluna que contem criterio de conformidade.
-- `lq_col`: Indice da coluna que contem LQ.
-- `referencia_col`: Indice da coluna que contem referencia/metodo.
-- `incerteza_col`: Indice da coluna que contem incerteza.
-- `numero_cq_col`: Indice da coluna que contem numero de CQ.
-- `duplicata_col`: Indice da coluna que contem valor de duplicata.
-- `faixa_aceitacao_col`: Indice da coluna que contem faixa/limite de aceitacao.
-- `variacao_percentual_col`: Indice da coluna que contem variacao percentual.
-- `quantidade_adicionada_col`: Indice da coluna que contem quantidade adicionada.
-- `recuperacao_percentual_col`: Indice da coluna que contem recuperacao percentual.
+- `campo`: Campo interno preenchido a partir da tabela, como `resultado`, `lq`, `referencia` ou `faixa_aceitacao`.
+- `coluna_origem`: Indice da coluna na tabela extraida do PDF.
 - `ativo`: Indica se o layout esta ativo.
 
 #### `continuation_rules`

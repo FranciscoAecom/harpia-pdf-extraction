@@ -157,6 +157,20 @@ def _build_result_layouts(df_result_layouts: pd.DataFrame) -> dict[str, dict[str
     if df_result_layouts.empty:
         return layouts
 
+    if {"campo", "coluna_origem"}.issubset(df_result_layouts.columns):
+        for _, row in df_result_layouts.iterrows():
+            tipo = str(_value_or_none(row, "tipo_registro") or "").strip().upper()
+            campo = str(_value_or_none(row, "campo") or "").strip()
+            value = _value_or_none(row, "coluna_origem")
+            if not tipo or not campo or value is None:
+                continue
+            key = campo if campo.endswith("_col") else f"{campo}_col"
+            if key not in LAYOUT_FIELD_KEYS:
+                continue
+            layout = layouts.setdefault(tipo, {field: None for field in LAYOUT_FIELD_KEYS})
+            layout[key] = int(value)
+        return layouts
+
     for _, row in df_result_layouts.iterrows():
         tipo = str(_value_or_none(row, "tipo_registro") or "").strip().upper()
         if not tipo:
