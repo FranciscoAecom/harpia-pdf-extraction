@@ -1,7 +1,7 @@
 import argparse
 import re
 from pathlib import Path
-from typing import Iterable
+from typing import Sequence
 
 import pandas as pd
 
@@ -146,14 +146,14 @@ def suggest_document_types(inventory: pd.DataFrame) -> tuple[pd.DataFrame, pd.Da
     return document_types, detection_rules, audit
 
 
-def parse_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
+def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Sugere tipos macro de documento antes do cadastro de templates.")
     parser.add_argument("--inventory", type=Path, default=DEFAULT_INVENTORY, help="Excel gerado pelo 01_scan_pdf_corpus.py.")
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT, help="Excel com document_types e auditoria.")
     return parser.parse_args(argv)
 
 
-def main(argv: Iterable[str] | None = None) -> int:
+def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
     inventory = pd.read_excel(args.inventory, sheet_name="pdf_inventory")
     document_types, detection_rules, audit = suggest_document_types(inventory)

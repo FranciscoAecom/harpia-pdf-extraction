@@ -2,7 +2,7 @@ import argparse
 import hashlib
 import re
 from pathlib import Path
-from typing import Iterable
+from typing import Sequence
 
 import pandas as pd
 import pdfplumber
@@ -86,7 +86,7 @@ def write_inventory(df: pd.DataFrame, output_path: Path) -> None:
         summary.to_excel(writer, sheet_name="summary", index=False)
 
 
-def parse_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
+def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Cria inventario textual agnostico de uma pasta de PDFs.")
     parser.add_argument("--input", type=Path, default=DEFAULT_INPUT_DIR, help="Pasta raiz dos PDFs.")
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT, help="Arquivo Excel de inventario.")
@@ -95,7 +95,7 @@ def parse_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def main(argv: Iterable[str] | None = None) -> int:
+def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
     max_pages = args.pages if args.pages > 0 else None
     df = build_inventory(args.input, max_pages=max_pages, limit=args.limit)

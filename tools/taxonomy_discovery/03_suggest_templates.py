@@ -2,7 +2,7 @@ import argparse
 import re
 from collections import Counter
 from pathlib import Path
-from typing import Iterable
+from typing import Sequence
 
 import pandas as pd
 
@@ -207,7 +207,7 @@ def suggest_templates(inventory: pd.DataFrame, document_type_audit: pd.DataFrame
     return pd.DataFrame(template_rows), pd.DataFrame(rule_rows), pd.DataFrame(output_sheet_rows)
 
 
-def parse_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
+def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Sugere templates e template_detection_rules a partir do inventario.")
     parser.add_argument("--inventory", type=Path, default=DEFAULT_INVENTORY, help="Excel gerado pelo 01_scan_pdf_corpus.py.")
     parser.add_argument(
@@ -220,7 +220,7 @@ def parse_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def main(argv: Iterable[str] | None = None) -> int:
+def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
     inventory = pd.read_excel(args.inventory, sheet_name="pdf_inventory")
     document_type_audit = pd.read_excel(args.document_types, sheet_name="document_type_audit")
