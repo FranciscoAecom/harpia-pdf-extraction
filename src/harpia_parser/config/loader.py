@@ -97,6 +97,19 @@ def _validate_template_ids(sheet_name: str, df: pd.DataFrame, template_ids: set[
         raise ValueError(f"Aba {sheet_name} contem vinculo de template invalido: {'; '.join(details)}")
 
 
+def _validate_detection_sources(sheet_name: str, df: pd.DataFrame) -> None:
+    if df.empty or "source" not in df.columns:
+        return
+
+    sources = df["source"].fillna("text").astype(str).str.strip().str.lower()
+    invalid_sources = sorted({source for source in sources if source != "text"})
+    if invalid_sources:
+        raise ValueError(
+            f"Aba {sheet_name} contem source invalido para classificacao: {invalid_sources}. "
+            "Use somente source='text'."
+        )
+
+
 def _build_section_rules(df_section_aliases: pd.DataFrame) -> list[dict[str, Any]]:
     rules: list[dict[str, Any]] = []
 
@@ -378,6 +391,8 @@ def load_config(base_dir: Path, taxonomy_file: str = "config/taxonomy_config_v5.
     document_types = _build_document_types(df_document_types)
     document_type_detection_rules = _build_document_type_detection_rules(df_document_type_detection_rules)
     templates = _build_templates(df_templates)
+    _validate_detection_sources("document_type_detection_rules", df_document_type_detection_rules)
+    _validate_detection_sources("template_detection_rules", df_template_detection_rules)
     template_ids = set(templates)
     for sheet_name, df in {
         "metadata_schema": df_metadata,

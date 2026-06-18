@@ -165,7 +165,7 @@ Regras para identificar o tipo macro do documento antes de avaliar templates esp
 
 - `document_type_id`: Tipo macro ao qual a regra pertence.
 - `rule_type`: Tipo da regra, como `positive`, `required` ou `negative`.
-- `source`: Fonte usada pela regra, como `text`, `path` ou `filename`.
+- `source`: Fonte usada pela regra. Use sempre `text`; a classificacao nao deve depender do caminho ou nome do arquivo.
 - `padrao_regex`: Regex usada para identificar sinais do tipo de documento.
 - `peso`: Pontos somados quando uma regra `positive` casa.
 - `ativo`: Indica se a regra esta ativa.
@@ -189,7 +189,7 @@ Regras de identificacao por template. O parser avalia essas regras logo apos ler
 
 - `template_id`: Template/modelo ao qual a regra pertence.
 - `rule_type`: Tipo da regra: `required`, `positive` ou `negative`.
-- `source`: Fonte usada pela regra, como `text` para texto do PDF ou `path` para caminho/nome do arquivo.
+- `source`: Fonte usada pela regra. Use sempre `text`; a classificacao nao deve depender do caminho ou nome do arquivo.
 - `padrao_regex`: Regex usada para identificar sinais do template.
 - `peso`: Pontos somados quando uma regra `positive` casa. Regras `required` e `negative` normalmente usam peso zero.
 - `ativo`: Indica se a regra esta ativa.
