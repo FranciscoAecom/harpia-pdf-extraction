@@ -1,0 +1,173 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="880" viewBox="0 0 1280 880" role="img" aria-labelledby="title desc">
+  <title id="title">Modelo relacional para laudos de sedimento</title>
+  <desc id="desc">Diagrama entidade relacionamento para laudos de sedimento com document, client, sample, result_section, sediment_result, sediment_fraction_result, external_provider_result e quality_control_result.</desc>
+  <defs>
+    <style>
+      .canvas { fill: #f8fafc; }
+      .entity { fill: #ffffff; stroke: #334155; stroke-width: 1.4; rx: 8; }
+      .header { fill: #365314; }
+      .header.blue { fill: #1d4ed8; }
+      .header.slate { fill: #475569; }
+      .header.gold { fill: #a16207; }
+      .header.qc { fill: #7c2d12; }
+      .title { fill: #ffffff; font: 700 14px Arial, sans-serif; letter-spacing: 0; }
+      .field { fill: #0f172a; font: 11.5px Arial, sans-serif; letter-spacing: 0; }
+      .key { fill: #166534; font: 700 11.5px Arial, sans-serif; letter-spacing: 0; }
+      .note { fill: #475569; font: 12px Arial, sans-serif; letter-spacing: 0; }
+      .label { fill: #334155; font: 700 12px Arial, sans-serif; letter-spacing: 0; }
+      .line { stroke: #475569; stroke-width: 1.6; fill: none; }
+      .badge { fill: #e2e8f0; stroke: #94a3b8; stroke-width: 1; }
+      .badge-text { fill: #334155; font: 700 11px Arial, sans-serif; letter-spacing: 0; }
+    </style>
+    <marker id="many" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M1,1 L10,6 L1,11 M1,6 L10,6" stroke="#475569" stroke-width="1.4" fill="none"/>
+    </marker>
+  </defs>
+
+  <rect class="canvas" x="0" y="0" width="1280" height="880"/>
+  <text x="40" y="42" style="fill:#0f172a;font:700 24px Arial,sans-serif;letter-spacing:0">Modelo relacional para laudos de sedimento</text>
+  <text x="40" y="66" class="note">Inclui criterios CONAMA 454 Nivel 1/Nivel 2, resultados em massa, granulometria, provedores externos e QA/QC.</text>
+
+  <g id="document">
+    <rect class="entity" x="60" y="110" width="255" height="180"/>
+    <rect class="header" x="60" y="110" width="255" height="34" rx="8"/>
+    <text class="title" x="80" y="132">DOCUMENT</text>
+    <text class="key" x="80" y="165">PK document_id</text>
+    <text class="field" x="80" y="187">nome_do_arquivo</text>
+    <text class="field" x="80" y="209">template_id</text>
+    <text class="field" x="80" y="231">tipo_laudo</text>
+    <text class="field" x="80" y="253">numero_relatorio</text>
+    <text class="field" x="80" y="275">data_publicacao</text>
+  </g>
+
+  <g id="client">
+    <rect class="entity" x="410" y="100" width="250" height="198"/>
+    <rect class="header blue" x="410" y="100" width="250" height="34" rx="8"/>
+    <text class="title" x="430" y="122">CLIENT</text>
+    <text class="key" x="430" y="155">PK client_id</text>
+    <text class="key" x="430" y="177">FK document_id</text>
+    <text class="field" x="430" y="199">proposta_comercial</text>
+    <text class="field" x="430" y="221">cliente</text>
+    <text class="field" x="430" y="243">cnpj_cpf</text>
+    <text class="field" x="430" y="265">contato</text>
+    <text class="field" x="430" y="287">telefone / endereco</text>
+  </g>
+
+  <g id="sample">
+    <rect class="entity" x="410" y="360" width="270" height="270"/>
+    <rect class="header" x="410" y="360" width="270" height="34" rx="8"/>
+    <text class="title" x="430" y="382">SAMPLE</text>
+    <text class="key" x="430" y="415">PK sample_id</text>
+    <text class="key" x="430" y="437">FK document_id</text>
+    <text class="key" x="430" y="459">FK client_id</text>
+    <text class="field" x="430" y="481">id_amostra</text>
+    <text class="field" x="430" y="503">tipo_amostra / matriz</text>
+    <text class="field" x="430" y="525">classe_ambiente</text>
+    <text class="field" x="430" y="547">nivel_conama</text>
+    <text class="field" x="430" y="569">criterio_conformidade</text>
+    <text class="field" x="430" y="591">data_coleta / data_recebimento</text>
+    <text class="field" x="430" y="613">latitude / longitude</text>
+  </g>
+
+  <g id="section">
+    <rect class="entity" x="780" y="335" width="270" height="235"/>
+    <rect class="header slate" x="780" y="335" width="270" height="34" rx="8"/>
+    <text class="title" x="800" y="357">RESULT_SECTION</text>
+    <text class="key" x="800" y="390">PK section_id</text>
+    <text class="key" x="800" y="412">FK document_id</text>
+    <text class="key" x="800" y="434">FK sample_id</text>
+    <text class="field" x="800" y="456">categoria / subcategoria</text>
+    <text class="field" x="800" y="478">tipo_registro</text>
+    <text class="field" x="800" y="500">provedor_externo</text>
+    <text class="field" x="800" y="522">local</text>
+    <text class="field" x="800" y="544">pagina_inicio / ordem</text>
+  </g>
+
+  <g id="sediment_result">
+    <rect class="entity" x="60" y="395" width="285" height="270"/>
+    <rect class="header" x="60" y="395" width="285" height="34" rx="8"/>
+    <text class="title" x="80" y="417">SEDIMENT_RESULT</text>
+    <text class="key" x="80" y="450">PK sediment_result_id</text>
+    <text class="key" x="80" y="472">FK section_id</text>
+    <text class="key" x="80" y="494">FK sample_id</text>
+    <text class="field" x="80" y="516">parameter</text>
+    <text class="field" x="80" y="538">resultado / resultado_tratado</text>
+    <text class="field" x="80" y="560">qualificador / unidade</text>
+    <text class="field" x="80" y="582">criterio_nivel_1_original</text>
+    <text class="field" x="80" y="604">criterio_nivel_2_original</text>
+    <text class="field" x="80" y="626">lq_minimo / lq_maximo</text>
+    <text class="field" x="80" y="648">referencia / incerteza</text>
+  </g>
+
+  <g id="fraction">
+    <rect class="entity" x="60" y="710" width="285" height="135"/>
+    <rect class="header gold" x="60" y="710" width="285" height="34" rx="8"/>
+    <text class="title" x="80" y="732">SEDIMENT_FRACTION_RESULT</text>
+    <text class="key" x="80" y="765">PK fraction_result_id</text>
+    <text class="key" x="80" y="787">FK section_id / sample_id</text>
+    <text class="field" x="80" y="809">fracao / faixa_granulometrica</text>
+    <text class="field" x="80" y="831">resultado_tratado / unidade</text>
+  </g>
+
+  <g id="external">
+    <rect class="entity" x="780" y="650" width="285" height="165"/>
+    <rect class="header blue" x="780" y="650" width="285" height="34" rx="8"/>
+    <text class="title" x="800" y="672">EXTERNAL_PROVIDER_RESULT</text>
+    <text class="key" x="800" y="705">PK external_result_id</text>
+    <text class="key" x="800" y="727">FK section_id / sample_id</text>
+    <text class="field" x="800" y="749">provedor / acreditacao</text>
+    <text class="field" x="800" y="771">parameter</text>
+    <text class="field" x="800" y="793">resultado_tratado / unidade</text>
+  </g>
+
+  <g id="qc">
+    <rect class="entity" x="930" y="95" width="285" height="210"/>
+    <rect class="header qc" x="930" y="95" width="285" height="34" rx="8"/>
+    <text class="title" x="950" y="117">QUALITY_CONTROL_RESULT</text>
+    <text class="key" x="950" y="150">PK qc_result_id</text>
+    <text class="key" x="950" y="172">FK section_id / sample_id</text>
+    <text class="field" x="950" y="194">tipo_registro</text>
+    <text class="field" x="950" y="216">numero_cq / parameter</text>
+    <text class="field" x="950" y="238">resultado / unidade / lq</text>
+    <text class="field" x="950" y="260">duplicata / faixa_aceitacao</text>
+    <text class="field" x="950" y="282">variacao / recuperacao</text>
+  </g>
+
+  <path class="line" d="M315 170 C360 170 365 160 410 160" marker-end="url(#many)"/>
+  <text class="label" x="348" y="150">1:N</text>
+
+  <path class="line" d="M315 245 C370 330 360 475 410 500" marker-end="url(#many)"/>
+  <text class="label" x="335" y="365">1:N</text>
+
+  <path class="line" d="M535 298 L535 360" marker-end="url(#many)"/>
+  <text class="label" x="552" y="334">1:N</text>
+
+  <path class="line" d="M680 500 C720 500 740 475 780 455" marker-end="url(#many)"/>
+  <text class="label" x="715" y="472">1:N</text>
+
+  <path class="line" d="M780 500 C630 610 500 620 345 555" marker-end="url(#many)"/>
+  <text class="label" x="575" y="622">1:N</text>
+  <text class="note" x="470" y="642">resultados analiticos</text>
+
+  <path class="line" d="M830 570 C650 720 520 785 345 790" marker-end="url(#many)"/>
+  <text class="label" x="550" y="765">1:N</text>
+  <text class="note" x="420" y="785">granulometria/fracao</text>
+
+  <path class="line" d="M920 570 L920 650" marker-end="url(#many)"/>
+  <text class="label" x="940" y="615">1:N</text>
+  <text class="note" x="965" y="615">provedores</text>
+
+  <path class="line" d="M960 335 L1040 305" marker-end="url(#many)"/>
+  <text class="label" x="985" y="315">1:N</text>
+  <text class="note" x="1030" y="328">QA/QC</text>
+
+  <g id="legend">
+    <rect class="badge" x="60" y="860" width="28" height="18" rx="4"/>
+    <text class="badge-text" x="67" y="873">PK</text>
+    <text class="note" x="96" y="873">chave primaria</text>
+    <rect class="badge" x="220" y="860" width="28" height="18" rx="4"/>
+    <text class="badge-text" x="228" y="873">FK</text>
+    <text class="note" x="256" y="873">chave estrangeira</text>
+    <text class="note" x="410" y="873">Sedimento separa resultados gerais, fracoes granulometricas, provedores externos e QA/QC.</text>
+  </g>
+</svg>
