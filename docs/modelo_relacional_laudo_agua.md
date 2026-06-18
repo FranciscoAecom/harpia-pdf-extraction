@@ -6,6 +6,8 @@ O Excel `results_extract` continua sendo uma boa saida auditavel, mas em banco d
 
 ## Visao Geral
 
+![Modelo relacional para laudos de agua](modelo_relacional_laudo_agua.svg)
+
 ```mermaid
 erDiagram
     DOCUMENT ||--o{ CLIENT : possui
