@@ -39,12 +39,16 @@ class ConfigLoaderTest(unittest.TestCase):
         config = load_config(Path.cwd())
 
         for sheet_name, df in {
-            "document_type_detection_rules": config.df_document_type_detection_rules,
             "template_detection_rules": config.df_template_detection_rules,
         }.items():
             sources = df["source"].fillna("text").astype(str).str.strip().str.lower()
             with self.subTest(sheet_name=sheet_name):
                 self.assertEqual(set(sources), {"text"})
+
+    def test_templates_do_not_depend_on_document_type(self):
+        config = load_config(Path.cwd())
+
+        self.assertNotIn("document_type_id", config.df_templates.columns)
 
     def test_header_rules_are_limited_to_curated_laudo_templates(self):
         config = load_config(Path.cwd())
