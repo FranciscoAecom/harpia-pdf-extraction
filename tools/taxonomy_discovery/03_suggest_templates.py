@@ -141,11 +141,13 @@ def suggest_templates(inventory: pd.DataFrame, document_type_audit: pd.DataFrame
 
     grouped = merged.groupby(["document_type_id", "topic_candidate"], dropna=False)
     for order, ((document_type_id, topic), group) in enumerate(grouped, start=1):
-        theme_id = f"{document_type_id}_{topic}"
+        document_type_text = str(document_type_id)
+        topic_text = str(topic)
+        theme_id = f"{document_type_text}_{topic_text}"
         template_id = f"template_{theme_id}_v1"
         template_rows.append({
             "template_id": template_id,
-            "document_type_id": document_type_id,
+            "document_type_id": document_type_text,
             "theme_id": theme_id,
             "nome": theme_id.replace("_", " "),
             "schema_ref": "results_extract",
@@ -156,7 +158,7 @@ def suggest_templates(inventory: pd.DataFrame, document_type_audit: pd.DataFrame
             "quantidade_pdfs": len(group),
         })
 
-        path_pattern = _regex_literal(str(topic))
+        path_pattern = _regex_literal(topic_text)
         rule_rows.append({
             "template_id": template_id,
             "rule_type": "positive",
@@ -169,14 +171,14 @@ def suggest_templates(inventory: pd.DataFrame, document_type_audit: pd.DataFrame
 
         filename_hits = [
             token for token in re.findall(r"[A-Za-zÀ-ÿ]{3,}", " ".join(group["stem"].fillna("").astype(str)))
-            if _sanitize(token) == topic
+            if _sanitize(token) == topic_text
         ]
         if filename_hits:
             rule_rows.append({
                 "template_id": template_id,
                 "rule_type": "positive",
                 "source": "filename",
-                "padrao_regex": _regex_literal(topic),
+                "padrao_regex": _regex_literal(topic_text),
                 "peso": 30,
                 "ativo": True,
                 "descricao": "Regra candidata inferida pelo nome do arquivo.",
