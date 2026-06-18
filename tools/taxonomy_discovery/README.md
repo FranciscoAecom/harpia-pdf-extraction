@@ -16,10 +16,10 @@ Eles nao substituem a curadoria: a ideia e gerar planilhas candidatas para revis
 
 2. `02_suggest_document_types.py`
 
-   Cria a camada anterior ao template: `document_types`, `document_type_detection_rules` e auditoria por PDF.
+   Le `document_types` e `document_type_detection_rules` da taxonomia oficial e classifica o tipo macro de cada PDF.
 
    ```powershell
-   py .\tools\taxonomy_discovery\02_suggest_document_types.py
+   py .\tools\taxonomy_discovery\02_suggest_document_types.py --taxonomy .\config\taxonomy_config_v5.xlsx
    ```
 
 3. `03_suggest_templates.py`
@@ -40,4 +40,4 @@ Por padrao, os arquivos ficam em:
 
 ## Observacao
 
-Os scripts sao agnosticos no sentido de nao dependerem de um PDF, pasta ou template especifico. Eles usam sinais genericos de caminho, nome do arquivo e texto extraido. Ainda assim, as regras sugeridas devem ser revisadas, porque regex fraca ou baseada somente em caminho pode identificar documentos semelhantes de forma ampla demais.
+Os scripts sao agnosticos no sentido de nao dependerem de um PDF, pasta ou template especifico. O `02_suggest_document_types.py` nao possui regras fixas no codigo: ele apenas aplica as regras cadastradas no Excel. Ainda assim, regras novas sugeridas pelos demais scripts devem ser revisadas, porque regex fraca ou baseada somente em caminho pode identificar documentos semelhantes de forma ampla demais.

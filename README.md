@@ -133,7 +133,7 @@ Os scripts em `tools/taxonomy_discovery/` ajudam a criar propostas de cadastro p
 
 ```powershell
 py .\tools\taxonomy_discovery\01_scan_pdf_corpus.py --input "L:\Secure_DCS\BRBLH1PINFW001\COE_Digital\others\harpia_rd"
-py .\tools\taxonomy_discovery\02_suggest_document_types.py
+py .\tools\taxonomy_discovery\02_suggest_document_types.py --taxonomy .\config\taxonomy_config_v5.xlsx
 py .\tools\taxonomy_discovery\03_suggest_templates.py
 ```
 
