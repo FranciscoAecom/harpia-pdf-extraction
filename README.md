@@ -25,11 +25,9 @@ Harpia_Testes/
 ├─ output/
 │  └─ <tipo_laudo>/
 │     └─ extracted_data.xlsx
-├─ tools/
+├─ scripts/
 │  └─ taxonomy_discovery/
-│     ├─ 01_scan_pdf_corpus.py
-│     ├─ 02_suggest_document_types.py
-│     └─ 03_suggest_templates.py
+│     └─ profile_pdf_corpus.py
 └─ src/
    └─ harpia_parser/
       ├─ constants.py
@@ -129,19 +127,29 @@ As saidas em lote sao salvas em `output/`, separadas por tema, e o resumo geral 
 
 ### Descobrir Novas Taxonomias
 
-Os scripts em `tools/taxonomy_discovery/` ajudam a criar propostas de cadastro para novos tipos de documento e templates. Eles sao agnosticos: leem caminho, nome do arquivo e texto extraido dos PDFs para gerar planilhas candidatas, que devem ser revisadas antes de virar cadastro oficial.
+O script em `scripts/taxonomy_discovery/` gera insumos de curadoria para novos tipos de documento e templates. Ele e agnostico: nao sabe o que e laudo, ficha, agua ou laboratorio. Ele apenas le caminho, nome do arquivo e texto extraido dos PDFs, agrupa documentos parecidos e sugere termos/regexes candidatas.
 
 ```powershell
-py .\tools\taxonomy_discovery\01_scan_pdf_corpus.py --input "L:\Secure_DCS\BRBLH1PINFW001\COE_Digital\others\harpia_rd"
-py .\tools\taxonomy_discovery\02_suggest_document_types.py --taxonomy .\config\taxonomy_config_v5.xlsx
-py .\tools\taxonomy_discovery\03_suggest_templates.py
+py .\scripts\taxonomy_discovery\profile_pdf_corpus.py --input "L:\Secure_DCS\BRBLH1PINFW001\COE_Digital\others\harpia_rd"
 ```
 
-As saidas ficam em:
+Para uma amostra pequena:
 
-- `output/taxonomy_discovery/pdf_inventory.xlsx`
-- `output/taxonomy_discovery/document_type_suggestions.xlsx`
-- `output/taxonomy_discovery/template_suggestions.xlsx`
+```powershell
+py .\scripts\taxonomy_discovery\profile_pdf_corpus.py --limit 50
+```
+
+A saida fica em:
+
+- `output/taxonomy_discovery/pdf_corpus_profile.xlsx`
+
+Principais abas:
+
+- `clusters`: grupos de PDFs parecidos, com exemplos e campos em branco para curadoria.
+- `regex_candidates`: termos/frases fortes que podem virar regras no Excel.
+- `pdf_inventory`: inventario PDF a PDF, incluindo `cluster_id`.
+
+A decisao final continua no Excel: uma pessoa revisa os clusters, nomeia os tipos/templates e promove apenas as regexes confiaveis para `document_type_detection_rules` ou `template_detection_rules`.
 
 ## Configuracao
 
