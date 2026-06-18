@@ -25,9 +25,6 @@ Harpia_Testes/
 ├─ output/
 │  └─ <tipo_laudo>/
 │     └─ extracted_data.xlsx
-├─ scripts/
-│  └─ taxonomy_discovery/
-│     └─ profile_pdf_corpus.py
 └─ src/
    └─ harpia_parser/
       ├─ constants.py
@@ -124,32 +121,6 @@ py .\run_batch.py extract --input "L:\Secure_DCS\BRBLH1PINFW001\COE_Digital\othe
 ```
 
 As saidas em lote sao salvas em `output/`, separadas por tema, e o resumo geral fica em `output/batch_extraction_summary.xlsx`.
-
-### Descobrir Novas Taxonomias
-
-O script em `scripts/taxonomy_discovery/` gera insumos de curadoria para novos tipos de documento e templates. Ele e agnostico: nao sabe o que e laudo, ficha, agua ou laboratorio. Ele apenas le caminho, nome do arquivo e texto extraido dos PDFs, agrupa documentos parecidos e sugere termos/regexes candidatas.
-
-```powershell
-py .\scripts\taxonomy_discovery\profile_pdf_corpus.py --input "L:\Secure_DCS\BRBLH1PINFW001\COE_Digital\others\harpia_rd"
-```
-
-Para uma amostra pequena:
-
-```powershell
-py .\scripts\taxonomy_discovery\profile_pdf_corpus.py --limit 50
-```
-
-A saida fica em:
-
-- `output/taxonomy_discovery/pdf_corpus_profile.xlsx`
-
-Principais abas:
-
-- `clusters`: grupos de PDFs parecidos, com exemplos e campos em branco para curadoria.
-- `regex_candidates`: termos/frases fortes que podem virar regras no Excel.
-- `pdf_inventory`: inventario PDF a PDF, incluindo `cluster_id`.
-
-A decisao final continua no Excel: uma pessoa revisa os clusters, nomeia os tipos/templates e promove apenas as regexes confiaveis para `document_type_detection_rules` ou `template_detection_rules`.
 
 ## Configuracao
 
