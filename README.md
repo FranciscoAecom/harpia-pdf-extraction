@@ -126,7 +126,7 @@ As saidas em lote sao salvas em `output/`, separadas por tema, e o resumo geral 
 
 As regras ficam em `config/taxonomy_config_v5.xlsx`. A taxonomy separa abas de regras de extracao, catalogos auxiliares e contratos de saida.
 
-Depois que o template do PDF e identificado, o parser filtra as abas relacionais por `template_id`. Cada regra deve estar vinculada explicitamente a um template cadastrado; a taxonomy nao usa mais `template_id = *` como coringa.
+Depois que o template do PDF e identificado, o parser filtra as abas relacionais por `template_id`. Cada regra deve estar vinculada explicitamente a um template cadastrado; a taxonomy nao usa mais `template_id = *` como coringa. No estado atual, as regras de `metadata_schema`, `client_schema` e `sample_schema` estao cadastradas somente para `template_laudo_agua_v1`, pois ainda nao foram curadas para as demais matrizes.
 
 ### Abas da Taxonomy
 
