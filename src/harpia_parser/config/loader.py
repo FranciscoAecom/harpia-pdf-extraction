@@ -21,6 +21,8 @@ log = logging.getLogger(__name__)
 @dataclass
 class PipelineConfig:
     taxonomy_path: Path
+    df_document_types: pd.DataFrame
+    df_document_type_detection_rules: pd.DataFrame
     df_templates: pd.DataFrame
     df_sections: pd.DataFrame
     df_metadata: pd.DataFrame
@@ -34,6 +36,8 @@ class PipelineConfig:
     df_output_sheets: pd.DataFrame
     df_result_layouts: pd.DataFrame
     df_continuation_rules: pd.DataFrame
+    document_types: dict[str, dict[str, Any]]
+    document_type_detection_rules: list[dict[str, Any]]
     templates: dict[str, dict[str, Any]]
     section_config_rules: list[dict[str, Any]]
     metadata_rules: list[dict[str, Any]]
@@ -174,6 +178,25 @@ def _build_templates(df_templates: pd.DataFrame) -> dict[str, dict[str, Any]]:
     return templates
 
 
+def _build_document_types(df_document_types: pd.DataFrame) -> dict[str, dict[str, Any]]:
+    document_types: dict[str, dict[str, Any]] = {}
+    if df_document_types.empty:
+        return document_types
+
+    for _, row in df_document_types.iterrows():
+        if _is_disabled(_value_or_none(row, "ativo")):
+            continue
+        document_type_id = str(_value_or_none(row, "document_type_id") or "").strip()
+        if not document_type_id:
+            continue
+        document_type = _row_to_str_dict(row)
+        document_type["document_type_id"] = document_type_id
+        document_type["prioridade"] = int(_value_or_none(row, "prioridade") or 999)
+        document_type["score_minimo"] = float(_value_or_none(row, "score_minimo") or 0)
+        document_types[document_type_id] = document_type
+    return document_types
+
+
 def _validate_output_schema(sheet_name: str, df_schema: pd.DataFrame, expected_columns: list[str]) -> None:
     if df_schema.empty:
         raise ValueError(f"Aba obrigatoria ausente ou vazia na taxonomy: {sheet_name}")
@@ -215,6 +238,35 @@ def _build_template_detection_rules(df_template_detection_rules: pd.DataFrame) -
         peso = _value_or_none(row, "peso")
         rules.append({
             "template_id": template_id,
+            "rule_type": rule_type,
+            "source": source,
+            "regex": re.compile(str(pattern), re.IGNORECASE),
+            "peso": float(peso) if peso is not None else 0.0,
+            "descricao": _value_or_none(row, "descricao"),
+        })
+
+    return rules
+
+
+def _build_document_type_detection_rules(df_document_type_detection_rules: pd.DataFrame) -> list[dict[str, Any]]:
+    rules: list[dict[str, Any]] = []
+    if df_document_type_detection_rules.empty:
+        return rules
+
+    for _, row in df_document_type_detection_rules.iterrows():
+        if _is_disabled(_value_or_none(row, "ativo")):
+            continue
+
+        document_type_id = str(_value_or_none(row, "document_type_id") or "").strip()
+        rule_type = str(_value_or_none(row, "rule_type") or "").strip().lower()
+        source = str(_value_or_none(row, "source") or "text").strip().lower()
+        pattern = _value_or_none(row, "padrao_regex")
+        if not document_type_id or rule_type not in {"required", "positive", "negative"} or pattern is None:
+            continue
+
+        peso = _value_or_none(row, "peso")
+        rules.append({
+            "document_type_id": document_type_id,
             "rule_type": rule_type,
             "source": source,
             "regex": re.compile(str(pattern), re.IGNORECASE),
@@ -280,6 +332,8 @@ def load_config(base_dir: Path, taxonomy_file: str = "config/taxonomy_config_v5.
     log.info("Carregando taxonomy: %s", taxonomy_path)
 
     excel = pd.ExcelFile(taxonomy_path)
+    df_document_types = _read_optional_sheet(excel, "document_types")
+    df_document_type_detection_rules = _read_optional_sheet(excel, "document_type_detection_rules")
     df_templates = _read_optional_sheet(excel, "templates")
     df_sections = pd.read_excel(excel, "section_config")
     df_metadata = pd.read_excel(excel, "metadata_schema")
@@ -304,6 +358,8 @@ def load_config(base_dir: Path, taxonomy_file: str = "config/taxonomy_config_v5.
     section_rules = _build_section_rules(df_section_aliases)
     result_layouts = _build_result_layouts(df_result_layouts)
     continuation_rules = _build_continuation_rules(df_continuation_rules)
+    document_types = _build_document_types(df_document_types)
+    document_type_detection_rules = _build_document_type_detection_rules(df_document_type_detection_rules)
     templates = _build_templates(df_templates)
     template_detection_rules = _build_template_detection_rules(df_template_detection_rules)
     output_sheets = _build_output_sheets(df_output_sheets)
@@ -316,6 +372,8 @@ def load_config(base_dir: Path, taxonomy_file: str = "config/taxonomy_config_v5.
 
     return PipelineConfig(
         taxonomy_path=taxonomy_path,
+        df_document_types=df_document_types,
+        df_document_type_detection_rules=df_document_type_detection_rules,
         df_templates=df_templates,
         df_sections=df_sections,
         df_metadata=df_metadata,
@@ -329,6 +387,8 @@ def load_config(base_dir: Path, taxonomy_file: str = "config/taxonomy_config_v5.
         df_output_sheets=df_output_sheets,
         df_result_layouts=df_result_layouts,
         df_continuation_rules=df_continuation_rules,
+        document_types=document_types,
+        document_type_detection_rules=document_type_detection_rules,
         templates=templates,
         section_config_rules=section_config_rules,
         metadata_rules=metadata_rules,

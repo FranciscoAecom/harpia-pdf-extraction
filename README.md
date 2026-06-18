@@ -25,6 +25,11 @@ Harpia_Testes/
 ├─ output/
 │  └─ <tipo_laudo>/
 │     └─ extracted_data.xlsx
+├─ tools/
+│  └─ taxonomy_discovery/
+│     ├─ 01_scan_pdf_corpus.py
+│     ├─ 02_suggest_document_types.py
+│     └─ 03_suggest_templates.py
 └─ src/
    └─ harpia_parser/
       ├─ constants.py
@@ -122,6 +127,22 @@ py .\run_batch.py extract --input "L:\Secure_DCS\BRBLH1PINFW001\COE_Digital\othe
 
 As saidas em lote sao salvas em `output/`, separadas por tema, e o resumo geral fica em `output/batch_extraction_summary.xlsx`.
 
+### Descobrir Novas Taxonomias
+
+Os scripts em `tools/taxonomy_discovery/` ajudam a criar propostas de cadastro para novos tipos de documento e templates. Eles sao agnosticos: leem caminho, nome do arquivo e texto extraido dos PDFs para gerar planilhas candidatas, que devem ser revisadas antes de virar cadastro oficial.
+
+```powershell
+py .\tools\taxonomy_discovery\01_scan_pdf_corpus.py --input "L:\Secure_DCS\BRBLH1PINFW001\COE_Digital\others\harpia_rd"
+py .\tools\taxonomy_discovery\02_suggest_document_types.py
+py .\tools\taxonomy_discovery\03_suggest_templates.py
+```
+
+As saidas ficam em:
+
+- `output/taxonomy_discovery/pdf_inventory.xlsx`
+- `output/taxonomy_discovery/document_type_suggestions.xlsx`
+- `output/taxonomy_discovery/template_suggestions.xlsx`
+
 ## Configuracao
 
 As regras ficam em `config/taxonomy_config_v5.xlsx`. A taxonomy separa abas de regras de extracao, catalogos auxiliares e contratos de saida.
@@ -130,6 +151,8 @@ Depois que o template do PDF e identificado, o parser filtra as abas relacionais
 
 ### Abas da Taxonomy
 
+- `document_types`: Tipos macro de documento reconhecidos antes da identificacao do template, como laudo, ficha de campo, ficha de coleta, ficha de recebimento e ficha de subcontratacao.
+- `document_type_detection_rules`: Regras candidatas para identificar o tipo macro do documento.
 - `templates`: Registro dos templates/modelos de documento reconhecidos pela taxonomia, com prioridade, score minimo e status ativo.
 - `template_detection_rules`: Regras de identificacao por template; avaliam regexes obrigatorias, positivas e negativas antes da extracao.
 - `output_sheets`: Define quais abas cada template deve gerar no arquivo Excel final.
@@ -148,10 +171,32 @@ Depois que o template do PDF e identificado, o parser filtra as abas relacionais
 
 Templates cadastrados atualmente: `laudo_agua`, `laudo_fito`, `laudo_sedimento`, `laudo_mps`, `laudo_ect`, `laudo_zbt`, `laudo_dsl`, `laudo_dss`, `ficha_coleta_tommasi`, `ficha_recebimento_ethica`, `ficha_recebimento_labmar`, `ficha_recebimento_aplysia`, `ficha_subcontratacao_als` e `ficha_recebimento_bioagri`.
 
+#### `document_types`
+Registro dos tipos macro de documento. Essa camada vem antes de `templates` e ajuda a separar familias amplas, como laudos e fichas.
+
+- `document_type_id`: Identificador do tipo macro do documento.
+- `nome`: Nome legivel do tipo de documento.
+- `descricao`: Descricao funcional do tipo de documento.
+- `prioridade`: Ordem de desempate quando mais de um tipo atinge o score minimo.
+- `score_minimo`: Pontuacao minima para aceitar o tipo macro.
+- `ativo`: Indica se o tipo esta ativo.
+
+#### `document_type_detection_rules`
+Regras para identificar o tipo macro do documento antes de avaliar templates especificos.
+
+- `document_type_id`: Tipo macro ao qual a regra pertence.
+- `rule_type`: Tipo da regra, como `positive`, `required` ou `negative`.
+- `source`: Fonte usada pela regra, como `text`, `path` ou `filename`.
+- `padrao_regex`: Regex usada para identificar sinais do tipo de documento.
+- `peso`: Pontos somados quando uma regra `positive` casa.
+- `ativo`: Indica se a regra esta ativa.
+- `descricao`: Explica o objetivo da regra.
+
 #### `templates`
 Registro dos templates/modelos de documento reconhecidos pela taxonomia. O template vencedor e escolhido antes da extracao.
 
 - `template_id`: Identificador do template/modelo.
+- `document_type_id`: Tipo macro do documento ao qual o template pertence.
 - `theme_id`: Tema/familia do documento, como `laudo_agua`, `laudo_fito` ou `laudo_sedimento`.
 - `nome`: Nome legivel do template.
 - `schema_ref`: Referencia do schema associado ao template.

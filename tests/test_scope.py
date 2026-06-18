@@ -2,7 +2,13 @@
 import unittest
 from types import SimpleNamespace
 
-from harpia_parser.core.scope import classify_document, detect_document_template, detect_tipo_laudo, document_in_scope
+from harpia_parser.core.scope import (
+    classify_document,
+    detect_document_template,
+    detect_document_type,
+    detect_tipo_laudo,
+    document_in_scope,
+)
 
 
 def _config():
@@ -10,17 +16,47 @@ def _config():
         templates={
             "template_laudo_agua_v1": {
                 "template_id": "template_laudo_agua_v1",
+                "document_type_id": "laudo",
                 "theme_id": "laudo_agua",
                 "prioridade": 30,
                 "score_minimo": 70,
             },
             "template_laudo_fito_v1": {
                 "template_id": "template_laudo_fito_v1",
+                "document_type_id": "laudo",
                 "theme_id": "laudo_fito",
                 "prioridade": 10,
                 "score_minimo": 80,
             },
         },
+        document_types={
+            "laudo": {
+                "document_type_id": "laudo",
+                "prioridade": 10,
+                "score_minimo": 70,
+            },
+            "ficha_coleta": {
+                "document_type_id": "ficha_coleta",
+                "prioridade": 20,
+                "score_minimo": 70,
+            },
+        },
+        document_type_detection_rules=[
+            {
+                "document_type_id": "laudo",
+                "rule_type": "positive",
+                "source": "text",
+                "regex": re.compile(r"Relat.rio Anal.tico", re.IGNORECASE),
+                "peso": 70,
+            },
+            {
+                "document_type_id": "ficha_coleta",
+                "rule_type": "positive",
+                "source": "text",
+                "regex": re.compile(r"Cadeia de Custodia", re.IGNORECASE),
+                "peso": 90,
+            },
+        ],
         template_detection_rules=[
             {
                 "template_id": "template_laudo_agua_v1",
@@ -102,6 +138,12 @@ class ScopeTest(unittest.TestCase):
             detect_tipo_laudo(texto, r"L:\base\Agua\arquivo.pdf", _config(), "template_laudo_agua_v1"),
             "laudo_agua",
         )
+
+    def test_document_type_filters_templates_before_template_detection(self):
+        texto = "Cadeia de Custodia Relatorio Analitico Tipo de Amostra: Agua Salobra CONAMA N 357"
+
+        self.assertEqual(detect_document_type(texto, _config()), "ficha_coleta")
+        self.assertIsNone(detect_document_template(texto, _config()))
 
     def test_classification_audit_marks_winner(self):
         texto = "Relatorio Analitico Tipo de Amostra: Agua Salobra CONAMA N 357"

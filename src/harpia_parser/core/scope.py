@@ -5,11 +5,65 @@ from .context import ClassificationResult, TemplateScore
 
 
 def _rule_haystack(texto: str, path_text: str, source: str) -> str:
-    return path_text if source == "path" else texto
+    if source == "path":
+        return path_text
+    if source == "filename":
+        return Path(path_text).name
+    return texto
 
 
 def _rule_description(rule: dict) -> str:
     return str(rule.get("descricao") or rule["regex"].pattern)
+
+
+def _document_type_score(document_type_id: str, texto: str, path_text: str, config) -> tuple[float, list[str], str]:
+    rules = [
+        rule
+        for rule in getattr(config, "document_type_detection_rules", [])
+        if rule["document_type_id"] == document_type_id
+    ]
+    required_rules = [rule for rule in rules if rule["rule_type"] == "required"]
+    positive_rules = [rule for rule in rules if rule["rule_type"] == "positive"]
+    negative_rules = [rule for rule in rules if rule["rule_type"] == "negative"]
+    matched_rules: list[str] = []
+
+    for rule in required_rules:
+        haystack = _rule_haystack(texto, path_text, rule["source"])
+        if not rule["regex"].search(haystack):
+            return 0.0, matched_rules, f"required_missing:{_rule_description(rule)}"
+        matched_rules.append(f"required:{_rule_description(rule)}")
+
+    for rule in negative_rules:
+        haystack = _rule_haystack(texto, path_text, rule["source"])
+        if rule["regex"].search(haystack):
+            matched_rules.append(f"negative:{_rule_description(rule)}")
+            return 0.0, matched_rules, f"negative_matched:{_rule_description(rule)}"
+
+    score = 0.0
+    for rule in positive_rules:
+        haystack = _rule_haystack(texto, path_text, rule["source"])
+        if rule["regex"].search(haystack):
+            score += rule["peso"]
+            matched_rules.append(f"positive:{_rule_description(rule)}")
+    return score, matched_rules, "scored"
+
+
+def detect_document_type(texto: str, config, pdf_path: str | Path | None = None) -> str | None:
+    document_types = getattr(config, "document_types", {})
+    if not document_types:
+        return None
+
+    path_text = str(pdf_path or "")
+    candidates: list[tuple[float, int, str]] = []
+    for document_type_id, document_type in document_types.items():
+        score, _, status = _document_type_score(document_type_id, texto, path_text, config)
+        if status != "scored":
+            continue
+        score_minimo = float(document_type.get("score_minimo") or 0)
+        prioridade = int(document_type.get("prioridade") or 999)
+        if score >= score_minimo:
+            candidates.append((score, -prioridade, document_type_id))
+    return max(candidates)[2] if candidates else None
 
 
 def _template_score(template_id: str, texto: str, path_text: str, config) -> tuple[float, list[str], str]:
@@ -44,8 +98,21 @@ def classify_document(texto: str, config, pdf_path: str | Path | None = None) ->
     path_text = str(pdf_path or "")
     candidates: list[tuple[float, int, str]] = []
     scores: list[TemplateScore] = []
+    document_type_id = detect_document_type(texto, config, pdf_path)
 
     for template_id, template in config.templates.items():
+        template_document_type_id = str(template.get("document_type_id") or "").strip()
+        if document_type_id and template_document_type_id and template_document_type_id != document_type_id:
+            scores.append(TemplateScore(
+                template_id,
+                0.0,
+                float(template.get("score_minimo") or 0),
+                int(template.get("prioridade") or 999),
+                "document_type_filtered",
+                [],
+            ))
+            continue
+
         score, matched_rules, status = _template_score(template_id, texto, path_text, config)
         score_minimo = float(template.get("score_minimo") or 0)
         prioridade = int(template.get("prioridade") or 999)
