@@ -3,6 +3,13 @@ import re
 from ..utils import normalizar
 
 
+QAQC_TIPO_REGISTRO = {
+    "branco": "BRANCO",
+    "duplicata": "DUPLICATA",
+    "recuperacao": "RECUPERACAO",
+}
+
+
 def novo_estado() -> dict:
     return {
         "categoria": None,
@@ -42,12 +49,7 @@ def _apply_section_title(txt: str, estado: dict, config) -> bool:
         section_norm = normalizar(subcat_txt)
         subcat_from_tipo = section_norm.replace(" ", "_").replace("-", "_")
 
-        if tipo_norm == "branco":
-            tipo_registro = "BRANCO"
-        elif tipo_norm == "duplicata":
-            tipo_registro = "DUPLICATA"
-        elif tipo_norm == "recuperacao":
-            tipo_registro = "RECUPERACAO"
+        tipo_registro = QAQC_TIPO_REGISTRO.get(tipo_norm, "AMOSTRA")
 
     for rule in config.section_rules:
         if rule["regex"].search(section_norm):
@@ -56,6 +58,13 @@ def _apply_section_title(txt: str, estado: dict, config) -> bool:
             estado["tipo_registro"] = tipo_registro
             estado["local"] = rule["local"]
             return True
+
+    if tipo_registro in {"BRANCO", "DUPLICATA", "RECUPERACAO"} and subcat_from_tipo:
+        estado["categoria"] = "Controle de Qualidade"
+        estado["subcategoria"] = subcat_from_tipo
+        estado["tipo_registro"] = tipo_registro
+        estado["local"] = "laboratorio"
+        return True
 
     return False
 

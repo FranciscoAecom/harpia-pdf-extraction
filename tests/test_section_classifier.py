@@ -1,6 +1,8 @@
-﻿import unittest
+import re
+import unittest
+from types import SimpleNamespace
 
-from harpia_parser.extraction.section_classifier import tabela_resultado
+from harpia_parser.extraction.section_classifier import estado_from_section_title, tabela_resultado
 
 
 class SectionClassifierTest(unittest.TestCase):
@@ -31,7 +33,33 @@ class SectionClassifierTest(unittest.TestCase):
 
         self.assertTrue(tabela_resultado(rows, estado))
 
+    def test_qaqc_recovery_section_without_alias_is_classified_generically(self):
+        config = SimpleNamespace(section_rules=[])
+
+        estado = estado_from_section_title("Recupera\u00e7\u00e3o - Especia\u00e7\u00e3o", config)
+
+        self.assertIsNotNone(estado)
+        assert estado is not None
+        self.assertEqual(estado["categoria"], "Controle de Qualidade")
+        self.assertEqual(estado["tipo_registro"], "RECUPERACAO")
+        self.assertEqual(estado["subcategoria"], "especiacao")
+        self.assertEqual(estado["local"], "laboratorio")
+
+    def test_qaqc_section_prefers_registered_alias_when_available(self):
+        config = SimpleNamespace(section_rules=[{
+            "regex": re.compile("metais"),
+            "categoria": "Controle de Qualidade",
+            "subcategoria": "metais",
+            "local": "laboratorio",
+        }])
+
+        estado = estado_from_section_title("Recupera\u00e7\u00e3o - Metais", config)
+
+        self.assertIsNotNone(estado)
+        assert estado is not None
+        self.assertEqual(estado["tipo_registro"], "RECUPERACAO")
+        self.assertEqual(estado["subcategoria"], "metais")
+
 
 if __name__ == "__main__":
     unittest.main()
-

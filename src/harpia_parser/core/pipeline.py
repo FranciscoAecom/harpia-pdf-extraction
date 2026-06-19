@@ -128,7 +128,8 @@ def _extract_result_rows(paginas, metadata: dict, sample_df: pd.DataFrame, conte
                     if data_inicio:
                         dh_inicio_atividade = data_inicio.group(0)
 
-                dado["subcategoria"] = subcategoria_relatorio_atual
+                if dado.get("tipo_registro") == "AMOSTRA" and subcategoria_relatorio_atual:
+                    dado["subcategoria"] = subcategoria_relatorio_atual
                 resultados.append({
                     "nome_do_arquivo": context.nome_do_arquivo,
                     "template_id": context.template_id,
