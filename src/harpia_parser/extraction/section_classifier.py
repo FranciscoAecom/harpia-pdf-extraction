@@ -3,13 +3,6 @@ import re
 from ..utils import normalizar
 
 
-QAQC_TIPO_REGISTRO = {
-    "branco": "BRANCO",
-    "duplicata": "DUPLICATA",
-    "recuperacao": "RECUPERACAO",
-}
-
-
 def novo_estado() -> dict:
     return {
         "categoria": None,
@@ -26,9 +19,25 @@ def aplicar_section_config(txt: str, estado: dict, config) -> bool:
             estado["tipo_registro"] = regra["tipo_registro"]
             estado["local"] = "laboratorio"
             if regra["extrair_subcategoria"] and "-" in txt:
-                estado["subcategoria"] = normalizar(txt.split("-", 1)[1]).replace(" ", "_")
+                estado["subcategoria"] = re.sub(r"\s+", " ", txt).strip()
             else:
                 estado["subcategoria"] = None
+            return True
+    return False
+
+
+def _apply_section_subcategory(txt: str, estado: dict, config) -> bool:
+    raw = re.sub(r"\s+", " ", txt or "").strip()
+    norm = normalizar(raw)
+    if not norm:
+        return False
+
+    for rule in getattr(config, "section_subcategory_rules", []):
+        if rule["regex"].search(norm):
+            estado["categoria"] = rule["categoria"]
+            estado["subcategoria"] = rule["subcategoria"] or raw
+            estado["tipo_registro"] = rule["tipo_registro"]
+            estado["local"] = rule["local"]
             return True
     return False
 
@@ -39,32 +48,25 @@ def _apply_section_title(txt: str, estado: dict, config) -> bool:
     if not norm:
         return False
 
+    if _apply_section_subcategory(raw, estado, config):
+        return True
+
     tipo_registro = "AMOSTRA"
     subcat_from_tipo = None
     section_norm = norm
 
     if " - " in raw and not norm.startswith("ethica ambiental"):
-        tipo_txt, subcat_txt = raw.split(" - ", 1)
-        tipo_norm = normalizar(tipo_txt)
+        _, subcat_txt = raw.split(" - ", 1)
         section_norm = normalizar(subcat_txt)
-        subcat_from_tipo = section_norm.replace(" ", "_").replace("-", "_")
-
-        tipo_registro = QAQC_TIPO_REGISTRO.get(tipo_norm, "AMOSTRA")
+        subcat_from_tipo = raw
 
     for rule in config.section_rules:
-        if rule["regex"].search(section_norm):
+        if rule["regex"].search(section_norm) or rule["regex"].search(norm):
             estado["categoria"] = rule["categoria"]
             estado["subcategoria"] = rule["subcategoria"] or subcat_from_tipo
             estado["tipo_registro"] = tipo_registro
             estado["local"] = rule["local"]
             return True
-
-    if tipo_registro in {"BRANCO", "DUPLICATA", "RECUPERACAO"} and subcat_from_tipo:
-        estado["categoria"] = "Controle de Qualidade"
-        estado["subcategoria"] = subcat_from_tipo
-        estado["tipo_registro"] = tipo_registro
-        estado["local"] = "laboratorio"
-        return True
 
     return False
 

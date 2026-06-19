@@ -100,6 +100,19 @@ class ConfigLoaderTest(unittest.TestCase):
             ["results_extract", "sample", "client", "classification_audit", "validation_errors"],
         )
 
+    def test_section_subcategory_aliases_are_loaded_by_template(self):
+        config = load_config(Path.cwd())
+
+        water_config = filter_config_for_template(config, "template_laudo_agua_v1")
+        self.assertGreater(len(water_config.section_subcategory_rules), 0)
+        self.assertTrue(
+            any(
+                rule["categoria"] == "Controle de Qualidade"
+                and rule["tipo_registro"] == "RECUPERACAO"
+                for rule in water_config.section_subcategory_rules
+            )
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

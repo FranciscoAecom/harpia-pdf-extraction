@@ -138,8 +138,9 @@ Campos booleanos da taxonomy, como `ativo`, `obrigatorio` e `extrair_subcategori
 - `metadata_schema`: Regex para extrair metadados globais do PDF, sempre vinculada a um `template_id` especifico.
 - `client_schema`: Regex para extrair campos brutos da aba `client`, sempre vinculada a um `template_id` especifico.
 - `sample_schema`: Regex para extrair campos brutos da aba `sample`, sempre vinculada a um `template_id` especifico.
-- `section_config`: Regras por template para reconhecer secoes e tipos de registro.
-- `section_aliases`: Aliases por template de titulos/secoes do PDF para categoria, subcategoria e local.
+- `section_config`: Regras legadas por template para reconhecer secoes e tipos de registro.
+- `section_aliases`: Aliases por template dos blocos principais do PDF, como `Resultados Analíticos`, `Controle de Qualidade` e `Provedores Externos`.
+- `section_subcategory_aliases`: Regexes por template para reconhecer secoes internas dos blocos principais, como `Metais`, `Físico-Químico`, `Recuperação - Especiação`, `Duplicata - Metais` e outras subcategorias.
 - `result_layouts`: Mapa relacional por template, tipo de registro e campo, indicando a posicao da coluna na tabela extraida do PDF.
 - `continuation_rules`: Padroes por template para detectar continuacao de tabelas de QA/QC entre paginas.
 - `results_extract_schema`: Contrato completo da aba de saida `results_extract`.
@@ -209,7 +210,7 @@ Regex para extrair campos brutos da aba `sample`.
 - `ativo`: Indica se a regra esta ativa.
 
 #### `section_config`
-Regras para reconhecer secoes e tipos de registro.
+Regras legadas para reconhecer secoes e tipos de registro. Novas regras de categoria/subcategoria devem ser preferencialmente cadastradas em `section_aliases` e `section_subcategory_aliases`.
 
 - `template_id`: Template ao qual a regra pertence.
 - `padrao_regex`: Regex usada para reconhecer uma secao/titulo no PDF.
@@ -219,14 +220,27 @@ Regras para reconhecer secoes e tipos de registro.
 - `ativo`: Indica se a regra esta ativa.
 
 #### `section_aliases`
-Aliases de titulos/secoes do PDF para categoria, subcategoria e local.
+Aliases dos blocos principais do PDF.
 
 - `template_id`: Template ao qual a regra pertence.
-- `padrao_regex`: Regex usada para reconhecer um titulo/secao alternativa.
-- `categoria`: Categoria atribuida quando o alias e reconhecido.
-- `subcategoria`: Subcategoria atribuida quando existir.
+- `padrao_regex`: Regex usada para reconhecer um bloco principal.
+- `categoria`: Bloco principal atribuido quando o alias e reconhecido, como `Resultados Analíticos`, `Controle de Qualidade` ou `Provedores Externos`.
+- `subcategoria`: Mantida vazia nesta aba; subcategorias devem ser cadastradas em `section_subcategory_aliases`.
+- `local`: Local padrao associado ao bloco, como campo ou laboratorio.
+- `ativo`: Indica se a regra esta ativa.
+
+#### `section_subcategory_aliases`
+Regexes para reconhecer as secoes internas dos blocos principais. Esta aba e a fonte preferencial para classificar `categoria`, `subcategoria`, `tipo` e `local` dos resultados.
+
+- `template_id`: Template ao qual a regra pertence.
+- `prioridade`: Ordem de avaliacao; numeros menores sao avaliados primeiro.
+- `padrao_regex`: Regex aplicada ao titulo/secao normalizado do PDF.
+- `categoria`: Bloco principal da secao, como `Resultados Analíticos`, `Controle de Qualidade` ou `Provedores Externos`.
+- `subcategoria`: Nome da secao interna. Quando estiver vazio, o parser preserva o titulo original reconhecido no PDF.
+- `tipo_registro`: Tipo de tabela/registro: `AMOSTRA`, `BRANCO`, `DUPLICATA` ou `RECUPERACAO`.
 - `local`: Local associado a secao, como campo ou laboratorio.
 - `ativo`: Indica se a regra esta ativa.
+- `descricao`: Explica o objetivo da regra.
 
 #### `result_layouts`
 Mapa relacional de posicoes das colunas extraidas das tabelas do PDF. Cada linha representa um campo de um tipo de registro.
@@ -289,9 +303,9 @@ Resultados analiticos e QA/QC extraidos do PDF.
 - `template_id`: Template/modelo de laudo reconhecido pela taxonomia.
 - `tipo_laudo`: Tema/familia do documento identificado pela taxonomia, como `laudo_agua`, `laudo_fito` ou `laudo_sedimento`.
 - `id_sample`: Identificador da amostra na aba `results_extract`.
-- `tipo`: Tipo de registro: Amostra, Branco, Duplicata ou Recuperacao.
-- `categoria`: Categoria analitica/secao reconhecida.
-- `subcategoria`: Identificador do relatorio/subcategoria extraida do texto.
+- `tipo`: Natureza do registro/tabela extraida: Amostra, Branco, Duplicata ou Recuperacao.
+- `categoria`: Bloco principal do PDF, como `Resultados Analíticos`, `Controle de Qualidade` ou `Provedores Externos`.
+- `subcategoria`: Secao interna do bloco principal, preservando o nome cadastrado/original do PDF, como `Metais` ou `Recuperação - Especiação`.
 - `parameter`: Parametro/analise da linha de resultado.
 - `resultado`: Resultado textual preservado como aparece no PDF.
 - `resultado_tratado`: Resultado convertido para numero no Excel, com casas decimais preservadas e notacao cientifica exibida como decimal normal.

@@ -10,7 +10,7 @@ from ..config.loader import filter_config_for_template, load_config, output_shee
 from ..constants import CLIENT_COLUMNS, RESULTS_EXTRACT_COLUMNS, SAMPLE_COLUMNS
 from .context import DocumentContext
 from ..formatting.common import format_results_extract
-from ..extraction.metadata_extractor import extract_client, extract_metadata, extract_sample, relatorio_from_text
+from ..extraction.metadata_extractor import extract_client, extract_metadata, extract_sample
 from ..normalization import normalize_outputs
 from ..formatting.output_writer import salvar
 from ..extraction.pdf_reader import read_pdf
@@ -92,14 +92,10 @@ def _extract_header_tables(texto: str, context: DocumentContext, extraction_conf
 def _extract_result_rows(paginas, metadata: dict, sample_df: pd.DataFrame, context: DocumentContext, extraction_config):
     resultados = []
     estado = novo_estado()
-    subcategoria_relatorio_atual = None
     dh_inicio_atividade = sample_df.loc[0, "dh_inicio_atividade"]
     pending_estado = None
 
     for page_text, tabelas in paginas:
-        subcategoria_pagina = relatorio_from_text(page_text)
-        subcategoria_relatorio_atual = subcategoria_pagina or subcategoria_relatorio_atual
-
         if pending_estado:
             estado.update(pending_estado)
 
@@ -128,8 +124,6 @@ def _extract_result_rows(paginas, metadata: dict, sample_df: pd.DataFrame, conte
                     if data_inicio:
                         dh_inicio_atividade = data_inicio.group(0)
 
-                if dado.get("tipo_registro") == "AMOSTRA" and subcategoria_relatorio_atual:
-                    dado["subcategoria"] = subcategoria_relatorio_atual
                 resultados.append({
                     "nome_do_arquivo": context.nome_do_arquivo,
                     "template_id": context.template_id,

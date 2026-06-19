@@ -34,7 +34,16 @@ class SectionClassifierTest(unittest.TestCase):
         self.assertTrue(tabela_resultado(rows, estado))
 
     def test_qaqc_recovery_section_without_alias_is_classified_generically(self):
-        config = SimpleNamespace(section_rules=[])
+        config = SimpleNamespace(
+            section_rules=[],
+            section_subcategory_rules=[{
+                "regex": re.compile(r"^recuperacao\s+-\s+.+"),
+                "categoria": "Controle de Qualidade",
+                "subcategoria": None,
+                "tipo_registro": "RECUPERACAO",
+                "local": "laboratorio",
+            }],
+        )
 
         estado = estado_from_section_title("Recupera\u00e7\u00e3o - Especia\u00e7\u00e3o", config)
 
@@ -42,23 +51,27 @@ class SectionClassifierTest(unittest.TestCase):
         assert estado is not None
         self.assertEqual(estado["categoria"], "Controle de Qualidade")
         self.assertEqual(estado["tipo_registro"], "RECUPERACAO")
-        self.assertEqual(estado["subcategoria"], "especiacao")
+        self.assertEqual(estado["subcategoria"], "Recupera\u00e7\u00e3o - Especia\u00e7\u00e3o")
         self.assertEqual(estado["local"], "laboratorio")
 
     def test_qaqc_section_prefers_registered_alias_when_available(self):
-        config = SimpleNamespace(section_rules=[{
-            "regex": re.compile("metais"),
-            "categoria": "Controle de Qualidade",
-            "subcategoria": "metais",
-            "local": "laboratorio",
-        }])
+        config = SimpleNamespace(
+            section_rules=[],
+            section_subcategory_rules=[{
+                "regex": re.compile(r"^recuperacao\s+-\s+metais$"),
+                "categoria": "Controle de Qualidade",
+                "subcategoria": "Recupera\u00e7\u00e3o - Metais",
+                "tipo_registro": "RECUPERACAO",
+                "local": "laboratorio",
+            }],
+        )
 
         estado = estado_from_section_title("Recupera\u00e7\u00e3o - Metais", config)
 
         self.assertIsNotNone(estado)
         assert estado is not None
         self.assertEqual(estado["tipo_registro"], "RECUPERACAO")
-        self.assertEqual(estado["subcategoria"], "metais")
+        self.assertEqual(estado["subcategoria"], "Recupera\u00e7\u00e3o - Metais")
 
 
 if __name__ == "__main__":

@@ -25,6 +25,7 @@ class PipelineConfig:
     df_sections: pd.DataFrame
     df_metadata: pd.DataFrame
     df_section_aliases: pd.DataFrame
+    df_section_subcategory_aliases: pd.DataFrame
     df_sample_schema: pd.DataFrame
     df_client_schema: pd.DataFrame
     df_results_extract_schema: pd.DataFrame
@@ -38,6 +39,7 @@ class PipelineConfig:
     section_config_rules: list[dict[str, Any]]
     metadata_rules: list[dict[str, Any]]
     section_rules: list[dict[str, Any]]
+    section_subcategory_rules: list[dict[str, Any]]
     result_layouts: dict[str, dict[str, int | None]]
     continuation_rules: list[dict[str, str | Pattern[str]]]
     template_detection_rules: list[dict[str, Any]]
@@ -127,6 +129,30 @@ def _build_section_rules(df_section_aliases: pd.DataFrame) -> list[dict[str, Any
             "regex": re.compile(str(padrao), re.IGNORECASE),
             "categoria": categoria,
             "subcategoria": _value_or_none(row, "subcategoria"),
+            "local": _value_or_none(row, "local") or "laboratorio",
+        })
+    return rules
+
+
+def _build_section_subcategory_rules(df_section_subcategory_aliases: pd.DataFrame) -> list[dict[str, Any]]:
+    rules: list[dict[str, Any]] = []
+    if df_section_subcategory_aliases.empty:
+        return rules
+
+    source = df_section_subcategory_aliases.copy()
+    if "prioridade" in source.columns:
+        source = source.sort_values("prioridade", na_position="last")
+
+    for _, row in source.iterrows():
+        padrao = _value_or_none(row, "padrao_regex")
+        categoria = _value_or_none(row, "categoria")
+        if padrao is None or categoria is None:
+            continue
+        rules.append({
+            "regex": re.compile(str(padrao), re.IGNORECASE),
+            "categoria": categoria,
+            "subcategoria": _value_or_none(row, "subcategoria"),
+            "tipo_registro": str(_value_or_none(row, "tipo_registro") or "AMOSTRA").strip().upper(),
             "local": _value_or_none(row, "local") or "laboratorio",
         })
     return rules
@@ -306,6 +332,7 @@ def filter_config_for_template(config: PipelineConfig, template_id: str) -> Pipe
     df_sections = _filter_rules_dataframe(config.df_sections, template_id)
     df_metadata = _filter_rules_dataframe(config.df_metadata, template_id)
     df_section_aliases = _filter_rules_dataframe(config.df_section_aliases, template_id)
+    df_section_subcategory_aliases = _filter_rules_dataframe(config.df_section_subcategory_aliases, template_id)
     df_sample_schema = _filter_rules_dataframe(config.df_sample_schema, template_id)
     df_client_schema = _filter_rules_dataframe(config.df_client_schema, template_id)
     df_result_layouts = _filter_rules_dataframe(config.df_result_layouts, template_id)
@@ -316,6 +343,7 @@ def filter_config_for_template(config: PipelineConfig, template_id: str) -> Pipe
         df_sections=df_sections,
         df_metadata=df_metadata,
         df_section_aliases=df_section_aliases,
+        df_section_subcategory_aliases=df_section_subcategory_aliases,
         df_sample_schema=df_sample_schema,
         df_client_schema=df_client_schema,
         df_result_layouts=df_result_layouts,
@@ -323,6 +351,7 @@ def filter_config_for_template(config: PipelineConfig, template_id: str) -> Pipe
         section_config_rules=_build_section_config_rules(df_sections),
         metadata_rules=_build_metadata_rules(df_metadata),
         section_rules=_build_section_rules(df_section_aliases),
+        section_subcategory_rules=_build_section_subcategory_rules(df_section_subcategory_aliases),
         result_layouts=_build_result_layouts(df_result_layouts),
         continuation_rules=_build_continuation_rules(df_continuation_rules),
     )
@@ -337,6 +366,7 @@ def load_config(base_dir: Path, taxonomy_file: str = "config/taxonomy_config_v5.
     df_sections = pd.read_excel(excel, "section_config")
     df_metadata = pd.read_excel(excel, "metadata_schema")
     df_section_aliases = _read_optional_sheet(excel, "section_aliases")
+    df_section_subcategory_aliases = _read_optional_sheet(excel, "section_subcategory_aliases")
     df_sample_schema = _read_optional_sheet(excel, "sample_schema")
     df_client_schema = _read_optional_sheet(excel, "client_schema")
     df_results_extract_schema = _read_optional_sheet(excel, "results_extract_schema")
@@ -355,6 +385,7 @@ def load_config(base_dir: Path, taxonomy_file: str = "config/taxonomy_config_v5.
     section_config_rules = _build_section_config_rules(df_sections)
     metadata_rules = _build_metadata_rules(df_metadata)
     section_rules = _build_section_rules(df_section_aliases)
+    section_subcategory_rules = _build_section_subcategory_rules(df_section_subcategory_aliases)
     result_layouts = _build_result_layouts(df_result_layouts)
     continuation_rules = _build_continuation_rules(df_continuation_rules)
     templates = _build_templates(df_templates)
@@ -369,6 +400,7 @@ def load_config(base_dir: Path, taxonomy_file: str = "config/taxonomy_config_v5.
         "sample_schema": df_sample_schema,
         "section_config": df_sections,
         "section_aliases": df_section_aliases,
+        "section_subcategory_aliases": df_section_subcategory_aliases,
         "result_layouts": df_result_layouts,
         "continuation_rules": df_continuation_rules,
         "results_extract_schema": df_results_extract_schema,
@@ -382,7 +414,7 @@ def load_config(base_dir: Path, taxonomy_file: str = "config/taxonomy_config_v5.
 
     log.info(
         "Taxonomy carregada: %d regras de secao, %d campos de metadata",
-        len(df_sections) + len(section_rules),
+        len(df_sections) + len(section_rules) + len(section_subcategory_rules),
         len(df_metadata),
     )
 
@@ -392,6 +424,7 @@ def load_config(base_dir: Path, taxonomy_file: str = "config/taxonomy_config_v5.
         df_sections=df_sections,
         df_metadata=df_metadata,
         df_section_aliases=df_section_aliases,
+        df_section_subcategory_aliases=df_section_subcategory_aliases,
         df_sample_schema=df_sample_schema,
         df_client_schema=df_client_schema,
         df_results_extract_schema=df_results_extract_schema,
@@ -405,6 +438,7 @@ def load_config(base_dir: Path, taxonomy_file: str = "config/taxonomy_config_v5.
         section_config_rules=section_config_rules,
         metadata_rules=metadata_rules,
         section_rules=section_rules,
+        section_subcategory_rules=section_subcategory_rules,
         result_layouts=result_layouts,
         continuation_rules=continuation_rules,
         template_detection_rules=template_detection_rules,
