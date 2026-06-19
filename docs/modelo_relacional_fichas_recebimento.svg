@@ -1,0 +1,176 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1580" height="1100" viewBox="0 0 1580 1100">
+  <defs>
+    <style>
+      .bg { fill: #f7f8fb; }
+      .entity { fill: #ffffff; stroke: #2f3a4a; stroke-width: 1.4; rx: 8; }
+      .header { fill: #614b75; }
+      .header2 { fill: #315f72; }
+      .header3 { fill: #6a5d2f; }
+      .title { fill: #ffffff; font-family: Arial, sans-serif; font-size: 15px; font-weight: 700; }
+      .field { fill: #17202a; font-family: Arial, sans-serif; font-size: 12.5px; }
+      .pk { font-weight: 700; }
+      .fk { fill: #475569; }
+      .caption { fill: #0f172a; font-family: Arial, sans-serif; font-size: 24px; font-weight: 700; }
+      .subtitle { fill: #475569; font-family: Arial, sans-serif; font-size: 15px; }
+      .note { fill: #334155; font-family: Arial, sans-serif; font-size: 13px; }
+      .line { stroke: #64748b; stroke-width: 1.8; fill: none; }
+    </style>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#64748b" />
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1580" height="1100"/>
+  <text class="caption" x="50" y="48">Modelo relacional para fichas de recebimento</text>
+  <text class="subtitle" x="50" y="76">Checklists e tabelas de recebimento de provedores externos/subcontratados, com amostras, perguntas, temperaturas e nao conformidades.</text>
+
+  <g id="receipt_document">
+    <rect class="entity" x="50" y="110" width="310" height="230"/>
+    <rect class="header" x="50" y="110" width="310" height="36" rx="8"/>
+    <text class="title" x="66" y="134">RECEIPT_DOCUMENT</text>
+    <text class="field pk" x="66" y="169">PK receipt_document_id</text>
+    <text class="field" x="66" y="193">nome_do_arquivo</text>
+    <text class="field" x="66" y="217">template_id</text>
+    <text class="field" x="66" y="241">tipo_documento</text>
+    <text class="field" x="66" y="265">provedor</text>
+    <text class="field" x="66" y="289">formulario_codigo / revisao</text>
+    <text class="field" x="66" y="313">paginas / data_processamento</text>
+  </g>
+
+  <g id="receipt_provider">
+    <rect class="entity" x="430" y="110" width="280" height="210"/>
+    <rect class="header" x="430" y="110" width="280" height="36" rx="8"/>
+    <text class="title" x="446" y="134">RECEIPT_PROVIDER</text>
+    <text class="field pk" x="446" y="169">PK provider_id</text>
+    <text class="field fk" x="446" y="193">FK receipt_document_id</text>
+    <text class="field" x="446" y="217">nome_provedor</text>
+    <text class="field" x="446" y="241">unidade</text>
+    <text class="field" x="446" y="265">acreditacao</text>
+    <text class="field" x="446" y="289">endereco / contato</text>
+  </g>
+
+  <g id="receipt_process">
+    <rect class="entity" x="790" y="100" width="330" height="260"/>
+    <rect class="header2" x="790" y="100" width="330" height="36" rx="8"/>
+    <text class="title" x="806" y="124">RECEIPT_PROCESS</text>
+    <text class="field pk" x="806" y="159">PK receipt_process_id</text>
+    <text class="field fk" x="806" y="183">FK receipt_document_id</text>
+    <text class="field" x="806" y="207">proposta_comercial</text>
+    <text class="field" x="806" y="231">cliente</text>
+    <text class="field" x="806" y="255">laudo_vinculado</text>
+    <text class="field" x="806" y="279">data_recebimento / hora</text>
+    <text class="field" x="806" y="303">lote_recebimento</text>
+    <text class="field" x="806" y="327">cadeia_custodia / status</text>
+  </g>
+
+  <g id="receipt_sample">
+    <rect class="entity" x="1210" y="90" width="320" height="290"/>
+    <rect class="header2" x="1210" y="90" width="320" height="36" rx="8"/>
+    <text class="title" x="1226" y="114">RECEIPT_SAMPLE</text>
+    <text class="field pk" x="1226" y="149">PK receipt_sample_id</text>
+    <text class="field fk" x="1226" y="173">FK receipt_process_id</text>
+    <text class="field" x="1226" y="197">id_amostra</text>
+    <text class="field" x="1226" y="221">descricao_amostra</text>
+    <text class="field" x="1226" y="245">ponto_amostragem</text>
+    <text class="field" x="1226" y="269">matriz</text>
+    <text class="field" x="1226" y="293">data/hora coleta</text>
+    <text class="field" x="1226" y="317">data/hora recebimento</text>
+    <text class="field" x="1226" y="341">preservante / observacoes</text>
+    <text class="field" x="1226" y="365">status_amostra</text>
+  </g>
+
+  <g id="receipt_analysis">
+    <rect class="entity" x="50" y="500" width="300" height="210"/>
+    <rect class="header2" x="50" y="500" width="300" height="36" rx="8"/>
+    <text class="title" x="66" y="524">RECEIPT_ANALYSIS</text>
+    <text class="field pk" x="66" y="559">PK receipt_analysis_id</text>
+    <text class="field fk" x="66" y="583">FK receipt_sample_id</text>
+    <text class="field" x="66" y="607">analise</text>
+    <text class="field" x="66" y="631">grupo_analitico</text>
+    <text class="field" x="66" y="655">metodo_ou_area</text>
+    <text class="field" x="66" y="679">prazo_analise</text>
+  </g>
+
+  <g id="checklist">
+    <rect class="entity" x="430" y="500" width="320" height="230"/>
+    <rect class="header3" x="430" y="500" width="320" height="36" rx="8"/>
+    <text class="title" x="446" y="524">RECEIPT_CHECKLIST_ANSWER</text>
+    <text class="field pk" x="446" y="559">PK checklist_answer_id</text>
+    <text class="field fk" x="446" y="583">FK receipt_process_id</text>
+    <text class="field" x="446" y="607">numero_pergunta</text>
+    <text class="field" x="446" y="631">pergunta</text>
+    <text class="field" x="446" y="655">resposta</text>
+    <text class="field" x="446" y="679">observacao</text>
+    <text class="field" x="446" y="703">conforme</text>
+  </g>
+
+  <g id="temperature">
+    <rect class="entity" x="830" y="500" width="300" height="210"/>
+    <rect class="header3" x="830" y="500" width="300" height="36" rx="8"/>
+    <text class="title" x="846" y="524">RECEIPT_TEMPERATURE</text>
+    <text class="field pk" x="846" y="559">PK temperature_id</text>
+    <text class="field fk" x="846" y="583">FK receipt_process_id</text>
+    <text class="field" x="846" y="607">caixa</text>
+    <text class="field" x="846" y="631">identificador_termometro</text>
+    <text class="field" x="846" y="655">temperatura</text>
+    <text class="field" x="846" y="679">temperatura_tratada / unidade</text>
+  </g>
+
+  <g id="nonconformity">
+    <rect class="entity" x="1210" y="500" width="320" height="240"/>
+    <rect class="header3" x="1210" y="500" width="320" height="36" rx="8"/>
+    <text class="title" x="1226" y="524">RECEIPT_NONCONFORMITY</text>
+    <text class="field pk" x="1226" y="559">PK nonconformity_id</text>
+    <text class="field fk" x="1226" y="583">FK receipt_process_id</text>
+    <text class="field" x="1226" y="607">tipo_nao_conformidade</text>
+    <text class="field" x="1226" y="631">descricao</text>
+    <text class="field" x="1226" y="655">data_comunicado</text>
+    <text class="field" x="1226" y="679">pessoa_informada</text>
+    <text class="field" x="1226" y="703">responsavel_comunicacao</text>
+    <text class="field" x="1226" y="727">autorizacao_cliente</text>
+  </g>
+
+  <g id="responsible">
+    <rect class="entity" x="430" y="850" width="300" height="180"/>
+    <rect class="header3" x="430" y="850" width="300" height="36" rx="8"/>
+    <text class="title" x="446" y="874">RECEIPT_RESPONSIBLE</text>
+    <text class="field pk" x="446" y="909">PK responsible_id</text>
+    <text class="field fk" x="446" y="933">FK receipt_document_id</text>
+    <text class="field" x="446" y="957">papel</text>
+    <text class="field" x="446" y="981">nome</text>
+    <text class="field" x="446" y="1005">assinatura_presente</text>
+  </g>
+
+  <g id="attachment">
+    <rect class="entity" x="850" y="850" width="300" height="180"/>
+    <rect class="header3" x="850" y="850" width="300" height="36" rx="8"/>
+    <text class="title" x="866" y="874">RECEIPT_ATTACHMENT</text>
+    <text class="field pk" x="866" y="909">PK attachment_id</text>
+    <text class="field fk" x="866" y="933">FK receipt_document_id</text>
+    <text class="field" x="866" y="957">tipo_anexo</text>
+    <text class="field" x="866" y="981">referencia</text>
+    <text class="field" x="866" y="1005">observacao</text>
+  </g>
+
+  <path class="line" d="M360 210 L430 210" marker-end="url(#arrow)"/>
+  <text class="note" x="378" y="200">1:N</text>
+  <path class="line" d="M710 220 L790 220" marker-end="url(#arrow)"/>
+  <text class="note" x="730" y="210">1:N</text>
+  <path class="line" d="M1120 235 L1210 235" marker-end="url(#arrow)"/>
+  <text class="note" x="1145" y="225">1:N</text>
+  <path class="line" d="M1370 380 L1370 440 L200 440 L200 500" marker-end="url(#arrow)"/>
+  <text class="note" x="250" y="432">1:N</text>
+  <path class="line" d="M955 360 L955 455 L590 455 L590 500" marker-end="url(#arrow)"/>
+  <text class="note" x="635" y="447">1:N</text>
+  <path class="line" d="M955 360 L955 500" marker-end="url(#arrow)"/>
+  <text class="note" x="970" y="435">1:N</text>
+  <path class="line" d="M955 360 L955 455 L1370 455 L1370 500" marker-end="url(#arrow)"/>
+  <text class="note" x="1185" y="447">1:N</text>
+  <path class="line" d="M205 340 L205 820 L580 820 L580 850" marker-end="url(#arrow)"/>
+  <text class="note" x="250" y="812">1:N</text>
+  <path class="line" d="M205 340 L205 795 L1000 795 L1000 850" marker-end="url(#arrow)"/>
+  <text class="note" x="600" y="787">1:N</text>
+
+  <rect x="50" y="1050" width="1480" height="34" fill="#ede8f4" stroke="#cec4d6" rx="6"/>
+  <text class="note" x="66" y="1072">Nota: layouts tabulares alimentam RECEIPT_SAMPLE/RECEIPT_ANALYSIS; checklists formais alimentam RECEIPT_CHECKLIST_ANSWER, temperaturas e nao conformidades.</text>
+</svg>
