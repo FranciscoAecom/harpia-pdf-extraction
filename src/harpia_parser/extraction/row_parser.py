@@ -55,7 +55,7 @@ def _field_from_header_cell(value: object) -> str | None:
 
 
 def _layout_from_header(row: list, tipo_registro: str | None, config) -> dict[str, int | None] | None:
-    layout = _base_layout(tipo_registro, config)
+    layout: dict[str, int | None] = {field: None for field in LAYOUT_FIELD_KEYS}
     found = False
     for index, value in enumerate(row):
         field = _field_from_header_cell(value)
