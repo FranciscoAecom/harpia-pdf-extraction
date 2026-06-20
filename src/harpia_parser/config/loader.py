@@ -82,6 +82,8 @@ def _coerce_bool_columns(df: pd.DataFrame, columns: set[str], *, default: bool =
 
 def _value_or_none(row: pd.Series, column: str) -> Any:
     value = row[column] if column in row.index else None
+    if isinstance(value, str) and value.strip().upper() == "NAO_APLICAVEL":
+        return None
     return None if pd.isna(value) else value
 
 
