@@ -53,7 +53,8 @@ class ConfigLoaderTest(unittest.TestCase):
         self.assertNotIn("document_type_id", config.df_templates.columns)
 
     def test_boolean_columns_are_real_booleans(self):
-        workbook = pd.ExcelFile(Path.cwd() / "config" / "taxonomy_config_v5.xlsx")
+        config = load_config(Path.cwd())
+        workbook = pd.ExcelFile(config.taxonomy_path)
         boolean_columns = {"ativo", "obrigatorio", "extrair_subcategoria"}
 
         try:

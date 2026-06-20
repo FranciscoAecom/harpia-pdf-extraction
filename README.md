@@ -19,7 +19,7 @@ Harpia_Testes/
 ├─ run_pipeline.py
 ├─ README.md
 ├─ config/
-│  ├─ taxonomy_config_v5.xlsx
+│  ├─ taxonomy_config_consolidada_v1.xlsx
 ├─ data/
 │  └─ input/
 │     └─ *.pdf
@@ -125,7 +125,7 @@ As saidas em lote sao salvas em `output/`, separadas por tema, e o resumo geral 
 
 ## Configuracao
 
-As regras ficam em `config/taxonomy_config_v5.xlsx`. A taxonomy separa abas de regras de extracao, catalogos auxiliares e contratos de saida.
+As regras ficam em `config/taxonomy_config_consolidada_v1.xlsx`. A taxonomy separa abas de regras de extracao, catalogos auxiliares e contratos de saida.
 
 Depois que o template do PDF e identificado, o parser filtra as abas relacionais por `template_id`. Cada regra deve estar vinculada explicitamente a um template cadastrado; a taxonomy nao usa mais `template_id = *` como coringa. No estado atual, as regras de `metadata_schema`, `client_schema` e `sample_schema` estao cadastradas para `template_laudo_agua_v1`, `template_laudo_fito_v1` e `template_laudo_sedimento_v1`; as demais matrizes ainda precisam de curadoria propria.
 
@@ -428,7 +428,7 @@ Erros encontrados pela validacao final com Pydantic. Quando a extracao esta cons
 - `core/pipeline.py`: orquestra o fluxo completo em etapas: contexto, cabecalho, resultados, normalizacao, validacao e gravacao.
 - `core/context.py`: guarda o contexto do documento processado e monta a auditoria de classificacao do template.
 - `core/scope.py`: identifica se o PDF pertence a algum template cadastrado.
-- `config/loader.py`: carrega o Excel de configuração `taxonomy_config_v5.xlsx`.
+- `config/loader.py`: carrega o Excel de configuração `taxonomy_config_consolidada_v1.xlsx`.
 - `extraction/pdf_reader.py`: extrai texto e tabelas do PDF.
 - `extraction/metadata_extractor.py`: extrai metadata e abas `sample` e `client`.
 - `extraction/section_classifier.py`: identifica seções, categorias, tipos e continuação de tabela entre páginas.
@@ -450,6 +450,6 @@ Erros encontrados pela validacao final com Pydantic. Quando a extracao esta cons
 
 O script já trata tabelas quebradas entre páginas quando o cabeçalho fica no final de uma página e os dados aparecem na próxima.
 
-Para novos laboratórios/modelos, priorize alterar o `taxonomy_config_v5.xlsx` antes de mexer no código.
+Para novos laboratórios/modelos, priorize alterar o `taxonomy_config_consolidada_v1.xlsx` antes de mexer no código.
 
 As normalizacoes por tema devem ficar nos arquivos de `normalization/`. Elas servem para padronizar campos depois da extracao; regexes de identificacao, layout e captura devem continuar cadastradas no Excel sempre que forem regra de taxonomia.

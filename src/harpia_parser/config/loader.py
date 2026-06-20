@@ -52,6 +52,34 @@ def _read_optional_sheet(excel: pd.ExcelFile, sheet_name: str) -> pd.DataFrame:
     return pd.read_excel(excel, sheet_name)
 
 
+def _bool_value(value: Any, *, default: bool = True) -> bool:
+    if pd.isna(value):
+        return default
+    if isinstance(value, bool):
+        return value
+    text = str(value).strip().lower()
+    if text in {"true", "verdadeiro", "sim", "yes", "1"}:
+        return True
+    if text in {"false", "falso", "nao", "não", "no", "0"}:
+        return False
+    return bool(value)
+
+
+def _coerce_bool_column(df: pd.DataFrame, column: str, *, default: bool = True) -> pd.DataFrame:
+    if df.empty or column not in df.columns:
+        return df
+    result = df.copy()
+    result[column] = result[column].map(lambda value: _bool_value(value, default=default)).astype(bool)
+    return result
+
+
+def _coerce_bool_columns(df: pd.DataFrame, columns: set[str], *, default: bool = True) -> pd.DataFrame:
+    result = df
+    for column in columns & set(result.columns):
+        result = _coerce_bool_column(result, column, default=default)
+    return result
+
+
 def _value_or_none(row: pd.Series, column: str) -> Any:
     value = row[column] if column in row.index else None
     return None if pd.isna(value) else value
@@ -275,6 +303,147 @@ def _validate_output_schema(sheet_name: str, df_schema: pd.DataFrame, expected_c
         raise ValueError(f"Schema divergente em {sheet_name}: {'; '.join(details)}")
 
 
+def _schema_from_output_model(df_output_model: pd.DataFrame, schema_name: str) -> pd.DataFrame:
+    columns = ["sheet", "ordem", "campo", "tipo_dado", "obrigatorio", "origem", "descricao"]
+    if df_output_model.empty:
+        return pd.DataFrame(columns=columns)
+
+    schema = df_output_model[df_output_model["schema_origem"].astype(str) == schema_name].copy()
+    if schema.empty:
+        return pd.DataFrame(columns=columns)
+
+    schema = schema.rename(columns={
+        "sheet_name": "sheet",
+        "ordem_campo": "ordem",
+        "descricao_campo": "descricao",
+    })
+    schema = schema[columns]
+    schema = schema.dropna(subset=["campo"]).drop_duplicates(subset=["campo"], keep="first")
+    schema = _coerce_bool_column(schema, "obrigatorio", default=False)
+    return schema.sort_values("ordem", na_position="last").reset_index(drop=True)
+
+
+def _load_consolidated_frames(excel: pd.ExcelFile) -> dict[str, pd.DataFrame]:
+    df_templates = _coerce_bool_column(_read_optional_sheet(excel, "templates"), "ativo")
+
+    df_template_detection_rules = _read_optional_sheet(excel, "template_rules").rename(columns={
+        "tipo_regra": "rule_type",
+        "fonte": "source",
+    })
+    df_template_detection_rules = _coerce_bool_column(df_template_detection_rules, "ativo")
+
+    df_output_model = _read_optional_sheet(excel, "output_model")
+    if df_output_model.empty:
+        df_output_sheets = pd.DataFrame(columns=["template_id", "theme_id", "sheet_name", "ordem", "ativo", "descricao"])
+    else:
+        output_columns = [
+            "template_id",
+            "theme_id",
+            "sheet_name",
+            "ordem_aba",
+            "ativo_aba",
+            "descricao_aba",
+        ]
+        df_output_sheets = (
+            df_output_model[output_columns]
+            .dropna(subset=["template_id", "sheet_name"])
+            .drop_duplicates()
+            .rename(columns={
+                "ordem_aba": "ordem",
+                "ativo_aba": "ativo",
+                "descricao_aba": "descricao",
+            })
+        )
+        df_output_sheets = _coerce_bool_column(df_output_sheets, "ativo")
+
+    df_text_rules = _coerce_bool_column(_read_optional_sheet(excel, "text_extraction_rules"), "ativo")
+
+    def text_rules(regra_origem: str, columns: list[str]) -> pd.DataFrame:
+        if df_text_rules.empty:
+            return pd.DataFrame(columns=columns)
+        df = df_text_rules[df_text_rules["regra_origem"] == regra_origem].copy()
+        df = df.rename(columns={"padrao_regex": "regex"})
+        return df[[column for column in columns if column in df.columns]]
+
+    df_metadata = text_rules("metadata_schema", ["template_id", "campo", "regex", "ativo"])
+    df_client_schema = text_rules("client_schema", ["template_id", "campo", "regex", "descricao", "ativo"])
+    df_sample_schema = text_rules("sample_schema", ["template_id", "campo", "regex", "ativo"])
+
+    df_section_rules = _coerce_bool_columns(
+        _read_optional_sheet(excel, "section_rules"),
+        {"ativo", "extrair_subcategoria"},
+    )
+
+    def section_rules(regra_origem: str, columns: list[str]) -> pd.DataFrame:
+        if df_section_rules.empty:
+            return pd.DataFrame(columns=columns)
+        df = df_section_rules[df_section_rules["regra_origem"] == regra_origem].copy()
+        return df[[column for column in columns if column in df.columns]]
+
+    df_sections = section_rules(
+        "section_config",
+        ["template_id", "padrao_regex", "categoria", "tipo_registro", "extrair_subcategoria", "ativo"],
+    )
+    df_section_aliases = section_rules(
+        "section_aliases",
+        ["template_id", "padrao_regex", "categoria", "subcategoria", "local", "ativo"],
+    )
+    df_section_subcategory_aliases = section_rules(
+        "section_subcategory_aliases",
+        [
+            "template_id",
+            "prioridade",
+            "padrao_regex",
+            "categoria",
+            "subcategoria",
+            "tipo_registro",
+            "local",
+            "ativo",
+            "descricao",
+        ],
+    )
+
+    df_result_layouts = _read_optional_sheet(excel, "table_extraction_rules")
+    if not df_result_layouts.empty:
+        df_result_layouts = df_result_layouts[df_result_layouts["regra_origem"] == "result_layouts"].copy()
+        df_result_layouts = _coerce_bool_column(df_result_layouts, "ativo")
+        df_result_layouts = df_result_layouts[["template_id", "tipo_registro", "campo", "coluna_origem", "ativo"]]
+
+    df_continuation_rules = _read_optional_sheet(excel, "continuation_rules").rename(columns={
+        "padrao_regex": "continuation_regex",
+    })
+    df_continuation_rules = _coerce_bool_column(df_continuation_rules, "ativo")
+    if not df_continuation_rules.empty:
+        df_continuation_rules = df_continuation_rules[
+            ["template_id", "tipo_registro", "continuation_regex", "ativo"]
+        ]
+
+    return {
+        "templates": df_templates,
+        "section_config": df_sections,
+        "metadata_schema": df_metadata,
+        "section_aliases": df_section_aliases,
+        "section_subcategory_aliases": df_section_subcategory_aliases,
+        "sample_schema": df_sample_schema,
+        "client_schema": df_client_schema,
+        "results_extract_schema": _schema_from_output_model(df_output_model, "results_extract_schema"),
+        "sample_output_schema": _schema_from_output_model(df_output_model, "sample_output_schema"),
+        "client_output_schema": _schema_from_output_model(df_output_model, "client_output_schema"),
+        "result_layouts": df_result_layouts,
+        "continuation_rules": df_continuation_rules,
+        "template_detection_rules": df_template_detection_rules,
+        "output_sheets": df_output_sheets,
+    }
+
+
+def _load_taxonomy_frames(excel: pd.ExcelFile) -> dict[str, pd.DataFrame]:
+    required_sheets = {"templates", "template_rules", "output_model", "text_extraction_rules", "table_extraction_rules"}
+    missing = sorted(required_sheets - set(excel.sheet_names))
+    if missing:
+        raise ValueError(f"Taxonomia consolidada invalida. Abas obrigatorias ausentes: {missing}")
+    return _load_consolidated_frames(excel)
+
+
 def _build_template_detection_rules(df_template_detection_rules: pd.DataFrame) -> list[dict[str, Any]]:
     rules: list[dict[str, Any]] = []
     if df_template_detection_rules.empty:
@@ -325,7 +494,14 @@ def _build_output_sheets(df_output_sheets: pd.DataFrame) -> dict[str, list[str]]
 
 
 def output_sheets_for_template(config: PipelineConfig, template_id: str) -> list[str]:
-    return config.output_sheets.get(template_id) or ["results_extract", "sample", "client", "validation_errors"]
+    return config.output_sheets.get(template_id) or [
+        "results_extract",
+        "sample",
+        "client",
+        "table_extraction_audit",
+        "classification_audit",
+        "validation_errors",
+    ]
 
 
 def filter_config_for_template(config: PipelineConfig, template_id: str) -> PipelineConfig:
@@ -357,26 +533,27 @@ def filter_config_for_template(config: PipelineConfig, template_id: str) -> Pipe
     )
 
 
-def load_config(base_dir: Path, taxonomy_file: str = "config/taxonomy_config_v5.xlsx") -> PipelineConfig:
+def load_config(base_dir: Path, taxonomy_file: str = "config/taxonomy_config_consolidada_v1.xlsx") -> PipelineConfig:
     taxonomy_path = resolve_path(base_dir, "TAXONOMY_FILE", taxonomy_file)
     log.info("Carregando taxonomy: %s", taxonomy_path)
 
     excel = pd.ExcelFile(taxonomy_path)
-    df_templates = _read_optional_sheet(excel, "templates")
-    df_sections = pd.read_excel(excel, "section_config")
-    df_metadata = pd.read_excel(excel, "metadata_schema")
-    df_section_aliases = _read_optional_sheet(excel, "section_aliases")
-    df_section_subcategory_aliases = _read_optional_sheet(excel, "section_subcategory_aliases")
-    df_sample_schema = _read_optional_sheet(excel, "sample_schema")
-    df_client_schema = _read_optional_sheet(excel, "client_schema")
-    df_results_extract_schema = _read_optional_sheet(excel, "results_extract_schema")
-    df_sample_output_schema = _read_optional_sheet(excel, "sample_output_schema")
-    df_client_output_schema = _read_optional_sheet(excel, "client_output_schema")
-    df_result_layouts = _read_optional_sheet(excel, "result_layouts")
-    df_continuation_rules = _read_optional_sheet(excel, "continuation_rules")
-    df_template_detection_rules = _read_optional_sheet(excel, "template_detection_rules")
-    df_output_sheets = _read_optional_sheet(excel, "output_sheets")
+    frames = _load_taxonomy_frames(excel)
     excel.close()
+    df_templates = frames["templates"]
+    df_sections = frames["section_config"]
+    df_metadata = frames["metadata_schema"]
+    df_section_aliases = frames["section_aliases"]
+    df_section_subcategory_aliases = frames["section_subcategory_aliases"]
+    df_sample_schema = frames["sample_schema"]
+    df_client_schema = frames["client_schema"]
+    df_results_extract_schema = frames["results_extract_schema"]
+    df_sample_output_schema = frames["sample_output_schema"]
+    df_client_output_schema = frames["client_output_schema"]
+    df_result_layouts = frames["result_layouts"]
+    df_continuation_rules = frames["continuation_rules"]
+    df_template_detection_rules = frames["template_detection_rules"]
+    df_output_sheets = frames["output_sheets"]
 
     _validate_output_schema("results_extract_schema", df_results_extract_schema, RESULTS_EXTRACT_COLUMNS)
     _validate_output_schema("sample_output_schema", df_sample_output_schema, SAMPLE_COLUMNS)
