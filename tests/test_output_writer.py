@@ -94,6 +94,9 @@ class OutputWriterTest(unittest.TestCase):
             self.assertIn("table_extraction_audit", workbook.sheetnames)
             worksheet = workbook["table_extraction_audit"]
             self.assertEqual(worksheet.cell(row=2, column=1).value, "a.pdf")
+            self.assertEqual(worksheet.freeze_panes, "A2")
+            self.assertEqual(worksheet.cell(row=1, column=1).fill.fgColor.rgb, "001F4E78")
+            self.assertEqual(worksheet.cell(row=1, column=1).font.color.rgb, "00FFFFFF")
 
 
 if __name__ == "__main__":

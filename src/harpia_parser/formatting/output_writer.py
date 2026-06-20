@@ -2,12 +2,23 @@ from pathlib import Path
 import re
 
 import pandas as pd
+from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+from openpyxl.utils import get_column_letter
 
 from ..validation.schemas import validate_outputs
 
 
 NUMERIC_TEXT = re.compile(r"^([+-]?\d+(?:[,.]\d+)?)(?:\s*x\s*10\s*([+-]?\d+))?$", re.IGNORECASE)
 NUMBER_IN_TEXT = re.compile(r"[<>]?\s*([+-]?\d+(?:[,.]\d+)?)")
+HEADER_FILL = PatternFill(fill_type="solid", fgColor="1F4E78")
+HEADER_FONT = Font(color="FFFFFF", bold=True)
+HEADER_ALIGNMENT = Alignment(horizontal="center", vertical="center", wrap_text=True)
+HEADER_BORDER = Border(
+    left=Side(style="thin", color="9EADCC"),
+    right=Side(style="thin", color="9EADCC"),
+    top=Side(style="thin", color="9EADCC"),
+    bottom=Side(style="thin", color="9EADCC"),
+)
 
 
 def _numeric_value_and_format(value) -> tuple[float, str] | None:
@@ -105,6 +116,33 @@ def _format_numeric_results_sheet(writer: pd.ExcelWriter, df: pd.DataFrame) -> N
         _apply_numeric_format_to_column(worksheet, df, column, source, source_number_index)
 
 
+def _format_output_sheet(writer: pd.ExcelWriter, sheet_name: str) -> None:
+    worksheet = writer.sheets.get(sheet_name)
+    if worksheet is None or worksheet.max_row < 1:
+        return
+
+    worksheet.freeze_panes = "A2"
+    worksheet.row_dimensions[1].height = 28
+    if worksheet.max_column > 0 and worksheet.max_row > 1:
+        worksheet.auto_filter.ref = worksheet.dimensions
+
+    for cell in worksheet[1]:
+        cell.fill = HEADER_FILL
+        cell.font = HEADER_FONT
+        cell.alignment = HEADER_ALIGNMENT
+        cell.border = HEADER_BORDER
+
+    for column_cells in worksheet.columns:
+        column_letter = get_column_letter(column_cells[0].column)
+        max_length = 0
+        for cell in column_cells[: min(len(column_cells), 200)]:
+            value = cell.value
+            if value is None:
+                continue
+            max_length = max(max_length, len(str(value)))
+        worksheet.column_dimensions[column_letter].width = min(max(max_length + 2, 12), 55)
+
+
 def salvar(
     df: pd.DataFrame,
     output_path: Path,
@@ -145,17 +183,27 @@ def salvar(
             )
     else:
         with pd.ExcelWriter(output_path) as writer:
+            written_sheets = []
             for sheet_name in sheets_to_write:
                 if sheet_name == "results_extract":
                     df.to_excel(writer, sheet_name="results_extract", index=False)
                     _format_numeric_results_sheet(writer, df)
+                    written_sheets.append("results_extract")
                 elif sheet_name == "sample" and sample_df is not None:
                     sample_df.to_excel(writer, sheet_name="sample", index=False)
+                    written_sheets.append("sample")
                 elif sheet_name == "client" and client_df is not None:
                     client_df.to_excel(writer, sheet_name="client", index=False)
+                    written_sheets.append("client")
                 elif sheet_name == "classification_audit" and classification_audit_df is not None:
                     classification_audit_df.to_excel(writer, sheet_name="classification_audit", index=False)
+                    written_sheets.append("classification_audit")
                 elif sheet_name == "table_extraction_audit" and table_extraction_audit_df is not None:
                     table_extraction_audit_df.to_excel(writer, sheet_name="table_extraction_audit", index=False)
+                    written_sheets.append("table_extraction_audit")
                 elif sheet_name == "validation_errors":
                     validation_errors.to_excel(writer, sheet_name="validation_errors", index=False)
+                    written_sheets.append("validation_errors")
+
+            for sheet_name in written_sheets:
+                _format_output_sheet(writer, sheet_name)
