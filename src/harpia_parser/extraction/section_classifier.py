@@ -96,7 +96,7 @@ def linha_header(row: list) -> bool:
         return False
     col0 = normalizar(str(row[0] or ""))
     col1 = normalizar(str(row[1] or ""))
-    return col0 in {"analise", "parametros"} and col1 in {"resultado", "numero do cq"}
+    return col0 in {"analise", "parametros"} and col1 in {"resultado", "numero do cq", "unidade"}
 
 
 def tabela_resultado(rows: list, estado: dict) -> bool:

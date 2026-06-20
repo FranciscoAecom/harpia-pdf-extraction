@@ -58,6 +58,11 @@ class ResultsExtractRow(BaseModel):
 
     criterio_conformidade: str | None = None
 
+    ld_original: str | None = None
+    ld_minimo: float | None = None
+    ld_maximo: float | None = None
+    ld_unidade: str | None = None
+
     lq_original: str | None = None
     lq_minimo: float | None = None
     lq_maximo: float | None = None
@@ -119,6 +124,7 @@ class ResultsExtractRow(BaseModel):
 
     @model_validator(mode="after")
     def validate_structured_measures(self) -> "ResultsExtractRow":
+        self._validate_measure("ld")
         self._validate_measure("lq")
         self._validate_measure("faixa_aceitacao")
         return self

@@ -93,6 +93,8 @@ def _format_numeric_results_sheet(writer: pd.ExcelWriter, df: pd.DataFrame) -> N
 
     source_mapped_columns = [
         ("resultado_tratado", "resultado", 0),
+        ("ld_minimo", "ld_original", 0),
+        ("ld_maximo", "ld_original", 1),
         ("lq_minimo", "lq_original", 0),
         ("lq_maximo", "lq_original", 1),
         ("incerteza_valor", "incerteza_original", 0),
