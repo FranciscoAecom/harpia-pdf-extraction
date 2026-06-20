@@ -17,7 +17,7 @@ def _rule_description(rule: dict) -> str:
 
 
 def _template_score(template_id: str, texto: str, path_text: str, config) -> tuple[float, list[str], str]:
-    rules = [rule for rule in config.template_detection_rules if rule["template_id"] == template_id]
+    rules = [rule for rule in config.template_rules if rule["template_id"] == template_id]
     required_rules = [rule for rule in rules if rule["rule_type"] == "required"]
     positive_rules = [rule for rule in rules if rule["rule_type"] == "positive"]
     negative_rules = [rule for rule in rules if rule["rule_type"] == "negative"]

@@ -35,8 +35,8 @@ class SectionClassifierTest(unittest.TestCase):
 
     def test_qaqc_recovery_section_without_alias_is_classified_generically(self):
         config = SimpleNamespace(
-            section_rules=[],
-            section_subcategory_rules=[{
+            category_alias_rules=[],
+            subcategory_alias_rules=[{
                 "regex": re.compile(r"^recuperacao\s+-\s+.+"),
                 "categoria": "Controle de Qualidade",
                 "subcategoria": None,
@@ -56,8 +56,8 @@ class SectionClassifierTest(unittest.TestCase):
 
     def test_qaqc_section_prefers_registered_alias_when_available(self):
         config = SimpleNamespace(
-            section_rules=[],
-            section_subcategory_rules=[{
+            category_alias_rules=[],
+            subcategory_alias_rules=[{
                 "regex": re.compile(r"^recuperacao\s+-\s+metais$"),
                 "categoria": "Controle de Qualidade",
                 "subcategoria": "Recupera\u00e7\u00e3o - Metais",

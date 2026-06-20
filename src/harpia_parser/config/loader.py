@@ -22,28 +22,28 @@ log = logging.getLogger(__name__)
 class PipelineConfig:
     taxonomy_path: Path
     df_templates: pd.DataFrame
-    df_sections: pd.DataFrame
-    df_metadata: pd.DataFrame
-    df_section_aliases: pd.DataFrame
-    df_section_subcategory_aliases: pd.DataFrame
-    df_sample_schema: pd.DataFrame
-    df_client_schema: pd.DataFrame
-    df_results_extract_schema: pd.DataFrame
-    df_sample_output_schema: pd.DataFrame
-    df_client_output_schema: pd.DataFrame
-    df_template_detection_rules: pd.DataFrame
-    df_output_sheets: pd.DataFrame
-    df_result_layouts: pd.DataFrame
+    df_category_type_rules: pd.DataFrame
+    df_metadata_text_rules: pd.DataFrame
+    df_category_alias_rules: pd.DataFrame
+    df_subcategory_alias_rules: pd.DataFrame
+    df_sample_text_rules: pd.DataFrame
+    df_client_text_rules: pd.DataFrame
+    df_results_extract_model: pd.DataFrame
+    df_sample_output_model: pd.DataFrame
+    df_client_output_model: pd.DataFrame
+    df_template_rules: pd.DataFrame
+    df_output_tabs: pd.DataFrame
+    df_table_extraction_rules: pd.DataFrame
     df_continuation_rules: pd.DataFrame
     templates: dict[str, dict[str, Any]]
-    section_config_rules: list[dict[str, Any]]
+    category_type_rules: list[dict[str, Any]]
     metadata_rules: list[dict[str, Any]]
-    section_rules: list[dict[str, Any]]
-    section_subcategory_rules: list[dict[str, Any]]
-    result_layouts: dict[str, dict[str, int | None]]
+    category_alias_rules: list[dict[str, Any]]
+    subcategory_alias_rules: list[dict[str, Any]]
+    table_layouts: dict[str, dict[str, int | None]]
     continuation_rules: list[dict[str, str | Pattern[str]]]
-    template_detection_rules: list[dict[str, Any]]
-    output_sheets: dict[str, list[str]]
+    template_rules: list[dict[str, Any]]
+    output_tabs: dict[str, list[str]]
 
 
 def _read_optional_sheet(excel: pd.ExcelFile, sheet_name: str) -> pd.DataFrame:
@@ -145,10 +145,10 @@ def _validate_boolean_columns(sheet_name: str, df: pd.DataFrame) -> None:
             )
 
 
-def _build_section_rules(df_section_aliases: pd.DataFrame) -> list[dict[str, Any]]:
+def _build_category_alias_rules(df_category_alias_rules: pd.DataFrame) -> list[dict[str, Any]]:
     rules: list[dict[str, Any]] = []
 
-    for _, row in df_section_aliases.iterrows():
+    for _, row in df_category_alias_rules.iterrows():
         padrao = _value_or_none(row, "padrao_regex")
         categoria = _value_or_none(row, "categoria")
         if pd.isna(padrao) or pd.isna(categoria):
@@ -162,12 +162,12 @@ def _build_section_rules(df_section_aliases: pd.DataFrame) -> list[dict[str, Any
     return rules
 
 
-def _build_section_subcategory_rules(df_section_subcategory_aliases: pd.DataFrame) -> list[dict[str, Any]]:
+def _build_subcategory_alias_rules(df_subcategory_alias_rules: pd.DataFrame) -> list[dict[str, Any]]:
     rules: list[dict[str, Any]] = []
-    if df_section_subcategory_aliases.empty:
+    if df_subcategory_alias_rules.empty:
         return rules
 
-    source = df_section_subcategory_aliases.copy()
+    source = df_subcategory_alias_rules.copy()
     if "prioridade" in source.columns:
         source = source.sort_values("prioridade", na_position="last")
 
@@ -186,9 +186,9 @@ def _build_section_subcategory_rules(df_section_subcategory_aliases: pd.DataFram
     return rules
 
 
-def _build_section_config_rules(df_sections: pd.DataFrame) -> list[dict[str, Any]]:
+def _build_category_type_rules(df_category_type_rules: pd.DataFrame) -> list[dict[str, Any]]:
     rules: list[dict[str, Any]] = []
-    for _, row in df_sections.iterrows():
+    for _, row in df_category_type_rules.iterrows():
         padrao = _value_or_none(row, "padrao_regex")
         if padrao is None:
             continue
@@ -201,9 +201,9 @@ def _build_section_config_rules(df_sections: pd.DataFrame) -> list[dict[str, Any
     return rules
 
 
-def _build_metadata_rules(df_metadata: pd.DataFrame) -> list[dict[str, Any]]:
+def _build_metadata_rules(df_metadata_text_rules: pd.DataFrame) -> list[dict[str, Any]]:
     rules: list[dict[str, Any]] = []
-    for _, row in df_metadata.iterrows():
+    for _, row in df_metadata_text_rules.iterrows():
         regex = _value_or_none(row, "regex")
         campo = _value_or_none(row, "campo")
         if regex is None or campo is None:
@@ -215,13 +215,13 @@ def _build_metadata_rules(df_metadata: pd.DataFrame) -> list[dict[str, Any]]:
     return rules
 
 
-def _build_result_layouts(df_result_layouts: pd.DataFrame) -> dict[str, dict[str, int | None]]:
+def _build_table_layouts(df_table_extraction_rules: pd.DataFrame) -> dict[str, dict[str, int | None]]:
     layouts: dict[str, dict[str, int | None]] = {}
-    if df_result_layouts.empty:
+    if df_table_extraction_rules.empty:
         return layouts
 
-    if {"campo", "coluna_origem"}.issubset(df_result_layouts.columns):
-        for _, row in df_result_layouts.iterrows():
+    if {"campo", "coluna_origem"}.issubset(df_table_extraction_rules.columns):
+        for _, row in df_table_extraction_rules.iterrows():
             tipo = str(_value_or_none(row, "tipo_registro") or "").strip().upper()
             campo = str(_value_or_none(row, "campo") or "").strip()
             value = _value_or_none(row, "coluna_origem")
@@ -234,7 +234,7 @@ def _build_result_layouts(df_result_layouts: pd.DataFrame) -> dict[str, dict[str
             layout[key] = int(value)
         return layouts
 
-    for _, row in df_result_layouts.iterrows():
+    for _, row in df_table_extraction_rules.iterrows():
         tipo = str(_value_or_none(row, "tipo_registro") or "").strip().upper()
         if not tipo:
             continue
@@ -281,13 +281,13 @@ def _build_templates(df_templates: pd.DataFrame) -> dict[str, dict[str, Any]]:
     return templates
 
 
-def _validate_output_schema(sheet_name: str, df_schema: pd.DataFrame, expected_columns: list[str]) -> None:
-    if df_schema.empty:
+def _validate_output_model(sheet_name: str, df_model: pd.DataFrame, expected_columns: list[str]) -> None:
+    if df_model.empty:
         raise ValueError(f"Aba obrigatoria ausente ou vazia na taxonomy: {sheet_name}")
-    if "campo" not in df_schema.columns:
+    if "campo" not in df_model.columns:
         raise ValueError(f"Aba {sheet_name} nao contem a coluna obrigatoria 'campo'.")
 
-    actual_columns = df_schema["campo"].dropna().astype(str).tolist()
+    actual_columns = df_model["campo"].dropna().astype(str).tolist()
     missing = [column for column in expected_columns if column not in actual_columns]
     extra = [column for column in actual_columns if column not in expected_columns]
     wrong_order = not missing and not extra and actual_columns != expected_columns
@@ -300,41 +300,41 @@ def _validate_output_schema(sheet_name: str, df_schema: pd.DataFrame, expected_c
             details.append(f"extras={extra}")
         if wrong_order:
             details.append("ordem diferente do codigo")
-        raise ValueError(f"Schema divergente em {sheet_name}: {'; '.join(details)}")
+        raise ValueError(f"Modelo de saida divergente em {sheet_name}: {'; '.join(details)}")
 
 
-def _schema_from_output_model(df_output_model: pd.DataFrame, schema_name: str) -> pd.DataFrame:
+def _fields_from_output_model(df_output_model: pd.DataFrame, sheet_name: str) -> pd.DataFrame:
     columns = ["sheet", "ordem", "campo", "tipo_dado", "obrigatorio", "origem", "descricao"]
     if df_output_model.empty:
         return pd.DataFrame(columns=columns)
 
-    schema = df_output_model[df_output_model["schema_origem"].astype(str) == schema_name].copy()
-    if schema.empty:
+    fields = df_output_model[df_output_model["sheet_name"].astype(str) == sheet_name].copy()
+    if fields.empty:
         return pd.DataFrame(columns=columns)
 
-    schema = schema.rename(columns={
+    fields = fields.rename(columns={
         "sheet_name": "sheet",
         "ordem_campo": "ordem",
         "descricao_campo": "descricao",
     })
-    schema = schema[columns]
-    schema = schema.dropna(subset=["campo"]).drop_duplicates(subset=["campo"], keep="first")
-    schema = _coerce_bool_column(schema, "obrigatorio", default=False)
-    return schema.sort_values("ordem", na_position="last").reset_index(drop=True)
+    fields = fields[columns]
+    fields = fields.dropna(subset=["campo"]).drop_duplicates(subset=["campo"], keep="first")
+    fields = _coerce_bool_column(fields, "obrigatorio", default=False)
+    return fields.sort_values("ordem", na_position="last").reset_index(drop=True)
 
 
 def _load_consolidated_frames(excel: pd.ExcelFile) -> dict[str, pd.DataFrame]:
     df_templates = _coerce_bool_column(_read_optional_sheet(excel, "templates"), "ativo")
 
-    df_template_detection_rules = _read_optional_sheet(excel, "template_rules").rename(columns={
+    df_template_rules = _read_optional_sheet(excel, "template_rules").rename(columns={
         "tipo_regra": "rule_type",
         "fonte": "source",
     })
-    df_template_detection_rules = _coerce_bool_column(df_template_detection_rules, "ativo")
+    df_template_rules = _coerce_bool_column(df_template_rules, "ativo")
 
     df_output_model = _read_optional_sheet(excel, "output_model")
     if df_output_model.empty:
-        df_output_sheets = pd.DataFrame(columns=["template_id", "theme_id", "sheet_name", "ordem", "ativo", "descricao"])
+        df_output_tabs = pd.DataFrame(columns=["template_id", "theme_id", "sheet_name", "ordem", "ativo", "descricao"])
     else:
         output_columns = [
             "template_id",
@@ -344,7 +344,7 @@ def _load_consolidated_frames(excel: pd.ExcelFile) -> dict[str, pd.DataFrame]:
             "ativo_aba",
             "descricao_aba",
         ]
-        df_output_sheets = (
+        df_output_tabs = (
             df_output_model[output_columns]
             .dropna(subset=["template_id", "sheet_name"])
             .drop_duplicates()
@@ -354,7 +354,7 @@ def _load_consolidated_frames(excel: pd.ExcelFile) -> dict[str, pd.DataFrame]:
                 "descricao_aba": "descricao",
             })
         )
-        df_output_sheets = _coerce_bool_column(df_output_sheets, "ativo")
+        df_output_tabs = _coerce_bool_column(df_output_tabs, "ativo")
 
     df_text_rules = _coerce_bool_column(_read_optional_sheet(excel, "text_extraction_rules"), "ativo")
 
@@ -365,31 +365,31 @@ def _load_consolidated_frames(excel: pd.ExcelFile) -> dict[str, pd.DataFrame]:
         df = df.rename(columns={"padrao_regex": "regex"})
         return df[[column for column in columns if column in df.columns]]
 
-    df_metadata = text_rules("metadata_schema", ["template_id", "campo", "regex", "ativo"])
-    df_client_schema = text_rules("client_schema", ["template_id", "campo", "regex", "descricao", "ativo"])
-    df_sample_schema = text_rules("sample_schema", ["template_id", "campo", "regex", "ativo"])
+    df_metadata_text_rules = text_rules("metadata", ["template_id", "campo", "regex", "ativo"])
+    df_client_text_rules = text_rules("client", ["template_id", "campo", "regex", "descricao", "ativo"])
+    df_sample_text_rules = text_rules("sample", ["template_id", "campo", "regex", "ativo"])
 
     df_section_rules = _coerce_bool_columns(
         _read_optional_sheet(excel, "section_rules"),
         {"ativo", "extrair_subcategoria"},
     )
 
-    def section_rules(regra_origem: str, columns: list[str]) -> pd.DataFrame:
+    def section_rule_subset(regra_origem: str, columns: list[str]) -> pd.DataFrame:
         if df_section_rules.empty:
             return pd.DataFrame(columns=columns)
         df = df_section_rules[df_section_rules["regra_origem"] == regra_origem].copy()
         return df[[column for column in columns if column in df.columns]]
 
-    df_sections = section_rules(
-        "section_config",
+    df_category_type_rules = section_rule_subset(
+        "category_type",
         ["template_id", "padrao_regex", "categoria", "tipo_registro", "extrair_subcategoria", "ativo"],
     )
-    df_section_aliases = section_rules(
-        "section_aliases",
+    df_category_alias_rules = section_rule_subset(
+        "category_alias",
         ["template_id", "padrao_regex", "categoria", "subcategoria", "local", "ativo"],
     )
-    df_section_subcategory_aliases = section_rules(
-        "section_subcategory_aliases",
+    df_subcategory_alias_rules = section_rule_subset(
+        "subcategory_alias",
         [
             "template_id",
             "prioridade",
@@ -403,11 +403,11 @@ def _load_consolidated_frames(excel: pd.ExcelFile) -> dict[str, pd.DataFrame]:
         ],
     )
 
-    df_result_layouts = _read_optional_sheet(excel, "table_extraction_rules")
-    if not df_result_layouts.empty:
-        df_result_layouts = df_result_layouts[df_result_layouts["regra_origem"] == "result_layouts"].copy()
-        df_result_layouts = _coerce_bool_column(df_result_layouts, "ativo")
-        df_result_layouts = df_result_layouts[["template_id", "tipo_registro", "campo", "coluna_origem", "ativo"]]
+    df_table_extraction_rules = _read_optional_sheet(excel, "table_extraction_rules")
+    if not df_table_extraction_rules.empty:
+        df_table_extraction_rules = df_table_extraction_rules[df_table_extraction_rules["regra_origem"] == "layout"].copy()
+        df_table_extraction_rules = _coerce_bool_column(df_table_extraction_rules, "ativo")
+        df_table_extraction_rules = df_table_extraction_rules[["template_id", "tipo_registro", "campo", "coluna_origem", "ativo"]]
 
     df_continuation_rules = _read_optional_sheet(excel, "continuation_rules").rename(columns={
         "padrao_regex": "continuation_regex",
@@ -420,19 +420,19 @@ def _load_consolidated_frames(excel: pd.ExcelFile) -> dict[str, pd.DataFrame]:
 
     return {
         "templates": df_templates,
-        "section_config": df_sections,
-        "metadata_schema": df_metadata,
-        "section_aliases": df_section_aliases,
-        "section_subcategory_aliases": df_section_subcategory_aliases,
-        "sample_schema": df_sample_schema,
-        "client_schema": df_client_schema,
-        "results_extract_schema": _schema_from_output_model(df_output_model, "results_extract_schema"),
-        "sample_output_schema": _schema_from_output_model(df_output_model, "sample_output_schema"),
-        "client_output_schema": _schema_from_output_model(df_output_model, "client_output_schema"),
-        "result_layouts": df_result_layouts,
+        "category_type_rules": df_category_type_rules,
+        "metadata_text_rules": df_metadata_text_rules,
+        "category_alias_rules": df_category_alias_rules,
+        "subcategory_alias_rules": df_subcategory_alias_rules,
+        "sample_text_rules": df_sample_text_rules,
+        "client_text_rules": df_client_text_rules,
+        "results_extract_model": _fields_from_output_model(df_output_model, "results_extract"),
+        "sample_output_model": _fields_from_output_model(df_output_model, "sample"),
+        "client_output_model": _fields_from_output_model(df_output_model, "client"),
+        "table_layouts": df_table_extraction_rules,
         "continuation_rules": df_continuation_rules,
-        "template_detection_rules": df_template_detection_rules,
-        "output_sheets": df_output_sheets,
+        "template_rules": df_template_rules,
+        "output_tabs": df_output_tabs,
     }
 
 
@@ -444,12 +444,12 @@ def _load_taxonomy_frames(excel: pd.ExcelFile) -> dict[str, pd.DataFrame]:
     return _load_consolidated_frames(excel)
 
 
-def _build_template_detection_rules(df_template_detection_rules: pd.DataFrame) -> list[dict[str, Any]]:
+def _build_template_rules(df_template_rules: pd.DataFrame) -> list[dict[str, Any]]:
     rules: list[dict[str, Any]] = []
-    if df_template_detection_rules.empty:
+    if df_template_rules.empty:
         return rules
 
-    for _, row in df_template_detection_rules.iterrows():
+    for _, row in df_template_rules.iterrows():
         if _is_disabled(_value_or_none(row, "ativo")):
             continue
 
@@ -473,28 +473,28 @@ def _build_template_detection_rules(df_template_detection_rules: pd.DataFrame) -
     return rules
 
 
-def _build_output_sheets(df_output_sheets: pd.DataFrame) -> dict[str, list[str]]:
-    if df_output_sheets.empty:
+def _build_output_tabs(df_output_tabs: pd.DataFrame) -> dict[str, list[str]]:
+    if df_output_tabs.empty:
         return {}
 
-    rules = df_output_sheets.copy()
+    rules = df_output_tabs.copy()
     if "ativo" in rules.columns:
         rules = rules[~rules["ativo"].map(_is_disabled)]
     if "ordem" in rules.columns:
         rules = rules.sort_values(["template_id", "ordem"], na_position="last")
 
-    output_sheets: dict[str, list[str]] = {}
+    output_tabs: dict[str, list[str]] = {}
     for _, row in rules.iterrows():
         template_id = str(_value_or_none(row, "template_id") or "").strip()
         sheet_name = str(_value_or_none(row, "sheet_name") or "").strip()
         if not template_id or not sheet_name:
             continue
-        output_sheets.setdefault(template_id, []).append(sheet_name)
-    return output_sheets
+        output_tabs.setdefault(template_id, []).append(sheet_name)
+    return output_tabs
 
 
-def output_sheets_for_template(config: PipelineConfig, template_id: str) -> list[str]:
-    return config.output_sheets.get(template_id) or [
+def output_tabs_for_template(config: PipelineConfig, template_id: str) -> list[str]:
+    return config.output_tabs.get(template_id) or [
         "results_extract",
         "sample",
         "client",
@@ -505,30 +505,30 @@ def output_sheets_for_template(config: PipelineConfig, template_id: str) -> list
 
 
 def filter_config_for_template(config: PipelineConfig, template_id: str) -> PipelineConfig:
-    df_sections = _filter_rules_dataframe(config.df_sections, template_id)
-    df_metadata = _filter_rules_dataframe(config.df_metadata, template_id)
-    df_section_aliases = _filter_rules_dataframe(config.df_section_aliases, template_id)
-    df_section_subcategory_aliases = _filter_rules_dataframe(config.df_section_subcategory_aliases, template_id)
-    df_sample_schema = _filter_rules_dataframe(config.df_sample_schema, template_id)
-    df_client_schema = _filter_rules_dataframe(config.df_client_schema, template_id)
-    df_result_layouts = _filter_rules_dataframe(config.df_result_layouts, template_id)
+    df_category_type_rules = _filter_rules_dataframe(config.df_category_type_rules, template_id)
+    df_metadata_text_rules = _filter_rules_dataframe(config.df_metadata_text_rules, template_id)
+    df_category_alias_rules = _filter_rules_dataframe(config.df_category_alias_rules, template_id)
+    df_subcategory_alias_rules = _filter_rules_dataframe(config.df_subcategory_alias_rules, template_id)
+    df_sample_text_rules = _filter_rules_dataframe(config.df_sample_text_rules, template_id)
+    df_client_text_rules = _filter_rules_dataframe(config.df_client_text_rules, template_id)
+    df_table_extraction_rules = _filter_rules_dataframe(config.df_table_extraction_rules, template_id)
     df_continuation_rules = _filter_rules_dataframe(config.df_continuation_rules, template_id)
 
     return replace(
         config,
-        df_sections=df_sections,
-        df_metadata=df_metadata,
-        df_section_aliases=df_section_aliases,
-        df_section_subcategory_aliases=df_section_subcategory_aliases,
-        df_sample_schema=df_sample_schema,
-        df_client_schema=df_client_schema,
-        df_result_layouts=df_result_layouts,
+        df_category_type_rules=df_category_type_rules,
+        df_metadata_text_rules=df_metadata_text_rules,
+        df_category_alias_rules=df_category_alias_rules,
+        df_subcategory_alias_rules=df_subcategory_alias_rules,
+        df_sample_text_rules=df_sample_text_rules,
+        df_client_text_rules=df_client_text_rules,
+        df_table_extraction_rules=df_table_extraction_rules,
         df_continuation_rules=df_continuation_rules,
-        section_config_rules=_build_section_config_rules(df_sections),
-        metadata_rules=_build_metadata_rules(df_metadata),
-        section_rules=_build_section_rules(df_section_aliases),
-        section_subcategory_rules=_build_section_subcategory_rules(df_section_subcategory_aliases),
-        result_layouts=_build_result_layouts(df_result_layouts),
+        category_type_rules=_build_category_type_rules(df_category_type_rules),
+        metadata_rules=_build_metadata_rules(df_metadata_text_rules),
+        category_alias_rules=_build_category_alias_rules(df_category_alias_rules),
+        subcategory_alias_rules=_build_subcategory_alias_rules(df_subcategory_alias_rules),
+        table_layouts=_build_table_layouts(df_table_extraction_rules),
         continuation_rules=_build_continuation_rules(df_continuation_rules),
     )
 
@@ -541,83 +541,83 @@ def load_config(base_dir: Path, taxonomy_file: str = "config/taxonomy_config_con
     frames = _load_taxonomy_frames(excel)
     excel.close()
     df_templates = frames["templates"]
-    df_sections = frames["section_config"]
-    df_metadata = frames["metadata_schema"]
-    df_section_aliases = frames["section_aliases"]
-    df_section_subcategory_aliases = frames["section_subcategory_aliases"]
-    df_sample_schema = frames["sample_schema"]
-    df_client_schema = frames["client_schema"]
-    df_results_extract_schema = frames["results_extract_schema"]
-    df_sample_output_schema = frames["sample_output_schema"]
-    df_client_output_schema = frames["client_output_schema"]
-    df_result_layouts = frames["result_layouts"]
+    df_category_type_rules = frames["category_type_rules"]
+    df_metadata_text_rules = frames["metadata_text_rules"]
+    df_category_alias_rules = frames["category_alias_rules"]
+    df_subcategory_alias_rules = frames["subcategory_alias_rules"]
+    df_sample_text_rules = frames["sample_text_rules"]
+    df_client_text_rules = frames["client_text_rules"]
+    df_results_extract_model = frames["results_extract_model"]
+    df_sample_output_model = frames["sample_output_model"]
+    df_client_output_model = frames["client_output_model"]
+    df_table_extraction_rules = frames["table_layouts"]
     df_continuation_rules = frames["continuation_rules"]
-    df_template_detection_rules = frames["template_detection_rules"]
-    df_output_sheets = frames["output_sheets"]
+    df_template_rules = frames["template_rules"]
+    df_output_tabs = frames["output_tabs"]
 
-    _validate_output_schema("results_extract_schema", df_results_extract_schema, RESULTS_EXTRACT_COLUMNS)
-    _validate_output_schema("sample_output_schema", df_sample_output_schema, SAMPLE_COLUMNS)
-    _validate_output_schema("client_output_schema", df_client_output_schema, CLIENT_COLUMNS)
+    _validate_output_model("results_extract", df_results_extract_model, RESULTS_EXTRACT_COLUMNS)
+    _validate_output_model("sample", df_sample_output_model, SAMPLE_COLUMNS)
+    _validate_output_model("client", df_client_output_model, CLIENT_COLUMNS)
 
-    section_config_rules = _build_section_config_rules(df_sections)
-    metadata_rules = _build_metadata_rules(df_metadata)
-    section_rules = _build_section_rules(df_section_aliases)
-    section_subcategory_rules = _build_section_subcategory_rules(df_section_subcategory_aliases)
-    result_layouts = _build_result_layouts(df_result_layouts)
+    category_type_rules = _build_category_type_rules(df_category_type_rules)
+    metadata_rules = _build_metadata_rules(df_metadata_text_rules)
+    category_alias_rules = _build_category_alias_rules(df_category_alias_rules)
+    subcategory_alias_rules = _build_subcategory_alias_rules(df_subcategory_alias_rules)
+    table_layouts = _build_table_layouts(df_table_extraction_rules)
     continuation_rules = _build_continuation_rules(df_continuation_rules)
     templates = _build_templates(df_templates)
-    _validate_detection_sources("template_detection_rules", df_template_detection_rules)
+    _validate_detection_sources("template_rules", df_template_rules)
     template_ids = set(templates)
     for sheet_name, df in {
         "templates": df_templates,
-        "template_detection_rules": df_template_detection_rules,
-        "output_sheets": df_output_sheets,
-        "metadata_schema": df_metadata,
-        "client_schema": df_client_schema,
-        "sample_schema": df_sample_schema,
-        "section_config": df_sections,
-        "section_aliases": df_section_aliases,
-        "section_subcategory_aliases": df_section_subcategory_aliases,
-        "result_layouts": df_result_layouts,
+        "template_rules": df_template_rules,
+        "output_tabs": df_output_tabs,
+        "metadata_text_rules": df_metadata_text_rules,
+        "client_text_rules": df_client_text_rules,
+        "sample_text_rules": df_sample_text_rules,
+        "category_type_rules": df_category_type_rules,
+        "category_alias_rules": df_category_alias_rules,
+        "subcategory_alias_rules": df_subcategory_alias_rules,
+        "table_layouts": df_table_extraction_rules,
         "continuation_rules": df_continuation_rules,
-        "results_extract_schema": df_results_extract_schema,
-        "sample_output_schema": df_sample_output_schema,
-        "client_output_schema": df_client_output_schema,
+        "results_extract_model": df_results_extract_model,
+        "sample_output_model": df_sample_output_model,
+        "client_output_model": df_client_output_model,
     }.items():
         _validate_boolean_columns(sheet_name, df)
         _validate_template_ids(sheet_name, df, template_ids)
-    template_detection_rules = _build_template_detection_rules(df_template_detection_rules)
-    output_sheets = _build_output_sheets(df_output_sheets)
+    template_rules = _build_template_rules(df_template_rules)
+    output_tabs = _build_output_tabs(df_output_tabs)
 
     log.info(
         "Taxonomy carregada: %d regras de secao, %d campos de metadata",
-        len(df_sections) + len(section_rules) + len(section_subcategory_rules),
-        len(df_metadata),
+        len(df_category_type_rules) + len(category_alias_rules) + len(subcategory_alias_rules),
+        len(df_metadata_text_rules),
     )
 
     return PipelineConfig(
         taxonomy_path=taxonomy_path,
         df_templates=df_templates,
-        df_sections=df_sections,
-        df_metadata=df_metadata,
-        df_section_aliases=df_section_aliases,
-        df_section_subcategory_aliases=df_section_subcategory_aliases,
-        df_sample_schema=df_sample_schema,
-        df_client_schema=df_client_schema,
-        df_results_extract_schema=df_results_extract_schema,
-        df_sample_output_schema=df_sample_output_schema,
-        df_client_output_schema=df_client_output_schema,
-        df_template_detection_rules=df_template_detection_rules,
-        df_output_sheets=df_output_sheets,
-        df_result_layouts=df_result_layouts,
+        df_category_type_rules=df_category_type_rules,
+        df_metadata_text_rules=df_metadata_text_rules,
+        df_category_alias_rules=df_category_alias_rules,
+        df_subcategory_alias_rules=df_subcategory_alias_rules,
+        df_sample_text_rules=df_sample_text_rules,
+        df_client_text_rules=df_client_text_rules,
+        df_results_extract_model=df_results_extract_model,
+        df_sample_output_model=df_sample_output_model,
+        df_client_output_model=df_client_output_model,
+        df_template_rules=df_template_rules,
+        df_output_tabs=df_output_tabs,
+        df_table_extraction_rules=df_table_extraction_rules,
         df_continuation_rules=df_continuation_rules,
         templates=templates,
-        section_config_rules=section_config_rules,
+        category_type_rules=category_type_rules,
         metadata_rules=metadata_rules,
-        section_rules=section_rules,
-        section_subcategory_rules=section_subcategory_rules,
-        result_layouts=result_layouts,
+        category_alias_rules=category_alias_rules,
+        subcategory_alias_rules=subcategory_alias_rules,
+        table_layouts=table_layouts,
         continuation_rules=continuation_rules,
-        template_detection_rules=template_detection_rules,
-        output_sheets=output_sheets,
+        template_rules=template_rules,
+        output_tabs=output_tabs,
     )

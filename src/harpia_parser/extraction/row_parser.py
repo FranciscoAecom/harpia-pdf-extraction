@@ -13,8 +13,8 @@ IGNORAR_TEXTO_LINHA = re.compile(
 
 
 def _base_layout(tipo_registro: str | None, config) -> dict[str, int | None]:
-    fallback = config.result_layouts.get("AMOSTRA", {})
-    layout = config.result_layouts.get(tipo_registro, fallback).copy()
+    fallback = config.table_layouts.get("AMOSTRA", {})
+    layout = config.table_layouts.get(tipo_registro, fallback).copy()
     return {field: layout.get(field) for field in LAYOUT_FIELD_KEYS}
 
 

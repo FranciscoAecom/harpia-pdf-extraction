@@ -12,7 +12,7 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from harpia_parser.config.loader import load_config, output_sheets_for_template  # noqa: E402
+from harpia_parser.config.loader import load_config, output_tabs_for_template  # noqa: E402
 from harpia_parser.core.pipeline import run_pipeline_document  # noqa: E402
 from harpia_parser.core.scope import classify_document  # noqa: E402
 from harpia_parser.formatting.output_writer import salvar  # noqa: E402
@@ -149,13 +149,13 @@ def extract_batch(input_dir: Path, output_dir: Path) -> None:
         table_audit_df = pd.concat(all_table_audits.get(tipo_laudo, []), ignore_index=True) if all_table_audits.get(tipo_laudo) else pd.DataFrame()
 
         template_id = _first_value([results_df, sample_df, client_df], "template_id")
-        output_sheets = output_sheets_for_template(config, template_id) if template_id else None
+        output_tabs = output_tabs_for_template(config, template_id) if template_id else None
         salvar(
             results_df,
             output_dir / tipo_laudo / "extracted_data.xlsx",
             sample_df=sample_df,
             client_df=client_df,
-            output_sheets=output_sheets,
+            output_tabs=output_tabs,
             classification_audit_df=audit_df,
             table_extraction_audit_df=table_audit_df,
         )

@@ -194,9 +194,16 @@ def validate_outputs(
     df: pd.DataFrame,
     sample_df: pd.DataFrame | None = None,
     client_df: pd.DataFrame | None = None,
-    output_sheets: list[str] | None = None,
+    output_tabs: list[str] | None = None,
 ) -> dict[str, pd.DataFrame]:
-    sheets = output_sheets or ["results_extract", "sample", "client", "validation_errors"]
+    sheets = output_tabs or [
+        "results_extract",
+        "sample",
+        "client",
+        "table_extraction_audit",
+        "classification_audit",
+        "validation_errors",
+    ]
     validations: dict[str, pd.DataFrame] = {}
     if "results_extract" in sheets:
         validations["results_extract"] = validate_results_extract(df)

@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from ..config.loader import filter_config_for_template, load_config, output_sheets_for_template
+from ..config.loader import filter_config_for_template, load_config, output_tabs_for_template
 from ..constants import CLIENT_COLUMNS, RESULTS_EXTRACT_COLUMNS, SAMPLE_COLUMNS, TABLE_EXTRACTION_AUDIT_COLUMNS
 from .context import DocumentContext
 from ..formatting.common import format_results_extract
@@ -216,9 +216,9 @@ def main(argv=None) -> int:
         return 0
 
     template_id = _first_nonempty_value([df, sample_df, client_df], "template_id")
-    output_sheets = output_sheets_for_template(config, template_id) if template_id else None
+    output_tabs = output_tabs_for_template(config, template_id) if template_id else None
     output_path = Path(args.output) if args.output else _default_output_path(PROJECT_ROOT, df, sample_df, client_df)
-    salvar(df, output_path, sample_df, client_df, output_sheets, classification_audit_df, table_audit_df)
+    salvar(df, output_path, sample_df, client_df, output_tabs, classification_audit_df, table_audit_df)
     log.info("Resultado salvo em: %s  (%d registros)", output_path, len(df))
     if not df.empty:
         _print_dataframe(df)

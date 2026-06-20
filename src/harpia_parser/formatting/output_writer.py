@@ -110,13 +110,20 @@ def salvar(
     output_path: Path,
     sample_df: pd.DataFrame | None = None,
     client_df: pd.DataFrame | None = None,
-    output_sheets: list[str] | None = None,
+    output_tabs: list[str] | None = None,
     classification_audit_df: pd.DataFrame | None = None,
     table_extraction_audit_df: pd.DataFrame | None = None,
 ) -> None:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     ext = output_path.suffix.lower()
-    sheets_to_write = output_sheets or ["results_extract", "sample", "client", "validation_errors"]
+    sheets_to_write = output_tabs or [
+        "results_extract",
+        "sample",
+        "client",
+        "table_extraction_audit",
+        "classification_audit",
+        "validation_errors",
+    ]
     validation_errors = validate_outputs(df, sample_df, client_df, sheets_to_write).get("results_extract", pd.DataFrame())
 
     if ext == ".csv":

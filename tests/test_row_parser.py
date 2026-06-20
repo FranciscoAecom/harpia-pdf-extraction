@@ -7,7 +7,7 @@ from harpia_parser.extraction.row_parser import processar_linha
 class RowParserTest(unittest.TestCase):
     def test_header_without_ld_does_not_reuse_base_ld_column(self):
         config = SimpleNamespace(
-            result_layouts={
+            table_layouts={
                 "AMOSTRA": {
                     "resultado_col": 4,
                     "unidade_col": 1,

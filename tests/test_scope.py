@@ -1,4 +1,4 @@
-﻿import re
+import re
 import unittest
 from types import SimpleNamespace
 
@@ -26,7 +26,7 @@ def _config():
                 "score_minimo": 80,
             },
         },
-        template_detection_rules=[
+        template_rules=[
             {
                 "template_id": "template_laudo_agua_v1",
                 "rule_type": "required",

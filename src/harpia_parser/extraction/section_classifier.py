@@ -12,8 +12,8 @@ def novo_estado() -> dict:
     }
 
 
-def aplicar_section_config(txt: str, estado: dict, config) -> bool:
-    for regra in config.section_config_rules:
+def aplicar_category_type_rule(txt: str, estado: dict, config) -> bool:
+    for regra in config.category_type_rules:
         if regra["regex"].search(txt):
             estado["categoria"] = regra["categoria"]
             estado["tipo_registro"] = regra["tipo_registro"]
@@ -32,7 +32,7 @@ def _apply_section_subcategory(txt: str, estado: dict, config) -> bool:
     if not norm:
         return False
 
-    for rule in getattr(config, "section_subcategory_rules", []):
+    for rule in getattr(config, "subcategory_alias_rules", []):
         if rule["regex"].search(norm):
             estado["categoria"] = rule["categoria"]
             estado["subcategoria"] = rule["subcategoria"] or raw
@@ -60,7 +60,7 @@ def _apply_section_title(txt: str, estado: dict, config) -> bool:
         section_norm = normalizar(subcat_txt)
         subcat_from_tipo = raw
 
-    for rule in config.section_rules:
+    for rule in config.category_alias_rules:
         if rule["regex"].search(section_norm) or rule["regex"].search(norm):
             estado["categoria"] = rule["categoria"]
             estado["subcategoria"] = rule["subcategoria"] or subcat_from_tipo
@@ -72,7 +72,7 @@ def _apply_section_title(txt: str, estado: dict, config) -> bool:
 
 
 def aplicar_section_pdf(txt: str, estado: dict, config) -> bool:
-    return _apply_section_title(txt, estado, config) or aplicar_section_config(txt, estado, config)
+    return _apply_section_title(txt, estado, config) or aplicar_category_type_rule(txt, estado, config)
 
 
 def estado_from_section_title(txt: str, config) -> dict | None:

@@ -1,4 +1,4 @@
-﻿import tempfile
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -86,7 +86,7 @@ class OutputWriterTest(unittest.TestCase):
             salvar(
                 df,
                 output_path,
-                output_sheets=["results_extract", "table_extraction_audit", "validation_errors"],
+                output_tabs=["results_extract", "table_extraction_audit", "validation_errors"],
                 table_extraction_audit_df=table_audit_df,
             )
 

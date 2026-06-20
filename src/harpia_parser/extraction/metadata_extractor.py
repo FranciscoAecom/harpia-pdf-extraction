@@ -21,8 +21,8 @@ def extract_metadata(texto: str, config) -> dict:
 def extract_sample(texto: str, metadata: dict, config) -> pd.DataFrame:
     extracted = {}
 
-    if not config.df_sample_schema.empty:
-        for _, row in config.df_sample_schema.iterrows():
+    if not config.df_sample_text_rules.empty:
+        for _, row in config.df_sample_text_rules.iterrows():
             campo = row.get("campo")
             regex = row.get("regex")
             if pd.notna(campo) and pd.notna(regex) and str(regex) != "DERIVADO_DO_NOME_DO_PDF":
@@ -61,8 +61,8 @@ def extract_sample(texto: str, metadata: dict, config) -> pd.DataFrame:
 def extract_client(texto: str, metadata: dict, config) -> pd.DataFrame:
     extracted = {}
 
-    if not config.df_client_schema.empty:
-        for _, row in config.df_client_schema.iterrows():
+    if not config.df_client_text_rules.empty:
+        for _, row in config.df_client_text_rules.iterrows():
             campo = row.get("campo")
             regex = row.get("regex")
             if pd.notna(campo) and pd.notna(regex) and str(regex) != "DERIVADO_DO_NOME_DO_PDF":

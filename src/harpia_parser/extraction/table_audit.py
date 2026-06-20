@@ -76,7 +76,7 @@ def _join(values: list[str]) -> str:
 
 
 def _expected_fields(tipo_registro: str | None, config) -> list[str]:
-    layout = config.result_layouts.get(tipo_registro) or config.result_layouts.get("AMOSTRA") or {}
+    layout = config.table_layouts.get(tipo_registro) or config.table_layouts.get("AMOSTRA") or {}
     expected = ["parameter"]
     for key in LAYOUT_FIELD_KEYS:
         if layout.get(key) is not None:

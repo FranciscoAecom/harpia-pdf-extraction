@@ -14,7 +14,7 @@ def _context():
 
 def _config():
     return SimpleNamespace(
-        result_layouts={
+        table_layouts={
             "AMOSTRA": {
                 "resultado_col": 4,
                 "unidade_col": 1,
