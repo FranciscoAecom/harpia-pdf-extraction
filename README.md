@@ -7,6 +7,7 @@ O projeto gera um Excel de saída com as abas definidas por template na taxonomi
 - `results_extract`: resultados analíticos e QA/QC.
 - `sample`: dados cadastrais e de coleta da amostra.
 - `client`: identificação do cliente.
+- `table_extraction_audit`: auditoria das colunas detectadas em cada tabela extraída.
 - `classification_audit`: auditoria da identificação do template antes da extração.
 - `validation_errors`: erros de validação da saída, vazia quando não houver inconsistências.
 
@@ -294,7 +295,7 @@ Contrato completo da aba de saida `client`.
 
 ## Saidas
 
-O arquivo de extracao padrao e separado por tema em `output/<tipo_laudo>/extracted_data.xlsx`. As abas criadas e a ordem delas sao definidas na aba `output_sheets` da taxonomia. No estado atual, os templates cadastrados geram `results_extract`, `sample`, `client`, `classification_audit` e `validation_errors`.
+O arquivo de extracao padrao e separado por tema em `output/<tipo_laudo>/extracted_data.xlsx`. As abas criadas e a ordem delas sao definidas na aba `output_sheets` da taxonomia. No estado atual, os templates cadastrados geram `results_extract`, `sample`, `client`, `table_extraction_audit`, `classification_audit` e `validation_errors`.
 
 ### `results_extract`
 Resultados analiticos e QA/QC extraidos do PDF.
@@ -386,7 +387,30 @@ Auditoria da etapa de identificacao do template. Essa aba ajuda a validar se o P
 - `score_minimo`: Pontuacao minima exigida para aceitar o template.
 - `prioridade`: Prioridade usada como desempate entre templates aceitos.
 - `status`: Resultado da avaliacao, como `winner`, `candidate`, `below_score`, `missing_required` ou `blocked_by_negative`.
-- `regras_encontradas`: Regras de deteccao que casaram no texto ou no caminho do PDF.
+- `regras_encontradas`: Regras de deteccao que casaram no texto do PDF.
+
+### `table_extraction_audit`
+Auditoria generica das tabelas processadas. Essa aba ajuda a conferir se as colunas detectadas no PDF batem com o layout esperado na taxonomia.
+
+- `nome_do_arquivo`: Nome do PDF avaliado.
+- `template_id`: Template/modelo identificado.
+- `tipo_laudo`: Tema/familia do documento.
+- `pagina`: Pagina onde a tabela foi encontrada.
+- `tabela_indice`: Ordem da tabela dentro da pagina.
+- `categoria`: Bloco principal atribuido a tabela.
+- `subcategoria`: Secao interna atribuida a tabela.
+- `tipo_registro`: Tipo de registro usado no layout, como `AMOSTRA`, `BRANCO`, `DUPLICATA` ou `RECUPERACAO`.
+- `modo_auditoria`: Indica que a checagem combina contrato esperado e descoberta de colunas.
+- `cabecalho_detectado`: Cabecalho reconhecido na tabela.
+- `colunas_detectadas`: Colunas lidas do cabecalho do PDF.
+- `colunas_mapeadas`: Relacao entre coluna detectada e campo interno.
+- `colunas_sem_mapeamento`: Colunas detectadas que ainda nao possuem regra conhecida.
+- `campos_esperados`: Campos esperados conforme `result_layouts`.
+- `campos_obrigatorios_ausentes`: Reservado para regras obrigatorias por tabela quando forem cadastradas na taxonomia.
+- `campos_opcionais_ausentes`: Campos previstos no layout que nao apareceram no cabecalho detectado.
+- `usou_fallback`: Indica se a tabela foi processada sem cabecalho detectado, usando apenas o layout cadastrado.
+- `status`: Resultado da auditoria da tabela, como `ok`, `ok_com_opcional_ausente`, `alerta_descoberta`, `alerta_descoberta_com_opcional_ausente` ou `fallback`.
+- `observacao`: Detalhe textual sobre ausencias, colunas novas ou uso de fallback.
 
 ### `validation_errors`
 Erros encontrados pela validacao final com Pydantic. Quando a extracao esta consistente, a aba e criada apenas com cabecalhos e sem linhas.
