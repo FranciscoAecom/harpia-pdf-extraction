@@ -11,7 +11,6 @@ TIPO_REGISTRO = Literal["Amostra", "Branco", "Duplicata", "Recupera\u00e7\u00e3o
 LOCAL = Literal["campo", "laboratorio"]
 OPERADOR = Literal["max", "min", "<", ">", "<=", ">=", "="]
 NUMERO_PT = re.compile(r"^([+-]?\d+(?:[,.]\d+)?)(?:\s*x\s*10\s*([+-]?\d+))?$", re.IGNORECASE)
-PDF_CALC_ERROR_TOKENS = {"VALUE", "DIV0", "#VALUE!", "#DIV/0!"}
 
 
 def _parse_numero_pt(value: Any) -> float:
@@ -82,9 +81,9 @@ class ResultsExtractRow(BaseModel):
     faixa_aceitacao_maximo: float | None = None
     faixa_aceitacao_unidade: str | None = None
 
-    variacao_percentual: float | str | None = None
-    quantidade_adicionada: float | str | None = None
-    recuperacao_percentual: float | str | None = None
+    variacao_percentual: float | None = None
+    quantidade_adicionada: float | None = None
+    recuperacao_percentual: float | None = None
 
     @field_validator("*", mode="before")
     @classmethod
@@ -121,9 +120,6 @@ class ResultsExtractRow(BaseModel):
     def numeric_value(cls, value: Any) -> Any:
         if value is None:
             return value
-        text = str(value).strip()
-        if text.upper() in PDF_CALC_ERROR_TOKENS:
-            return text
         return _parse_numero_pt(value)
 
     @model_validator(mode="after")
