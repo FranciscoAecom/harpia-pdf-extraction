@@ -99,7 +99,14 @@ class ConfigLoaderTest(unittest.TestCase):
 
         self.assertEqual(
             config.output_sheets["template_laudo_agua_v1"],
-            ["results_extract", "sample", "client", "classification_audit", "validation_errors"],
+            [
+                "results_extract",
+                "sample",
+                "client",
+                "table_extraction_audit",
+                "classification_audit",
+                "validation_errors",
+            ],
         )
 
     def test_section_subcategory_aliases_are_loaded_by_template(self):

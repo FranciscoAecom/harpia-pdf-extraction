@@ -69,6 +69,32 @@ class OutputWriterTest(unittest.TestCase):
             self.assertEqual(cell.value, 790)
             self.assertEqual(cell.number_format, "0.0")
 
+    def test_table_extraction_audit_sheet_is_written_when_requested(self):
+        row = _valid_row()
+        df = pd.DataFrame([row], columns=RESULTS_EXTRACT_COLUMNS)
+        table_audit_df = pd.DataFrame([{
+            "nome_do_arquivo": "a.pdf",
+            "template_id": "template_laudo_agua_v1",
+            "tipo_laudo": "laudo_agua",
+            "pagina": 1,
+            "tabela_indice": 1,
+            "status": "ok",
+        }])
+
+        with tempfile.TemporaryDirectory() as tmp:
+            output_path = Path(tmp) / "out.xlsx"
+            salvar(
+                df,
+                output_path,
+                output_sheets=["results_extract", "table_extraction_audit", "validation_errors"],
+                table_extraction_audit_df=table_audit_df,
+            )
+
+            workbook = load_workbook(output_path, data_only=False)
+            self.assertIn("table_extraction_audit", workbook.sheetnames)
+            worksheet = workbook["table_extraction_audit"]
+            self.assertEqual(worksheet.cell(row=2, column=1).value, "a.pdf")
+
 
 if __name__ == "__main__":
     unittest.main()

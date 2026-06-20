@@ -78,6 +78,28 @@ CLIENT_COLUMNS = [
     "endereco",
 ]
 
+TABLE_EXTRACTION_AUDIT_COLUMNS = [
+    "nome_do_arquivo",
+    "template_id",
+    "tipo_laudo",
+    "pagina",
+    "tabela_indice",
+    "categoria",
+    "subcategoria",
+    "tipo_registro",
+    "modo_auditoria",
+    "cabecalho_detectado",
+    "colunas_detectadas",
+    "colunas_mapeadas",
+    "colunas_sem_mapeamento",
+    "campos_esperados",
+    "campos_obrigatorios_ausentes",
+    "campos_opcionais_ausentes",
+    "usou_fallback",
+    "status",
+    "observacao",
+]
+
 LAYOUT_FIELD_KEYS = [
     "resultado_col",
     "unidade_col",

@@ -7,7 +7,7 @@ from pathlib import Path
 import pandas as pd
 
 from ..config.loader import filter_config_for_template, load_config, output_sheets_for_template
-from ..constants import CLIENT_COLUMNS, RESULTS_EXTRACT_COLUMNS, SAMPLE_COLUMNS
+from ..constants import CLIENT_COLUMNS, RESULTS_EXTRACT_COLUMNS, SAMPLE_COLUMNS, TABLE_EXTRACTION_AUDIT_COLUMNS
 from .context import DocumentContext
 from ..formatting.common import format_results_extract
 from ..extraction.metadata_extractor import extract_client, extract_metadata, extract_sample
@@ -15,6 +15,7 @@ from ..normalization import normalize_outputs
 from ..formatting.output_writer import salvar
 from ..extraction.pdf_reader import read_pdf
 from ..extraction.row_parser import processar_linha
+from ..extraction.table_audit import build_table_audit_row
 from .scope import classify_document
 from ..extraction.section_classifier import (
     aplicar_section_pdf,
@@ -53,12 +54,13 @@ def _default_output_path(base_dir: Path, df: pd.DataFrame, sample_df: pd.DataFra
     return base_dir / "output" / tipo_laudo / "extracted_data.xlsx"
 
 
-def _empty_outputs() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+def _empty_outputs() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     return (
         pd.DataFrame(columns=RESULTS_EXTRACT_COLUMNS),
         pd.DataFrame(columns=SAMPLE_COLUMNS),
         pd.DataFrame(columns=CLIENT_COLUMNS),
         pd.DataFrame(),
+        pd.DataFrame(columns=TABLE_EXTRACTION_AUDIT_COLUMNS),
     )
 
 
@@ -91,15 +93,16 @@ def _extract_header_tables(texto: str, context: DocumentContext, extraction_conf
 
 def _extract_result_rows(paginas, metadata: dict, sample_df: pd.DataFrame, context: DocumentContext, extraction_config):
     resultados = []
+    table_audit_rows = []
     estado = novo_estado()
     dh_inicio_atividade = sample_df.loc[0, "dh_inicio_atividade"]
     pending_estado = None
 
-    for page_text, tabelas in paginas:
+    for page_number, (page_text, tabelas) in enumerate(paginas, start=1):
         if pending_estado:
             estado.update(pending_estado)
 
-        for tabela in tabelas:
+        for table_index, tabela in enumerate(tabelas, start=1):
             if not tabela:
                 continue
 
@@ -109,6 +112,18 @@ def _extract_result_rows(paginas, metadata: dict, sample_df: pd.DataFrame, conte
 
             if not estado.get("categoria") or (not is_qaqc_continuacao and not tabela_resultado(rows, estado)):
                 continue
+
+            table_audit_rows.append(
+                build_table_audit_row(
+                    context=context,
+                    page_number=page_number,
+                    table_index=table_index,
+                    rows=rows,
+                    estado=estado,
+                    config=extraction_config,
+                    is_qaqc_continuacao=is_qaqc_continuacao,
+                )
+            )
 
             for row in rows:
                 txt = " ".join(str(c) for c in row if c)
@@ -134,10 +149,10 @@ def _extract_result_rows(paginas, metadata: dict, sample_df: pd.DataFrame, conte
 
         pending_estado = pending_section_from_page_text(page_text, extraction_config)
 
-    return pd.DataFrame(resultados), dh_inicio_atividade
+    return pd.DataFrame(resultados), dh_inicio_atividade, pd.DataFrame(table_audit_rows, columns=TABLE_EXTRACTION_AUDIT_COLUMNS)
 
 
-def run_pipeline_document(pdf_path, config=None) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+def run_pipeline_document(pdf_path, config=None) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     pdf_path = Path(pdf_path)
     config = config or load_config(PROJECT_ROOT)
     log.info("Processando: %s", pdf_path)
@@ -151,7 +166,7 @@ def run_pipeline_document(pdf_path, config=None) -> tuple[pd.DataFrame, pd.DataF
     log.info("Template identificado: %s (%s)", context.template_id, context.tipo_laudo)
     extraction_config = filter_config_for_template(config, context.template_id)
     metadata, sample_df, client_df = _extract_header_tables(texto, context, extraction_config)
-    raw_results_df, dh_inicio_atividade = _extract_result_rows(
+    raw_results_df, dh_inicio_atividade, table_audit_df = _extract_result_rows(
         paginas,
         metadata,
         sample_df,
@@ -168,11 +183,11 @@ def run_pipeline_document(pdf_path, config=None) -> tuple[pd.DataFrame, pd.DataF
     classification_audit_df = context.classification.to_dataframe(context.nome_do_arquivo)
 
     log.info("Pipeline concluido: %d registros extraidos de %s", len(df), pdf_path.name)
-    return df, sample_df, client_df, classification_audit_df
+    return df, sample_df, client_df, classification_audit_df, table_audit_df
 
 
 def run_pipeline(pdf_path) -> pd.DataFrame:
-    df, _, _, _ = run_pipeline_document(pdf_path)
+    df, _, _, _, _ = run_pipeline_document(pdf_path)
     return df
 
 
@@ -195,7 +210,7 @@ def main(argv=None) -> int:
         return 1
 
     config = load_config(PROJECT_ROOT)
-    df, sample_df, client_df, classification_audit_df = run_pipeline_document(pdf_path, config)
+    df, sample_df, client_df, classification_audit_df, table_audit_df = run_pipeline_document(pdf_path, config)
     if df.empty and sample_df.empty and client_df.empty:
         log.warning("Nenhum dado extraido. Verifique o PDF e as regras da taxonomy.")
         return 0
@@ -203,7 +218,7 @@ def main(argv=None) -> int:
     template_id = _first_nonempty_value([df, sample_df, client_df], "template_id")
     output_sheets = output_sheets_for_template(config, template_id) if template_id else None
     output_path = Path(args.output) if args.output else _default_output_path(PROJECT_ROOT, df, sample_df, client_df)
-    salvar(df, output_path, sample_df, client_df, output_sheets, classification_audit_df)
+    salvar(df, output_path, sample_df, client_df, output_sheets, classification_audit_df, table_audit_df)
     log.info("Resultado salvo em: %s  (%d registros)", output_path, len(df))
     if not df.empty:
         _print_dataframe(df)

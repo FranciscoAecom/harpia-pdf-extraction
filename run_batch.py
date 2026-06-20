@@ -88,13 +88,14 @@ def extract_batch(input_dir: Path, output_dir: Path) -> None:
     all_samples: dict[str, list[pd.DataFrame]] = {}
     all_clients: dict[str, list[pd.DataFrame]] = {}
     all_audits: dict[str, list[pd.DataFrame]] = {}
+    all_table_audits: dict[str, list[pd.DataFrame]] = {}
     summary = []
     pdfs = _list_pdfs(input_dir)
 
     for index, pdf in enumerate(pdfs, start=1):
         log.info("[%d/%d] Extraindo %s", index, len(pdfs), pdf.name)
         try:
-            df, sample_df, client_df, audit_df = run_pipeline_document(pdf, config)
+            df, sample_df, client_df, audit_df, table_audit_df = run_pipeline_document(pdf, config)
             template_id = _first_value([df, sample_df, client_df], "template_id")
             tipo_laudo = _first_value([df, sample_df, client_df], "tipo_laudo")
 
@@ -115,6 +116,7 @@ def extract_batch(input_dir: Path, output_dir: Path) -> None:
             all_samples.setdefault(tipo_laudo, []).append(sample_df)
             all_clients.setdefault(tipo_laudo, []).append(client_df)
             all_audits.setdefault(tipo_laudo, []).append(audit_df)
+            all_table_audits.setdefault(tipo_laudo, []).append(table_audit_df)
             summary.append({
                 "arquivo": pdf.name,
                 "caminho": str(pdf),
@@ -144,6 +146,7 @@ def extract_batch(input_dir: Path, output_dir: Path) -> None:
         sample_df = pd.concat(all_samples.get(tipo_laudo, []), ignore_index=True) if all_samples.get(tipo_laudo) else pd.DataFrame()
         client_df = pd.concat(all_clients.get(tipo_laudo, []), ignore_index=True) if all_clients.get(tipo_laudo) else pd.DataFrame()
         audit_df = pd.concat(all_audits.get(tipo_laudo, []), ignore_index=True) if all_audits.get(tipo_laudo) else pd.DataFrame()
+        table_audit_df = pd.concat(all_table_audits.get(tipo_laudo, []), ignore_index=True) if all_table_audits.get(tipo_laudo) else pd.DataFrame()
 
         template_id = _first_value([results_df, sample_df, client_df], "template_id")
         output_sheets = output_sheets_for_template(config, template_id) if template_id else None
@@ -154,6 +157,7 @@ def extract_batch(input_dir: Path, output_dir: Path) -> None:
             client_df=client_df,
             output_sheets=output_sheets,
             classification_audit_df=audit_df,
+            table_extraction_audit_df=table_audit_df,
         )
 
     summary_df = pd.DataFrame(summary)
