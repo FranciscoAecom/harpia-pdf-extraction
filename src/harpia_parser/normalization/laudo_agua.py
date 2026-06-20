@@ -3,8 +3,6 @@ import pandas as pd
 from ..parsing.measure_parser import parse_medida, parse_resultado, texto_vazio
 from ..utils import normalizar
 
-CALC_ERROR_TOKENS = {"VALUE", "DIV0", "#VALUE!", "#DIV/0!"}
-
 
 def _original_or_none(value):
     return None if texto_vazio(value) else value
@@ -83,16 +81,6 @@ def _normalize_faixa_aceitacao(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def _normalize_numeric_error_tokens(df: pd.DataFrame) -> pd.DataFrame:
-    for column in {"variacao_percentual", "quantidade_adicionada", "recuperacao_percentual"} & set(df.columns):
-        df[column] = df[column].map(
-            lambda value: None
-            if str(value or "").strip().upper() in CALC_ERROR_TOKENS
-            else value
-        )
-    return df
-
-
 def normalize(
     df: pd.DataFrame,
     sample_df: pd.DataFrame,
@@ -106,6 +94,5 @@ def normalize(
         df = _normalize_lq(df)
         df = _normalize_incerteza(df)
         df = _normalize_faixa_aceitacao(df)
-        df = _normalize_numeric_error_tokens(df)
 
     return df, sample_df, client_df
