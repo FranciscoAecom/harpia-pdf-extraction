@@ -79,6 +79,17 @@ class ConfigLoaderTest(unittest.TestCase):
         self.assertEqual(config.table_layouts["AMOSTRA"]["resultado_col"], 4)
         self.assertEqual(config.table_layouts["DUPLICATA"]["faixa_aceitacao_col"], 5)
 
+    def test_header_alias_rules_include_copam_criterion(self):
+        config = filter_config_for_template(load_config(Path.cwd()), "template_laudo_agua_v1")
+
+        self.assertTrue(
+            any(
+                rule["field"] == "criterio_conformidade_col"
+                and "copam" in rule["regex"].pattern.lower()
+                for rule in config.header_alias_rules
+            )
+        )
+
     def test_header_rules_are_limited_to_curated_laudo_templates(self):
         config = load_config(Path.cwd())
         expected_templates = {

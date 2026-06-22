@@ -138,7 +138,7 @@ Campos booleanos da taxonomy, como `ativo`, `obrigatorio` e `extrair_subcategori
 - `template_rules`: Regras de identificacao por template; avaliam regexes obrigatorias, positivas e negativas antes da extracao.
 - `output_model`: Modelo de saida por template, incluindo abas geradas e campos de cada aba.
 - `text_extraction_rules`: Regexes para extrair campos textuais de `metadata`, `sample` e `client`.
-- `table_extraction_rules`: Regras tabulares por template, tipo de registro e campo, incluindo a posicao da coluna na tabela extraida do PDF.
+- `table_extraction_rules`: Regras tabulares por template, tipo de registro, campo e aliases de cabecalho, incluindo a posicao da coluna na tabela extraida do PDF.
 - `section_rules`: Regras para reconhecer categoria, subcategoria, tipo de registro e local das secoes do PDF.
 - `continuation_rules`: Padroes por template para detectar continuacao de tabelas de QA/QC entre paginas.
 
@@ -197,14 +197,15 @@ Regexes para extrair campos textuais.
 - `descricao`: Explica o objetivo da regra.
 
 #### `table_extraction_rules`
-Regras tabulares por template, tipo de registro e campo.
+Regras tabulares por template, tipo de registro, campo e alias de cabecalho.
 
-- `regra_origem`: Grupo da regra tabular. Para layout de resultados, use `layout`.
+- `regra_origem`: Grupo da regra tabular. Para layout de resultados, use `layout`; para reconhecer nomes de cabecalho, use `header_alias`.
 - `template_id`: Template ao qual a regra pertence.
 - `tabela_destino`: Tabela de saida relacionada a regra.
 - `tipo_registro`: Tipo de tabela/registro ao qual o layout se aplica.
 - `campo`: Campo interno preenchido a partir da tabela, como `resultado`, `lq`, `referencia` ou `faixa_aceitacao`.
 - `coluna_origem`: Indice da coluna na tabela extraida do PDF.
+- `header_regex`: Regex usada para reconhecer um nome de coluna do PDF e associa-lo ao campo informado. Exemplo: cabeçalhos com `COPAM` ou `CERH` podem ser mapeados para `criterio_conformidade`.
 - `ativo`: Indica se a regra esta ativa.
 - `descricao`: Explica o objetivo da regra.
 

@@ -1,9 +1,9 @@
 import re
 
+from .header_aliases import field_from_header_cell
 from .section_classifier import linha_header
 from ..constants import LAYOUT_FIELD_KEYS
 from ..utils import cell
-from ..utils import normalizar
 
 
 IGNORAR_TEXTO_LINHA = re.compile(
@@ -18,47 +18,11 @@ def _base_layout(tipo_registro: str | None, config) -> dict[str, int | None]:
     return {field: layout.get(field) for field in LAYOUT_FIELD_KEYS}
 
 
-def _field_from_header_cell(value: object) -> str | None:
-    text = normalizar(str(value or ""))
-    if not text:
-        return None
-
-    if text in {"unidade", "unid"}:
-        return "unidade_col"
-    if text == "ld" or "limite de deteccao" in text:
-        return "ld_col"
-    if text == "lq" or "limite de quantificacao" in text:
-        return "lq_col"
-    if text == "resultado" or text == "resultados":
-        return "resultado_col"
-    if "incerteza" in text:
-        return "incerteza_col"
-    if "referencia" in text:
-        return "referencia_col"
-    if "data de inicio" in text or "data inicio" in text:
-        return "data_inicio_col"
-    if "numero do cq" in text or text == "cq":
-        return "numero_cq_col"
-    if text == "duplicata":
-        return "duplicata_col"
-    if "faixa de aceitacao" in text:
-        return "faixa_aceitacao_col"
-    if "variacao" in text:
-        return "variacao_percentual_col"
-    if "quantidade adicionada" in text or text == "qtd adicionada":
-        return "quantidade_adicionada_col"
-    if "recuperacao" in text:
-        return "recuperacao_percentual_col"
-    if "resolucao" in text or "conama" in text or "criterio" in text:
-        return "criterio_conformidade_col"
-    return None
-
-
 def _layout_from_header(row: list, tipo_registro: str | None, config) -> dict[str, int | None] | None:
     layout: dict[str, int | None] = {field: None for field in LAYOUT_FIELD_KEYS}
     found = False
     for index, value in enumerate(row):
-        field = _field_from_header_cell(value)
+        field = field_from_header_cell(value, config)
         if field:
             layout[field] = index
             found = True

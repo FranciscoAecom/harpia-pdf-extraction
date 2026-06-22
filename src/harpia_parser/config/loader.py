@@ -34,6 +34,7 @@ class PipelineConfig:
     df_template_rules: pd.DataFrame
     df_output_tabs: pd.DataFrame
     df_table_extraction_rules: pd.DataFrame
+    df_header_alias_rules: pd.DataFrame
     df_continuation_rules: pd.DataFrame
     templates: dict[str, dict[str, Any]]
     category_type_rules: list[dict[str, Any]]
@@ -41,6 +42,7 @@ class PipelineConfig:
     category_alias_rules: list[dict[str, Any]]
     subcategory_alias_rules: list[dict[str, Any]]
     table_layouts: dict[str, dict[str, int | None]]
+    header_alias_rules: list[dict[str, Any]]
     continuation_rules: list[dict[str, str | Pattern[str]]]
     template_rules: list[dict[str, Any]]
     output_tabs: dict[str, list[str]]
@@ -249,6 +251,27 @@ def _build_table_layouts(df_table_extraction_rules: pd.DataFrame) -> dict[str, d
     return layouts
 
 
+def _build_header_alias_rules(df_header_alias_rules: pd.DataFrame) -> list[dict[str, Any]]:
+    rules: list[dict[str, Any]] = []
+    if df_header_alias_rules.empty:
+        return rules
+
+    for _, row in df_header_alias_rules.iterrows():
+        campo = str(_value_or_none(row, "campo") or "").strip()
+        pattern = _value_or_none(row, "header_regex")
+        if not campo or pattern is None:
+            continue
+        field = campo if campo == "parameter" or campo.endswith("_col") else f"{campo}_col"
+        if field != "parameter" and field not in LAYOUT_FIELD_KEYS:
+            continue
+        rules.append({
+            "field": field,
+            "regex": re.compile(str(pattern), re.IGNORECASE),
+            "descricao": _value_or_none(row, "descricao"),
+        })
+    return rules
+
+
 def _build_continuation_rules(df_continuation_rules: pd.DataFrame) -> list[dict[str, str | Pattern[str]]]:
     if df_continuation_rules.empty:
         return []
@@ -405,11 +428,21 @@ def _load_consolidated_frames(excel: pd.ExcelFile) -> dict[str, pd.DataFrame]:
         ],
     )
 
-    df_table_extraction_rules = _read_optional_sheet(excel, "table_extraction_rules")
+    df_table_extraction_rules = _coerce_bool_column(_read_optional_sheet(excel, "table_extraction_rules"), "ativo")
+    df_header_alias_rules = pd.DataFrame(columns=["template_id", "campo", "header_regex", "ativo", "descricao"])
     if not df_table_extraction_rules.empty:
-        df_table_extraction_rules = df_table_extraction_rules[df_table_extraction_rules["regra_origem"] == "layout"].copy()
-        df_table_extraction_rules = _coerce_bool_column(df_table_extraction_rules, "ativo")
-        df_table_extraction_rules = df_table_extraction_rules[["template_id", "tipo_registro", "campo", "coluna_origem", "ativo"]]
+        df_header_alias_rules = df_table_extraction_rules[
+            df_table_extraction_rules["regra_origem"] == "header_alias"
+        ].copy()
+        df_table_extraction_rules = df_table_extraction_rules[
+            df_table_extraction_rules["regra_origem"] == "layout"
+        ].copy()
+        df_header_alias_rules = df_header_alias_rules[
+            ["template_id", "campo", "header_regex", "ativo", "descricao"]
+        ]
+        df_table_extraction_rules = df_table_extraction_rules[
+            ["template_id", "tipo_registro", "campo", "coluna_origem", "ativo"]
+        ]
 
     df_continuation_rules = _read_optional_sheet(excel, "continuation_rules").rename(columns={
         "padrao_regex": "continuation_regex",
@@ -432,6 +465,7 @@ def _load_consolidated_frames(excel: pd.ExcelFile) -> dict[str, pd.DataFrame]:
         "sample_output_model": _fields_from_output_model(df_output_model, "sample"),
         "client_output_model": _fields_from_output_model(df_output_model, "client"),
         "table_layouts": df_table_extraction_rules,
+        "header_alias_rules": df_header_alias_rules,
         "continuation_rules": df_continuation_rules,
         "template_rules": df_template_rules,
         "output_tabs": df_output_tabs,
@@ -514,6 +548,7 @@ def filter_config_for_template(config: PipelineConfig, template_id: str) -> Pipe
     df_sample_text_rules = _filter_rules_dataframe(config.df_sample_text_rules, template_id)
     df_client_text_rules = _filter_rules_dataframe(config.df_client_text_rules, template_id)
     df_table_extraction_rules = _filter_rules_dataframe(config.df_table_extraction_rules, template_id)
+    df_header_alias_rules = _filter_rules_dataframe(config.df_header_alias_rules, template_id)
     df_continuation_rules = _filter_rules_dataframe(config.df_continuation_rules, template_id)
 
     return replace(
@@ -525,12 +560,14 @@ def filter_config_for_template(config: PipelineConfig, template_id: str) -> Pipe
         df_sample_text_rules=df_sample_text_rules,
         df_client_text_rules=df_client_text_rules,
         df_table_extraction_rules=df_table_extraction_rules,
+        df_header_alias_rules=df_header_alias_rules,
         df_continuation_rules=df_continuation_rules,
         category_type_rules=_build_category_type_rules(df_category_type_rules),
         metadata_rules=_build_metadata_rules(df_metadata_text_rules),
         category_alias_rules=_build_category_alias_rules(df_category_alias_rules),
         subcategory_alias_rules=_build_subcategory_alias_rules(df_subcategory_alias_rules),
         table_layouts=_build_table_layouts(df_table_extraction_rules),
+        header_alias_rules=_build_header_alias_rules(df_header_alias_rules),
         continuation_rules=_build_continuation_rules(df_continuation_rules),
     )
 
@@ -553,6 +590,7 @@ def load_config(base_dir: Path, taxonomy_file: str = "config/taxonomy_config_con
     df_sample_output_model = frames["sample_output_model"]
     df_client_output_model = frames["client_output_model"]
     df_table_extraction_rules = frames["table_layouts"]
+    df_header_alias_rules = frames["header_alias_rules"]
     df_continuation_rules = frames["continuation_rules"]
     df_template_rules = frames["template_rules"]
     df_output_tabs = frames["output_tabs"]
@@ -566,6 +604,7 @@ def load_config(base_dir: Path, taxonomy_file: str = "config/taxonomy_config_con
     category_alias_rules = _build_category_alias_rules(df_category_alias_rules)
     subcategory_alias_rules = _build_subcategory_alias_rules(df_subcategory_alias_rules)
     table_layouts = _build_table_layouts(df_table_extraction_rules)
+    header_alias_rules = _build_header_alias_rules(df_header_alias_rules)
     continuation_rules = _build_continuation_rules(df_continuation_rules)
     templates = _build_templates(df_templates)
     _validate_detection_sources("template_rules", df_template_rules)
@@ -581,6 +620,7 @@ def load_config(base_dir: Path, taxonomy_file: str = "config/taxonomy_config_con
         "category_alias_rules": df_category_alias_rules,
         "subcategory_alias_rules": df_subcategory_alias_rules,
         "table_layouts": df_table_extraction_rules,
+        "header_alias_rules": df_header_alias_rules,
         "continuation_rules": df_continuation_rules,
         "results_extract_model": df_results_extract_model,
         "sample_output_model": df_sample_output_model,
@@ -612,6 +652,7 @@ def load_config(base_dir: Path, taxonomy_file: str = "config/taxonomy_config_con
         df_template_rules=df_template_rules,
         df_output_tabs=df_output_tabs,
         df_table_extraction_rules=df_table_extraction_rules,
+        df_header_alias_rules=df_header_alias_rules,
         df_continuation_rules=df_continuation_rules,
         templates=templates,
         category_type_rules=category_type_rules,
@@ -619,6 +660,7 @@ def load_config(base_dir: Path, taxonomy_file: str = "config/taxonomy_config_con
         category_alias_rules=category_alias_rules,
         subcategory_alias_rules=subcategory_alias_rules,
         table_layouts=table_layouts,
+        header_alias_rules=header_alias_rules,
         continuation_rules=continuation_rules,
         template_rules=template_rules,
         output_tabs=output_tabs,

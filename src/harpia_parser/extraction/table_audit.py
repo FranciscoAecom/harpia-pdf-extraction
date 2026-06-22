@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import Any
 
+from .header_aliases import field_from_header_cell
 from .section_classifier import linha_header
 from ..constants import LAYOUT_FIELD_KEYS
-from ..utils import normalizar
 
 
 FIELD_OUTPUT_NAMES = {
@@ -23,44 +23,6 @@ FIELD_OUTPUT_NAMES = {
     "quantidade_adicionada_col": "quantidade_adicionada",
     "recuperacao_percentual_col": "recuperacao_percentual",
 }
-
-
-def _field_from_header_cell(value: object) -> str | None:
-    text = normalizar(str(value or ""))
-    if not text:
-        return None
-
-    if text in {"analise", "parametro", "parametros"}:
-        return "parameter"
-    if text in {"unidade", "unid"}:
-        return "unidade_col"
-    if text == "ld" or "limite de deteccao" in text:
-        return "ld_col"
-    if text == "lq" or "limite de quantificacao" in text:
-        return "lq_col"
-    if text == "resultado" or text == "resultados":
-        return "resultado_col"
-    if "incerteza" in text:
-        return "incerteza_col"
-    if "referencia" in text:
-        return "referencia_col"
-    if "data de inicio" in text or "data inicio" in text:
-        return "data_inicio_col"
-    if "numero do cq" in text or text == "cq":
-        return "numero_cq_col"
-    if text == "duplicata":
-        return "duplicata_col"
-    if "faixa de aceitacao" in text:
-        return "faixa_aceitacao_col"
-    if "variacao" in text:
-        return "variacao_percentual_col"
-    if "quantidade adicionada" in text or text == "qtd adicionada":
-        return "quantidade_adicionada_col"
-    if "recuperacao" in text:
-        return "recuperacao_percentual_col"
-    if "resolucao" in text or "conama" in text or "criterio" in text:
-        return "criterio_conformidade_col"
-    return None
 
 
 def _field_output_name(field: str) -> str:
@@ -139,7 +101,7 @@ def build_table_audit_row(
         column_name = _clean_cell(value)
         if not column_name:
             continue
-        field = _field_from_header_cell(value)
+        field = field_from_header_cell(value, config, include_parameter=True)
         if field is None:
             unmapped_columns.append(column_name)
             continue

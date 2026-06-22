@@ -1,4 +1,5 @@
 import unittest
+import re
 from types import SimpleNamespace
 
 from harpia_parser.extraction.table_audit import build_table_audit_row
@@ -25,7 +26,8 @@ def _config():
                 "referencia_col": 7,
                 "data_inicio_col": 8,
             }
-        }
+        },
+        header_alias_rules=[],
     )
 
 
@@ -76,6 +78,36 @@ class TableAuditTest(unittest.TestCase):
         self.assertEqual(row["status"], "ok_com_opcional_ausente")
         self.assertIn("ld_original", row["campos_opcionais_ausentes"])
         self.assertIn("unidade", row["campos_opcionais_ausentes"])
+
+    def test_header_alias_from_taxonomy_maps_copam_criterion(self):
+        config = _config()
+        config.header_alias_rules = [
+            {
+                "field": "criterio_conformidade_col",
+                "regex": re.compile(r"copam|cerh|deliberacao normativa", re.IGNORECASE),
+            }
+        ]
+        row = build_table_audit_row(
+            context=_context(),
+            page_number=1,
+            table_index=1,
+            rows=[[
+                "Analise",
+                "Resultado",
+                "Data de Inicio",
+                "Deliberação Normativa COPAM/CERH MG Nº01, de 05/05/2008 - Art.14 - Lótico",
+                "LQ",
+                "Referencia",
+                "Incerteza",
+            ]],
+            estado={"categoria": "Resultados", "subcategoria": "Amostragem", "tipo_registro": "AMOSTRA"},
+            config=config,
+            is_qaqc_continuacao=False,
+        )
+
+        self.assertNotIn("alerta_descoberta", row["status"])
+        self.assertEqual(row["colunas_sem_mapeamento"], "")
+        self.assertIn("criterio_conformidade", row["colunas_mapeadas"])
 
 
 if __name__ == "__main__":
