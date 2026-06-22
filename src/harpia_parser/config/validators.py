@@ -43,7 +43,8 @@ def validate_raw_taxonomy(workbook: TaxonomyWorkbook) -> None:
 
     for sheet_name, required_columns in EXPECTED_COLUMNS.items():
         df = frames[sheet_name]
-        missing = sorted(required_columns - set(df.columns))
+        existing_columns = {str(column) for column in df.columns}
+        missing = sorted(required_columns - existing_columns)
         if missing:
             raise ValueError(f"Aba {sheet_name} sem colunas obrigatorias: {missing}")
         if df.empty:
@@ -97,7 +98,7 @@ def validate_detection_sources(sheet_name: str, df: pd.DataFrame) -> None:
 
 
 def validate_boolean_columns(sheet_name: str, df: pd.DataFrame) -> None:
-    for column in {"ativo", "obrigatorio", "extrair_subcategoria"} & set(df.columns):
+    for column in {"ativo", "obrigatorio", "extrair_subcategoria"} & {str(column) for column in df.columns}:
         if not pd.api.types.is_bool_dtype(df[column]):
             raise ValueError(
                 f"Aba {sheet_name} contem valores nao booleanos na coluna '{column}'. "
@@ -258,13 +259,13 @@ def _validate_regexes(workbook: TaxonomyWorkbook) -> None:
 
 def _validate_regex_column(label: str, values: pd.Series) -> None:
     errors = []
-    for index, value in values.items():
+    for excel_row_number, value in enumerate(values, start=2):
         if is_empty_marker(value):
             continue
         try:
             re.compile(str(value), re.IGNORECASE)
         except re.error as exc:
-            errors.append(f"linha={index + 2}: {exc}")
+            errors.append(f"linha={excel_row_number}: {exc}")
     if errors:
         raise ValueError(f"{label} contem regex invalida: {errors[:10]}")
 

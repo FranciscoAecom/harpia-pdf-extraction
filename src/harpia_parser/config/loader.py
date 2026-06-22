@@ -8,7 +8,7 @@ import pandas as pd
 
 from ..constants import LAYOUT_FIELD_KEYS
 from ..utils import resolve_path
-from .common import value_or_none
+from .common import float_value, int_value, value_or_none
 from .mapper import map_taxonomy_to_runtime_frames
 from .reader import read_taxonomy_workbook
 from .validators import validate_contract_frames, validate_raw_taxonomy
@@ -153,7 +153,7 @@ def _build_table_layouts(df_table_extraction_rules: pd.DataFrame) -> dict[str, d
         if key not in LAYOUT_FIELD_KEYS:
             continue
         layout = layouts.setdefault(tipo, {field: None for field in LAYOUT_FIELD_KEYS})
-        layout[key] = int(value)
+        layout[key] = int_value(value)
     return layouts
 
 
@@ -205,8 +205,8 @@ def _build_templates(df_templates: pd.DataFrame) -> dict[str, dict[str, Any]]:
             continue
         template = _row_to_str_dict(row)
         template["template_id"] = template_id
-        template["prioridade"] = int(value_or_none(row, "prioridade") or 999)
-        template["score_minimo"] = float(value_or_none(row, "score_minimo") or 0)
+        template["prioridade"] = int_value(value_or_none(row, "prioridade"), default=999)
+        template["score_minimo"] = float_value(value_or_none(row, "score_minimo"), default=0.0)
         templates[template_id] = template
     return templates
 
@@ -233,7 +233,7 @@ def _build_template_rules(df_template_rules: pd.DataFrame) -> list[dict[str, Any
             "rule_type": rule_type,
             "source": source,
             "regex": re.compile(str(pattern), re.IGNORECASE),
-            "peso": float(peso) if peso is not None else 0.0,
+            "peso": float_value(peso, default=0.0),
             "descricao": value_or_none(row, "descricao"),
         })
 

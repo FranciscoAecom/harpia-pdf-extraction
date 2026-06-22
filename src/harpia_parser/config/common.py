@@ -78,6 +78,18 @@ def parse_weight(value: Any) -> float:
     return float(match.group(0).replace(",", ".")) if match else 0.0
 
 
+def int_value(value: Any, *, default: int = 0) -> int:
+    if is_empty_marker(value):
+        return default
+    return int(value)
+
+
+def float_value(value: Any, *, default: float = 0.0) -> float:
+    if is_empty_marker(value):
+        return default
+    return float(value)
+
+
 def normalize_tipo_registro(value: Any) -> str | None:
     if is_empty_marker(value):
         return None

@@ -26,7 +26,8 @@ class TaxonomyWorkbook:
 def read_taxonomy_workbook(taxonomy_path: Path) -> TaxonomyWorkbook:
     excel = pd.ExcelFile(taxonomy_path)
     try:
-        missing = sorted(REQUIRED_TAXONOMY_SHEETS - set(excel.sheet_names))
+        sheet_names = {str(sheet_name) for sheet_name in excel.sheet_names}
+        missing = sorted(REQUIRED_TAXONOMY_SHEETS - sheet_names)
         if missing:
             raise ValueError(f"Taxonomia invalida. Abas obrigatorias ausentes: {missing}")
 

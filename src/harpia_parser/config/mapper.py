@@ -5,6 +5,8 @@ import pandas as pd
 from .common import (
     bool_value,
     cell_or_none,
+    float_value,
+    int_value,
     is_empty_marker,
     normalize_tipo_registro,
     normalize_token,
@@ -94,7 +96,7 @@ def _template_identity(template_row: pd.Series, taxonomy_name: Any) -> dict[str,
     explicit_schema_ref = _optional_text(template_row, "schema_ref")
 
     token = normalize_token(taxonomy_name)
-    version = int(template_row.get("id")) if not is_empty_marker(template_row.get("id")) else 1
+    version = int_value(template_row.get("id"), default=1)
 
     if explicit_template_id and explicit_theme_id:
         template_id = explicit_template_id
@@ -129,8 +131,8 @@ def _map_templates(workbook: TaxonomyWorkbook, identities: dict[Any, dict[str, A
             **identities[row.get("id")],
             "regex": row.get("regex"),
             "descricao": taxonomy_name,
-            "prioridade": int(_optional_number(row, "prioridade", row.get("id") or 999)),
-            "score_minimo": float(_optional_number(row, "score_minimo", 80.0)),
+            "prioridade": int_value(_optional_number(row, "prioridade", row.get("id") or 999), default=999),
+            "score_minimo": float_value(_optional_number(row, "score_minimo", 80.0), default=80.0),
             "ativo": bool_value(row.get("ativo"), default=True),
         })
     return pd.DataFrame(rows)
