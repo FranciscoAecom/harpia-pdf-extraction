@@ -15,47 +15,51 @@ O projeto gera um Excel de saída com as abas definidas por template na taxonomi
 
 ```text
 Harpia_Testes/
-├─ run_batch.py
-├─ run_pipeline.py
-├─ README.md
-├─ config/
-│  ├─ taxonomy.xlsx
-├─ data/
-│  └─ input/
-│     └─ *.pdf
-├─ output/
-│  └─ <tipo_laudo>/
-│     └─ extracted_data.xlsx
-└─ src/
-   └─ harpia_parser/
-      ├─ constants.py
-      ├─ utils.py
-      ├─ config/
-      │  └─ loader.py
-      ├─ core/
-      │  ├─ context.py
-      │  ├─ pipeline.py
-      │  └─ scope.py
-      ├─ extraction/
-      │  ├─ pdf_reader.py
-      │  ├─ metadata_extractor.py
-      │  ├─ section_classifier.py
-      │  └─ row_parser.py
-      ├─ formatting/
-      │  ├─ common.py
-      │  ├─ laudo_agua.py
-      │  ├─ laudo_fito.py
-      │  ├─ laudo_sedimento.py
-      │  └─ output_writer.py
-      ├─ normalization/
-      │  ├─ common.py
-      │  ├─ laudo_agua.py
-      │  ├─ laudo_fito.py
-      │  └─ laudo_sedimento.py
-      ├─ parsing/
-      │  └─ measure_parser.py
-      └─ validation/
-         └─ schemas.py
+|-- run_batch.py
+|-- run_pipeline.py
+|-- README.md
+|-- config/
+|   `-- taxonomy.xlsx
+|-- data/
+|   `-- input/
+|      `-- *.pdf
+|-- output/
+|   `-- <tipo_laudo>/
+|      `-- extracted_data.xlsx
+`-- src/
+   `-- harpia_parser/
+      |-- constants.py
+      |-- utils.py
+      |-- config/
+      |   |-- common.py
+      |   |-- loader.py
+      |   |-- mapper.py
+      |   |-- reader.py
+      |   `-- validators.py
+      |-- core/
+      |   |-- context.py
+      |   |-- pipeline.py
+      |   `-- scope.py
+      |-- extraction/
+      |   |-- pdf_reader.py
+      |   |-- metadata_extractor.py
+      |   |-- section_classifier.py
+      |   `-- row_parser.py
+      |-- formatting/
+      |   |-- common.py
+      |   |-- laudo_agua.py
+      |   |-- laudo_fito.py
+      |   |-- laudo_sedimento.py
+      |   `-- output_writer.py
+      |-- normalization/
+      |   |-- common.py
+      |   |-- laudo_agua.py
+      |   |-- laudo_fito.py
+      |   `-- laudo_sedimento.py
+      |-- parsing/
+      |   `-- measure_parser.py
+      `-- validation/
+         `-- schemas.py
 ```
 
 ## Como Rodar
@@ -331,7 +335,11 @@ Erros encontrados pela validacao final com Pydantic. Quando a extracao esta cons
 - `core/pipeline.py`: orquestra o fluxo completo em etapas: contexto, cabecalho, resultados, normalizacao, validacao e gravacao.
 - `core/context.py`: guarda o contexto do documento processado e monta a auditoria de classificacao do template.
 - `core/scope.py`: identifica se o PDF pertence a algum template cadastrado.
-- `config/loader.py`: carrega o Excel de configuracao `taxonomy.xlsx`.
+- `config/loader.py`: orquestra leitura, validacao, mapeamento e montagem da configuracao em memoria.
+- `config/reader.py`: le as 5 abas oficiais do Excel `taxonomy.xlsx`.
+- `config/mapper.py`: transforma o modelo relacional da taxonomia nos DataFrames usados pelo motor de extracao.
+- `config/validators.py`: valida estrutura, chaves relacionais, regexes, layouts e contratos de saida da taxonomia.
+- `config/common.py`: funcoes comuns para normalizar marcadores, booleanos e atributos da taxonomia.
 - `extraction/pdf_reader.py`: extrai texto e tabelas do PDF.
 - `extraction/metadata_extractor.py`: extrai metadata e abas `sample` e `client`.
 - `extraction/section_classifier.py`: identifica seções, categorias, tipos e continuação de tabela entre páginas.
