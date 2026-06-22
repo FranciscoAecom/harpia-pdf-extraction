@@ -8,6 +8,13 @@ def _original_or_none(value):
     return None if texto_vazio(value) else value
 
 
+def _pdf_text_or_none(value):
+    if value is None or pd.isna(value):
+        return None
+    text = str(value)
+    return None if text.strip() == "" else value
+
+
 def _optional_text(value) -> str | None:
     return None if texto_vazio(value) else str(value)
 
@@ -35,6 +42,20 @@ def _normalize_ld(df: pd.DataFrame) -> pd.DataFrame:
         df.at[index, "ld_minimo"] = parsed["ld_minimo"]
         df.at[index, "ld_maximo"] = parsed["ld_maximo"]
         df.at[index, "ld_unidade"] = parsed["ld_unidade"]
+    return df
+
+
+def _normalize_normative_field(df: pd.DataFrame, field: str) -> pd.DataFrame:
+    if field not in df.columns:
+        return df
+
+    for index, value in df[field].items():
+        parsed = parse_medida(value, field)
+        df.at[index, field] = _pdf_text_or_none(value)
+        df.at[index, f"{field}_operador"] = parsed[f"{field}_operador"]
+        df.at[index, f"{field}_minimo"] = parsed[f"{field}_minimo"]
+        df.at[index, f"{field}_maximo"] = parsed[f"{field}_maximo"]
+        df.at[index, f"{field}_unidade"] = parsed[f"{field}_unidade"]
     return df
 
 
@@ -90,6 +111,8 @@ def normalize(
     if not df.empty:
         df = df.copy()
         df = _normalize_resultado(df)
+        df = _normalize_normative_field(df, "conama")
+        df = _normalize_normative_field(df, "copam_cerh")
         df = _normalize_ld(df)
         df = _normalize_lq(df)
         df = _normalize_incerteza(df)

@@ -104,6 +104,10 @@ def _format_numeric_results_sheet(writer: pd.ExcelWriter, df: pd.DataFrame) -> N
 
     source_mapped_columns = [
         ("resultado_tratado", "resultado", 0),
+        ("conama_minimo", "conama", 0),
+        ("conama_maximo", "conama", 1),
+        ("copam_cerh_minimo", "copam_cerh", 0),
+        ("copam_cerh_maximo", "copam_cerh", 1),
         ("ld_minimo", "ld", 0),
         ("ld_maximo", "ld", 1),
         ("lq_minimo", "lq", 0),

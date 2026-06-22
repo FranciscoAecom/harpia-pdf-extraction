@@ -57,7 +57,15 @@ class ResultsExtractRow(BaseModel):
     data_inicio: str | None = Field(default=None, pattern=r"^\d{2}/\d{2}/\d{4}$")
 
     conama: str | None = None
+    conama_operador: OPERADOR | None = None
+    conama_minimo: float | None = None
+    conama_maximo: float | None = None
+    conama_unidade: str | None = None
     copam_cerh: str | None = None
+    copam_cerh_operador: OPERADOR | None = None
+    copam_cerh_minimo: float | None = None
+    copam_cerh_maximo: float | None = None
+    copam_cerh_unidade: str | None = None
 
     ld: str | None = None
     ld_minimo: float | None = None
@@ -125,6 +133,8 @@ class ResultsExtractRow(BaseModel):
 
     @model_validator(mode="after")
     def validate_structured_measures(self) -> "ResultsExtractRow":
+        self._validate_measure("conama")
+        self._validate_measure("copam_cerh")
         self._validate_measure("ld")
         self._validate_measure("lq")
         self._validate_measure("faixa_aceitacao")

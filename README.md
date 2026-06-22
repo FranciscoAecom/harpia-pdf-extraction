@@ -256,7 +256,15 @@ Resultados analiticos e QA/QC extraidos do PDF.
 - `local`: Local da medicao/analise, como campo ou laboratorio.
 - `data_inicio`: Data de inicio da analise.
 - `conama`: Valor extraido da coluna normativa CONAMA, quando esse cabecalho existir na tabela.
+- `conama_operador`: Operador extraido do valor CONAMA.
+- `conama_minimo`: Valor minimo extraido do campo CONAMA.
+- `conama_maximo`: Valor maximo extraido do campo CONAMA.
+- `conama_unidade`: Unidade de medida extraida do campo CONAMA.
 - `copam_cerh`: Valor extraido da coluna normativa COPAM/CERH, quando esse cabecalho existir na tabela.
+- `copam_cerh_operador`: Operador extraido do valor COPAM/CERH.
+- `copam_cerh_minimo`: Valor minimo extraido do campo COPAM/CERH.
+- `copam_cerh_maximo`: Valor maximo extraido do campo COPAM/CERH.
+- `copam_cerh_unidade`: Unidade de medida extraida do campo COPAM/CERH.
 - `lq`: Texto original do LQ.
 - `lq_minimo`: Valor minimo do LQ gravado como numero no Excel, com casas decimais preservadas conforme o LQ original.
 - `lq_maximo`: Valor maximo do LQ gravado como numero no Excel, com casas decimais preservadas conforme o LQ original.

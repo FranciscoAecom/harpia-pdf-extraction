@@ -33,6 +33,16 @@ class NormalizationTest(unittest.TestCase):
             "resultado_tratado": None,
             "qualificador": None,
             "unidade": None,
+            "conama": "6,5 a 8,5",
+            "conama_operador": None,
+            "conama_minimo": None,
+            "conama_maximo": None,
+            "conama_unidade": None,
+            "copam_cerh": "Mín. 5 mg/L",
+            "copam_cerh_operador": None,
+            "copam_cerh_minimo": None,
+            "copam_cerh_maximo": None,
+            "copam_cerh_unidade": None,
             "lq": "0,1 \u00b5S/cm",
             "lq_minimo": None,
             "lq_maximo": None,
@@ -53,6 +63,15 @@ class NormalizationTest(unittest.TestCase):
         self.assertEqual(out.loc[0, "resultado_tratado"], 0.5)
         self.assertEqual(out.loc[0, "qualificador"], "<")
         self.assertEqual(out.loc[0, "unidade"], "mg/L")
+        self.assertEqual(out.loc[0, "conama"], "6,5 a 8,5")
+        self.assertEqual(out.loc[0, "conama_minimo"], 6.5)
+        self.assertEqual(out.loc[0, "conama_maximo"], 8.5)
+        self.assertIsNone(out.loc[0, "conama_unidade"])
+        self.assertEqual(out.loc[0, "copam_cerh"], "Mín. 5 mg/L")
+        self.assertEqual(out.loc[0, "copam_cerh_operador"], "min")
+        self.assertEqual(out.loc[0, "copam_cerh_minimo"], 5.0)
+        self.assertIsNone(out.loc[0, "copam_cerh_maximo"])
+        self.assertEqual(out.loc[0, "copam_cerh_unidade"], "mg/L")
         self.assertEqual(out.loc[0, "lq"], "0,1 \u00b5S/cm")
         self.assertEqual(out.loc[0, "lq_minimo"], 0.1)
         self.assertEqual(out.loc[0, "lq_maximo"], 0.1)
@@ -65,6 +84,27 @@ class NormalizationTest(unittest.TestCase):
         self.assertEqual(out.loc[0, "faixa_aceitacao_minimo"], 20.0)
         self.assertEqual(out.loc[0, "faixa_aceitacao_maximo"], 20.0)
         self.assertEqual(out.loc[0, "faixa_aceitacao_unidade"], "%")
+
+    def test_laudo_agua_normative_na_is_preserved_as_pdf_text(self):
+        context = SimpleNamespace(tipo_laudo="laudo_agua")
+        df = pd.DataFrame([{
+            "parameter": "Parametro",
+            "resultado": "1,0",
+            "resultado_tratado": None,
+            "qualificador": None,
+            "unidade": None,
+            "conama": "NA",
+            "conama_operador": None,
+            "conama_minimo": None,
+            "conama_maximo": None,
+            "conama_unidade": None,
+        }])
+
+        out, _, _ = normalize_outputs(df, pd.DataFrame(), pd.DataFrame(), context)
+
+        self.assertEqual(out.loc[0, "conama"], "NA")
+        self.assertIsNone(out.loc[0, "conama_minimo"])
+        self.assertIsNone(out.loc[0, "conama_maximo"])
 
     def test_laudo_agua_normalization_sets_ph_unit(self):
         context = SimpleNamespace(tipo_laudo="laudo_agua")
