@@ -11,6 +11,8 @@ FIELD_OUTPUT_NAMES = {
     "resultado_col": "resultado",
     "unidade_col": "unidade",
     "data_inicio_col": "data_inicio",
+    "conama_col": "conama",
+    "copam_cerh_col": "copam_cerh",
     "criterio_conformidade_col": "criterio_conformidade",
     "ld_col": "ld",
     "lq_col": "lq",

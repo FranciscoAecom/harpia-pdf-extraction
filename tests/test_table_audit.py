@@ -83,7 +83,7 @@ class TableAuditTest(unittest.TestCase):
         config = _config()
         config.header_alias_rules = [
             {
-                "field": "criterio_conformidade_col",
+                "field": "copam_cerh_col",
                 "regex": re.compile(r"copam|cerh|deliberacao normativa", re.IGNORECASE),
             }
         ]
@@ -107,7 +107,7 @@ class TableAuditTest(unittest.TestCase):
 
         self.assertNotIn("alerta_descoberta", row["status"])
         self.assertEqual(row["colunas_sem_mapeamento"], "")
-        self.assertIn("criterio_conformidade", row["colunas_mapeadas"])
+        self.assertIn("copam_cerh", row["colunas_mapeadas"])
 
 
 if __name__ == "__main__":

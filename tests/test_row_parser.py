@@ -66,12 +66,12 @@ class RowParserTest(unittest.TestCase):
             table_layouts={
                 "AMOSTRA": {
                     "resultado_col": 1,
-                    "criterio_conformidade_col": 2,
+                    "copam_cerh_col": 2,
                 }
             },
             header_alias_rules=[
                 {
-                    "field": "criterio_conformidade_col",
+                    "field": "copam_cerh_col",
                     "regex": re.compile(r"copam|cerh|deliberacao normativa", re.IGNORECASE),
                 }
             ],
@@ -92,11 +92,8 @@ class RowParserTest(unittest.TestCase):
 
         self.assertIsNotNone(dado)
         assert dado is not None
-        self.assertEqual(
-            dado["referencia_normativa"],
-            "Deliberação Normativa COPAM/CERH MG Nº01, de 05/05/2008 - Art.14 - Lótico",
-        )
-        self.assertEqual(dado["criterio_conformidade"], "6,0 a 9,0")
+        self.assertEqual(dado["copam_cerh"], "6,0 a 9,0")
+        self.assertIsNone(dado["criterio_conformidade"])
 
 
 if __name__ == "__main__":

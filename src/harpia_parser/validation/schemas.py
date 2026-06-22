@@ -56,7 +56,8 @@ class ResultsExtractRow(BaseModel):
     local: LOCAL
     data_inicio: str | None = Field(default=None, pattern=r"^\d{2}/\d{2}/\d{4}$")
 
-    referencia_normativa: str | None = None
+    conama: str | None = None
+    copam_cerh: str | None = None
     criterio_conformidade: str | None = None
 
     ld: str | None = None

@@ -24,7 +24,9 @@ STATIC_REGEX_ALIASES = [
     ("variacao_percentual_col", re.compile(r"variacao", re.IGNORECASE)),
     ("quantidade_adicionada_col", re.compile(r"quantidade adicionada|^qtd adicionada$", re.IGNORECASE)),
     ("recuperacao_percentual_col", re.compile(r"recuperacao", re.IGNORECASE)),
-    ("criterio_conformidade_col", re.compile(r"resolucao|conama|criterio", re.IGNORECASE)),
+    ("copam_cerh_col", re.compile(r"copam|cerh|deliberacao normativa", re.IGNORECASE)),
+    ("conama_col", re.compile(r"conama", re.IGNORECASE)),
+    ("criterio_conformidade_col", re.compile(r"criterio", re.IGNORECASE)),
 ]
 
 
