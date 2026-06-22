@@ -22,6 +22,7 @@ def format_results_extract(df: pd.DataFrame, config, context=None) -> pd.DataFra
         "unidade": df["unidade_resultado"],
         "local": df["local"].fillna("laboratorio"),
         "data_inicio": df["data_inicio"],
+        "referencia_normativa": df.get("referencia_normativa"),
         "criterio_conformidade": df["criterio_conformidade"],
         "ld": df["ld"],
         "ld_minimo": None,

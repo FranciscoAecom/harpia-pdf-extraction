@@ -205,7 +205,7 @@ Regras tabulares por template, tipo de registro, campo e alias de cabecalho.
 - `tipo_registro`: Tipo de tabela/registro ao qual o layout se aplica.
 - `campo`: Campo interno preenchido a partir da tabela, como `resultado`, `lq`, `referencia` ou `faixa_aceitacao`.
 - `coluna_origem`: Indice da coluna na tabela extraida do PDF.
-- `header_regex`: Regex usada para reconhecer um nome de coluna do PDF e associa-lo ao campo informado. Exemplo: cabeçalhos com `COPAM` ou `CERH` podem ser mapeados para `criterio_conformidade`.
+- `header_regex`: Regex usada para reconhecer um nome de coluna do PDF e associa-lo ao campo informado. Exemplo: cabeçalhos com `COPAM` ou `CERH` podem identificar a coluna de criterio da tabela, enquanto o nome da norma e preservado em `referencia_normativa`.
 - `ativo`: Indica se a regra esta ativa.
 - `descricao`: Explica o objetivo da regra.
 
@@ -255,7 +255,8 @@ Resultados analiticos e QA/QC extraidos do PDF.
 - `unidade`: Unidade de medida do resultado.
 - `local`: Local da medicao/analise, como campo ou laboratorio.
 - `data_inicio`: Data de inicio da analise.
-- `criterio_conformidade`: Criterio de conformidade extraido diretamente do PDF.
+- `referencia_normativa`: Nome da norma/referencia detectada no cabecalho da coluna de criterio, como CONAMA ou COPAM/CERH.
+- `criterio_conformidade`: Valor do criterio de conformidade extraido da celula da tabela.
 - `lq`: Texto original do LQ.
 - `lq_minimo`: Valor minimo do LQ gravado como numero no Excel, com casas decimais preservadas conforme o LQ original.
 - `lq_maximo`: Valor maximo do LQ gravado como numero no Excel, com casas decimais preservadas conforme o LQ original.

@@ -13,6 +13,7 @@ RESULTS_EXTRACT_COLUMNS = [
     "unidade",
     "local",
     "data_inicio",
+    "referencia_normativa",
     "criterio_conformidade",
     "ld",
     "ld_minimo",

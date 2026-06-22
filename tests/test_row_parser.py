@@ -92,6 +92,10 @@ class RowParserTest(unittest.TestCase):
 
         self.assertIsNotNone(dado)
         assert dado is not None
+        self.assertEqual(
+            dado["referencia_normativa"],
+            "Deliberação Normativa COPAM/CERH MG Nº01, de 05/05/2008 - Art.14 - Lótico",
+        )
         self.assertEqual(dado["criterio_conformidade"], "6,0 a 9,0")
 
 

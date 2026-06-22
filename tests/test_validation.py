@@ -22,6 +22,7 @@ def _valid_row() -> dict:
         "unidade": "pH",
         "local": "laboratorio",
         "data_inicio": None,
+        "referencia_normativa": None,
         "criterio_conformidade": None,
         "lq": None,
         "lq_minimo": None,
