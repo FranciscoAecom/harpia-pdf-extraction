@@ -19,7 +19,7 @@ Harpia_Testes/
 ├─ run_pipeline.py
 ├─ README.md
 ├─ config/
-│  ├─ taxonomy_config_consolidada_v1.xlsx
+│  ├─ taxonomy.xlsx
 ├─ data/
 │  └─ input/
 │     └─ *.pdf
@@ -125,118 +125,71 @@ As saidas em lote sao salvas em `output/`, separadas por tema, e o resumo geral 
 
 ## Configuracao
 
-As regras ficam em `config/taxonomy_config_consolidada_v1.xlsx`. A taxonomy separa abas de regras de extracao, catalogos auxiliares e contratos de saida.
+As regras ficam em `config/taxonomy.xlsx`. A taxonomy oficial usa 5 abas relacionais: cadastro do item de taxonomia, templates, regras do template, schemas de saida e campos de cada schema.
 
-Depois que o template do PDF e identificado, o parser filtra as regras relacionais por `template_id`. Cada regra deve estar vinculada explicitamente a um template cadastrado; a taxonomy nao usa mais `template_id = *` como coringa. No estado atual, as regras textuais de `metadata`, `client` e `sample` ficam em `text_extraction_rules` e estao cadastradas para `template_laudo_agua_v1`, `template_laudo_fito_v1` e `template_laudo_sedimento_v1`; as demais matrizes ainda precisam de curadoria propria.
+Depois que o template do PDF e identificado, o parser filtra as regras relacionais pelo template cadastrado. O arquivo atual esta preenchido para agua; novos temas devem ser cadastrados nessa mesma estrutura antes de entrarem no escopo de extracao.
 
-Campos booleanos da taxonomy, como `ativo`, `obrigatorio` e `extrair_subcategoria`, devem usar valores booleanos reais do Excel (`VERDADEIRO`/`FALSO`), sem misturar textos como `sim` ou `nao`.
+Campos booleanos da taxonomy, como `ativo`, podem usar os valores padronizados do modelo (`Verdadeiro`/`Falso`). Campos de nulidade em `item_schema.nulo` usam `sim` ou `nao`.
 
 ### Abas da Taxonomy
 
-- `README_FORMATO`: Descreve o objetivo das abas do arquivo consolidado.
-- `templates`: Catalogo dos templates/modelos de documento reconhecidos pela taxonomia, com prioridade, score minimo e status ativo.
-- `template_rules`: Regras de identificacao por template; avaliam regexes obrigatorias, positivas e negativas antes da extracao.
-- `output_model`: Modelo de saida por template, incluindo abas geradas e campos de cada aba.
-- `text_extraction_rules`: Regexes para extrair campos textuais de `metadata`, `sample` e `client`.
-- `table_extraction_rules`: Regras tabulares por template, tipo de registro, campo e aliases de cabecalho, incluindo a posicao da coluna na tabela extraida do PDF.
-- `section_rules`: Regras para reconhecer categoria, subcategoria, tipo de registro e local das secoes do PDF.
-- `continuation_rules`: Padroes por template para detectar continuacao de tabelas de QA/QC entre paginas.
+- `item_taxonomia`: Cadastro do tema ou item de taxonomia, como agua superficial.
+- `template`: Cadastro dos templates associados ao item de taxonomia, incluindo regex geral e status ativo.
+- `item_template`: Regras do template. Contem regexes textuais, regras de identificacao, layouts de tabela, aliases de cabecalho, secoes e continuacoes.
+- `schema`: Cadastro das abas/tabelas de saida esperadas.
+- `item_schema`: Campos de cada aba de saida, com tipo esperado e regra de nulidade.
 
 ### Campos das Abas de Configuracao
 
-Templates cadastrados atualmente: `laudo_agua`, `laudo_fito`, `laudo_sedimento`, `laudo_mps`, `laudo_ect`, `laudo_zbt`, `laudo_dsl`, `laudo_dss`, `ficha_coleta_tommasi`, `ficha_recebimento_ethica`, `ficha_recebimento_labmar`, `ficha_recebimento_aplysia`, `ficha_subcontratacao_als` e `ficha_recebimento_bioagri`.
+Template cadastrado atualmente: `laudo_agua`.
 
-#### `templates`
-Registro dos templates/modelos de documento reconhecidos pela taxonomia. O template vencedor e escolhido antes da extracao.
+#### `item_taxonomia`
+Registro do tema ou item de taxonomia.
 
-- `template_id`: Identificador do template/modelo.
-- `theme_id`: Tema/familia do documento, como `laudo_agua`, `laudo_fito` ou `laudo_sedimento`.
-- `nome`: Nome legivel do template.
-- `schema_ref`: Referencia do modelo de saida associado ao template.
-- `descricao`: Descricao funcional do template.
-- `prioridade`: Ordem de desempate quando mais de um template atinge o score minimo; numeros menores tem prioridade maior.
-- `score_minimo`: Pontuacao minima para aceitar que o PDF pertence ao template.
+- `id`: Identificador interno do item.
+- `id_taxonomia`: Identificador agrupador da taxonomia.
+- `nome`: Nome do item de taxonomia, como `Agua Superficial`.
+
+#### `template`
+Registro dos templates/modelos de documento reconhecidos pela taxonomia.
+
+- `id`: Identificador interno do template.
+- `id_item_taxonomia`: Vinculo com `item_taxonomia.id`.
+- `regex`: Regex geral do template.
 - `ativo`: Indica se o template esta ativo.
 
-#### `template_rules`
-Regras de identificacao por template. O parser avalia essas regras logo apos ler o texto do PDF e antes de extrair os dados.
+#### `item_template`
+Regras associadas a cada template. Essa aba concentra as regras que antes ficavam espalhadas por abas especificas.
 
-- `template_id`: Template/modelo ao qual a regra pertence.
-- `tipo_regra`: Tipo da regra: `required`, `positive` ou `negative`.
-- `fonte`: Fonte usada pela regra. Use sempre `text`; a classificacao nao deve depender do caminho ou nome do arquivo.
-- `padrao_regex`: Regex usada para identificar sinais do template.
-- `peso`: Pontos somados quando uma regra `positive` casa. Regras `required` e `negative` normalmente usam peso zero.
-- `ativo`: Indica se a regra esta ativa.
-- `descricao`: Explica o objetivo da regra.
+- `id`: Identificador interno da regra.
+- `id_template`: Vinculo com `template.id`.
+- `schema`: Grupo da regra, como `template_required`, `metadata`, `sample`, `client`, `layout`, `header_alias`, `category_type`, `category_alias`, `subcategory_alias` ou `continuation`.
+- `campo`: Campo de destino ou valor semantico da regra.
+- `regex`: Regex usada pela regra. Em regras de layout sem regex, fica como `Nao se aplica`.
+- `coluna_origem`: Posicao da coluna no layout ou atributos complementares no formato `chave=valor; chave=valor`.
+- `tipo_registro`: Tipo de registro/tabela, como `Amostra`, `Branco`, `Duplicata` ou `Recuperacao`.
 
-#### `output_model`
-Modelo de saida por template. Cada linha pode representar uma aba gerada ou um campo de uma aba.
+#### `schema`
+Cadastro das abas/tabelas de saida.
 
-- `template_id`: Template ao qual a aba/campo pertence.
-- `theme_id`: Tema/familia do documento, usado tambem como pasta padrao de saida.
-- `sheet_name`: Nome da aba no Excel final.
-- `ordem_aba`: Ordem da aba no arquivo.
-- `ativo_aba`: Indica se a aba deve ser criada.
-- `descricao_aba`: Descricao funcional da aba.
-- `ordem_campo`: Ordem do campo dentro da aba, quando aplicavel.
-- `campo`: Nome da coluna de saida, quando aplicavel.
-- `tipo_dado`: Tipo esperado do dado na saida.
-- `obrigatorio`: Indica se o campo e obrigatorio no contrato da saida.
-- `origem`: Origem do campo: regra textual, regra tabular, metadado, parser ou normalizacao.
-- `descricao_campo`: Descricao funcional do campo.
+- `id`: Identificador interno do schema.
+- `id_item_taxonomia`: Vinculo com `item_taxonomia.id`.
+- `nome`: Nome da aba/tabela, como `results_extract`, `sample`, `client`, `table_extraction_audit`, `classification_audit` ou `validation_errors`.
+- `is_serial`: Indica se a aba possui varias linhas por documento.
 
-#### `text_extraction_rules`
-Regexes para extrair campos textuais.
+#### `item_schema`
+Campos de cada aba/tabela de saida.
 
-- `regra_origem`: Grupo da regra textual: `metadata`, `sample` ou `client`.
-- `template_id`: Template ao qual a regra pertence.
-- `tabela_destino`: Tabela de saida relacionada a regra.
-- `campo`: Nome do campo bruto preenchido pela regra.
-- `padrao_regex`: Regex usada para extrair o campo do PDF. `DERIVADO_DO_NOME_DO_PDF` indica campo calculado pelo codigo.
-- `ativo`: Indica se a regra esta ativa.
-- `descricao`: Explica o objetivo da regra.
-
-#### `table_extraction_rules`
-Regras tabulares por template, tipo de registro, campo e alias de cabecalho.
-
-- `regra_origem`: Grupo da regra tabular. Para layout de resultados, use `layout`; para reconhecer nomes de cabecalho, use `header_alias`.
-- `template_id`: Template ao qual a regra pertence.
-- `tabela_destino`: Tabela de saida relacionada a regra.
-- `tipo_registro`: Tipo de tabela/registro ao qual o layout se aplica.
-- `campo`: Campo interno preenchido a partir da tabela, como `resultado`, `lq`, `referencia` ou `faixa_aceitacao`.
-- `coluna_origem`: Indice da coluna na tabela extraida do PDF.
-- `header_regex`: Regex usada para reconhecer um nome de coluna do PDF e associa-lo ao campo informado. Exemplo: cabecalhos `CONAMA` e `COPAM/CERH` podem ser mapeados para campos proprios, fazendo o valor da linha sair em `conama` ou `copam_cerh`.
-- `ativo`: Indica se a regra esta ativa.
-- `descricao`: Explica o objetivo da regra.
-
-#### `section_rules`
-Regras para reconhecer secoes do PDF.
-
-- `regra_origem`: Grupo da regra: `category_type`, `category_alias` ou `subcategory_alias`.
-- `tipo_regra`: Tipo funcional da regra, alinhado ao grupo em `regra_origem`.
-- `template_id`: Template ao qual a regra pertence.
-- `prioridade`: Ordem de avaliacao; numeros menores sao avaliados primeiro.
-- `padrao_regex`: Regex aplicada ao titulo/secao normalizado do PDF.
-- `categoria`: Bloco principal da secao, como `Resultados Analiticos`, `Controle de Qualidade` ou `Provedores Externos`.
-- `subcategoria`: Nome da secao interna. Quando estiver vazio, o parser preserva o titulo original reconhecido no PDF.
-- `tipo_registro`: Tipo de tabela/registro: `AMOSTRA`, `BRANCO`, `DUPLICATA` ou `RECUPERACAO`.
-- `local`: Local associado a secao, como campo ou laboratorio.
-- `extrair_subcategoria`: Indica se a subcategoria deve ser derivada do titulo reconhecido.
-- `ativo`: Indica se a regra esta ativa.
-- `descricao`: Explica o objetivo da regra.
-
-#### `continuation_rules`
-Padroes para detectar continuacao de tabelas de QA/QC entre paginas.
-
-- `template_id`: Template ao qual a regra pertence.
-- `tipo_registro`: Tipo de registro ao qual a regra de continuacao se aplica.
-- `padrao_regex`: Regex usada para identificar uma tabela continuada.
-- `ativo`: Indica se a regra esta ativa.
-- `descricao`: Explica o objetivo da regra.
+- `id`: Identificador interno do campo.
+- `id_schema`: Vinculo com `schema.id`.
+- `schema`: Nome da aba/tabela de saida.
+- `campo`: Nome da coluna de saida.
+- `tipo`: Tipo esperado do dado na validacao.
+- `nulo`: Indica se o campo permite nulo (`sim` ou `nao`).
 
 ## Saidas
 
-O arquivo de extracao padrao e separado por tema em `output/<tipo_laudo>/extracted_data.xlsx`. As abas criadas e a ordem delas sao definidas na aba `output_model` da taxonomia. No estado atual, os templates cadastrados geram `results_extract`, `sample`, `client`, `table_extraction_audit`, `classification_audit` e `validation_errors`.
+O arquivo de extracao padrao e separado por tema em `output/<tipo_laudo>/extracted_data.xlsx`. As abas criadas sao definidas em `schema` e seus campos em `item_schema`. No estado atual, o template de agua gera `results_extract`, `sample`, `client`, `table_extraction_audit`, `classification_audit` e `validation_errors`.
 
 ### `results_extract`
 Resultados analiticos e QA/QC extraidos do PDF.
@@ -355,7 +308,7 @@ Auditoria generica das tabelas processadas. Essa aba ajuda a conferir se as colu
 - `colunas_detectadas`: Colunas lidas do cabecalho do PDF.
 - `colunas_mapeadas`: Relacao entre coluna detectada e campo interno.
 - `colunas_sem_mapeamento`: Colunas detectadas que ainda nao possuem regra conhecida.
-- `campos_esperados`: Campos esperados conforme `table_extraction_rules`.
+- `campos_esperados`: Campos esperados conforme as regras `layout` cadastradas em `item_template`.
 - `campos_obrigatorios_ausentes`: Reservado para regras obrigatorias por tabela quando forem cadastradas na taxonomia.
 - `campos_opcionais_ausentes`: Campos previstos no layout que nao apareceram no cabecalho detectado.
 - `usou_fallback`: Indica se a tabela foi processada sem cabecalho detectado, usando apenas o layout cadastrado.
@@ -378,7 +331,7 @@ Erros encontrados pela validacao final com Pydantic. Quando a extracao esta cons
 - `core/pipeline.py`: orquestra o fluxo completo em etapas: contexto, cabecalho, resultados, normalizacao, validacao e gravacao.
 - `core/context.py`: guarda o contexto do documento processado e monta a auditoria de classificacao do template.
 - `core/scope.py`: identifica se o PDF pertence a algum template cadastrado.
-- `config/loader.py`: carrega o Excel de configuração `taxonomy_config_consolidada_v1.xlsx`.
+- `config/loader.py`: carrega o Excel de configuracao `taxonomy.xlsx`.
 - `extraction/pdf_reader.py`: extrai texto e tabelas do PDF.
 - `extraction/metadata_extractor.py`: extrai metadata e abas `sample` e `client`.
 - `extraction/section_classifier.py`: identifica seções, categorias, tipos e continuação de tabela entre páginas.
@@ -387,7 +340,7 @@ Erros encontrados pela validacao final com Pydantic. Quando a extracao esta cons
 - `formatting/laudo_agua.py`: monta o contrato tabular da aba `results_extract` para o tema agua.
 - `formatting/laudo_fito.py`: ponto preparado para o contrato de saida do tema fito.
 - `formatting/laudo_sedimento.py`: ponto preparado para o contrato de saida do tema sedimento.
-- `formatting/output_writer.py`: grava o arquivo final respeitando as abas configuradas por template em `output_model`.
+- `formatting/output_writer.py`: grava o arquivo final respeitando as abas configuradas pela taxonomia.
 - `normalization/common.py`: aplica normalizacoes comuns sem alterar os textos originais preservados do PDF.
 - `normalization/laudo_agua.py`: ponto central para normalizacoes especificas do tema agua, incluindo resultado, unidade, pH, LQ, incerteza e faixa de aceitacao.
 - `normalization/laudo_fito.py`: ponto central para normalizacoes especificas do tema fito.
@@ -400,6 +353,6 @@ Erros encontrados pela validacao final com Pydantic. Quando a extracao esta cons
 
 O script já trata tabelas quebradas entre páginas quando o cabeçalho fica no final de uma página e os dados aparecem na próxima.
 
-Para novos laboratórios/modelos, priorize alterar o `taxonomy_config_consolidada_v1.xlsx` antes de mexer no código.
+Para novos laboratorios/modelos, priorize alterar o `taxonomy.xlsx` antes de mexer no codigo.
 
 As normalizacoes por tema devem ficar nos arquivos de `normalization/`. Elas servem para padronizar campos depois da extracao; regexes de identificacao, layout e captura devem continuar cadastradas no Excel sempre que forem regra de taxonomia.

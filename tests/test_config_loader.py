@@ -23,7 +23,7 @@ class ConfigLoaderTest(unittest.TestCase):
 
         self.assertGreater(len(water_config.category_type_rules), 0)
         self.assertEqual(len(fito_config.category_type_rules), 0)
-        self.assertGreater(len(fito_config.metadata_rules), 0)
+        self.assertEqual(len(fito_config.metadata_rules), 0)
 
     def test_relational_config_sheets_do_not_use_template_wildcard(self):
         config = load_config(Path.cwd())
@@ -54,17 +54,27 @@ class ConfigLoaderTest(unittest.TestCase):
 
     def test_boolean_columns_are_real_booleans(self):
         config = load_config(Path.cwd())
-        workbook = pd.ExcelFile(config.taxonomy_path)
         boolean_columns = {"ativo", "obrigatorio", "extrair_subcategoria"}
 
-        try:
-            for sheet_name in workbook.sheet_names:
-                df = pd.read_excel(workbook, sheet_name=sheet_name)
-                for column in boolean_columns & set(df.columns):
-                    with self.subTest(sheet_name=sheet_name, column=column):
-                        self.assertTrue(pd.api.types.is_bool_dtype(df[column]))
-        finally:
-            workbook.close()
+        for sheet_name, df in {
+            "templates": config.df_templates,
+            "template_rules": config.df_template_rules,
+            "metadata": config.df_metadata_text_rules,
+            "client": config.df_client_text_rules,
+            "sample": config.df_sample_text_rules,
+            "category_type": config.df_category_type_rules,
+            "category_alias": config.df_category_alias_rules,
+            "subcategory_alias": config.df_subcategory_alias_rules,
+            "table_layouts": config.df_table_extraction_rules,
+            "header_alias": config.df_header_alias_rules,
+            "continuation": config.df_continuation_rules,
+            "results_extract_model": config.df_results_extract_model,
+            "sample_output_model": config.df_sample_output_model,
+            "client_output_model": config.df_client_output_model,
+        }.items():
+            for column in boolean_columns & set(df.columns):
+                with self.subTest(sheet_name=sheet_name, column=column):
+                    self.assertTrue(pd.api.types.is_bool_dtype(df[column]))
 
     def test_table_layouts_use_relational_format(self):
         config = load_config(Path.cwd())
@@ -100,11 +110,7 @@ class ConfigLoaderTest(unittest.TestCase):
 
     def test_header_rules_are_limited_to_curated_laudo_templates(self):
         config = load_config(Path.cwd())
-        expected_templates = {
-            "template_laudo_agua_v1",
-            "template_laudo_fito_v1",
-            "template_laudo_sedimento_v1",
-        }
+        expected_templates = {"template_laudo_agua_v1"}
 
         for sheet_name, df in {
             "metadata": config.df_metadata_text_rules,
