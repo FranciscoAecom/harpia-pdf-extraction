@@ -13,12 +13,12 @@ def _optional_text(value) -> str | None:
 
 
 def _normalize_lq(df: pd.DataFrame) -> pd.DataFrame:
-    if "lq_original" not in df.columns:
+    if "lq" not in df.columns:
         return df
 
-    for index, value in df["lq_original"].items():
+    for index, value in df["lq"].items():
         parsed = parse_medida(value, "lq")
-        df.at[index, "lq_original"] = _original_or_none(value)
+        df.at[index, "lq"] = _original_or_none(value)
         df.at[index, "lq_minimo"] = parsed["lq_minimo"]
         df.at[index, "lq_maximo"] = parsed["lq_maximo"]
         df.at[index, "lq_unidade"] = parsed["lq_unidade"]
@@ -26,12 +26,12 @@ def _normalize_lq(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _normalize_ld(df: pd.DataFrame) -> pd.DataFrame:
-    if "ld_original" not in df.columns:
+    if "ld" not in df.columns:
         return df
 
-    for index, value in df["ld_original"].items():
+    for index, value in df["ld"].items():
         parsed = parse_medida(value, "ld")
-        df.at[index, "ld_original"] = _original_or_none(value)
+        df.at[index, "ld"] = _original_or_none(value)
         df.at[index, "ld_minimo"] = parsed["ld_minimo"]
         df.at[index, "ld_maximo"] = parsed["ld_maximo"]
         df.at[index, "ld_unidade"] = parsed["ld_unidade"]
@@ -56,24 +56,24 @@ def _normalize_resultado(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _normalize_incerteza(df: pd.DataFrame) -> pd.DataFrame:
-    if "incerteza_original" not in df.columns:
+    if "incerteza" not in df.columns:
         return df
 
-    for index, value in df["incerteza_original"].items():
+    for index, value in df["incerteza"].items():
         parsed = parse_medida(value, "incerteza")
-        df.at[index, "incerteza_original"] = _original_or_none(value)
+        df.at[index, "incerteza"] = _original_or_none(value)
         df.at[index, "incerteza_valor"] = parsed["incerteza_minimo"]
         df.at[index, "incerteza_unidade"] = parsed["incerteza_unidade"]
     return df
 
 
 def _normalize_faixa_aceitacao(df: pd.DataFrame) -> pd.DataFrame:
-    if "faixa_aceitacao_original" not in df.columns:
+    if "faixa_aceitacao" not in df.columns:
         return df
 
-    for index, value in df["faixa_aceitacao_original"].items():
+    for index, value in df["faixa_aceitacao"].items():
         parsed = parse_medida(value, "faixa_aceitacao", duplicar_valor_simples=True)
-        df.at[index, "faixa_aceitacao_original"] = _original_or_none(value)
+        df.at[index, "faixa_aceitacao"] = _original_or_none(value)
         df.at[index, "faixa_aceitacao_operador"] = parsed["faixa_aceitacao_operador"]
         df.at[index, "faixa_aceitacao_minimo"] = parsed["faixa_aceitacao_minimo"]
         df.at[index, "faixa_aceitacao_maximo"] = parsed["faixa_aceitacao_maximo"]

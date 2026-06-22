@@ -8,7 +8,7 @@ class MeasureParserTest(unittest.TestCase):
     def test_lq_single_value_repeats_min_and_max(self):
         parsed = parse_medida("0,1 \u00b5S/cm", "lq")
 
-        self.assertEqual(parsed["lq_original"], "0,1 \u00b5S/cm")
+        self.assertEqual(parsed["lq"], "0,1 \u00b5S/cm")
         self.assertEqual(parsed["lq_minimo"], 0.1)
         self.assertEqual(parsed["lq_maximo"], 0.1)
         self.assertEqual(parsed["lq_unidade"], "\u00b5S/cm")
@@ -38,7 +38,7 @@ class MeasureParserTest(unittest.TestCase):
     def test_empty_measure_does_not_become_nan_text(self):
         parsed = parse_medida(float("nan"), "faixa_aceitacao", duplicar_valor_simples=True)
 
-        self.assertIsNone(parsed["faixa_aceitacao_original"])
+        self.assertIsNone(parsed["faixa_aceitacao"])
         self.assertIsNone(parsed["faixa_aceitacao_minimo"])
         self.assertIsNone(parsed["faixa_aceitacao_maximo"])
 

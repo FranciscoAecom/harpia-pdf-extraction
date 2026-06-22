@@ -256,17 +256,17 @@ Resultados analiticos e QA/QC extraidos do PDF.
 - `local`: Local da medicao/analise, como campo ou laboratorio.
 - `data_inicio`: Data de inicio da analise.
 - `criterio_conformidade`: Criterio de conformidade extraido diretamente do PDF.
-- `lq_original`: Texto original do LQ.
+- `lq`: Texto original do LQ.
 - `lq_minimo`: Valor minimo do LQ gravado como numero no Excel, com casas decimais preservadas conforme o LQ original.
 - `lq_maximo`: Valor maximo do LQ gravado como numero no Excel, com casas decimais preservadas conforme o LQ original.
 - `lq_unidade`: Unidade de medida do LQ.
 - `referencia`: Referencia normativa/metodologica.
-- `incerteza_original`: Texto original da incerteza.
+- `incerteza`: Texto original da incerteza.
 - `incerteza_valor`: Valor da incerteza gravado como numero no Excel, com casas decimais preservadas conforme a incerteza original.
 - `incerteza_unidade`: Unidade da incerteza, usualmente `%`.
 - `numero_cq`: Numero de controle de qualidade.
 - `duplicata`: Valor de duplicata extraido diretamente do PDF; validado como texto numerico.
-- `faixa_aceitacao_original`: Texto original da faixa/limite de aceitacao.
+- `faixa_aceitacao`: Texto original da faixa/limite de aceitacao.
 - `faixa_aceitacao_operador`: Operador da faixa/limite de aceitacao.
 - `faixa_aceitacao_minimo`: Valor minimo da aceitacao gravado como numero no Excel, com casas decimais preservadas conforme a faixa original.
 - `faixa_aceitacao_maximo`: Valor maximo da aceitacao gravado como numero no Excel, com casas decimais preservadas conforme a faixa original.

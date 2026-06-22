@@ -12,7 +12,7 @@ class NormalizationTest(unittest.TestCase):
         df = pd.DataFrame([{
             "parameter": " pH ",
             "resultado": " 7,100 mg/L ",
-            "lq_original": " 0,100 mg/L ",
+            "lq": " 0,100 mg/L ",
         }])
         sample_df = pd.DataFrame([{"localizacao": " Local  "}])
         client_df = pd.DataFrame([{"cliente": " Cliente  "}])
@@ -21,7 +21,7 @@ class NormalizationTest(unittest.TestCase):
 
         self.assertEqual(out.loc[0, "parameter"], "pH")
         self.assertEqual(out.loc[0, "resultado"], " 7,100 mg/L ")
-        self.assertEqual(out.loc[0, "lq_original"], " 0,100 mg/L ")
+        self.assertEqual(out.loc[0, "lq"], " 0,100 mg/L ")
         self.assertEqual(sample_out.loc[0, "localizacao"], "Local")
         self.assertEqual(client_out.loc[0, "cliente"], "Cliente")
 
@@ -33,14 +33,14 @@ class NormalizationTest(unittest.TestCase):
             "resultado_tratado": None,
             "qualificador": None,
             "unidade": None,
-            "lq_original": "0,1 \u00b5S/cm",
+            "lq": "0,1 \u00b5S/cm",
             "lq_minimo": None,
             "lq_maximo": None,
             "lq_unidade": None,
-            "incerteza_original": "0,030 %",
+            "incerteza": "0,030 %",
             "incerteza_valor": None,
             "incerteza_unidade": None,
-            "faixa_aceitacao_original": "< 20 %",
+            "faixa_aceitacao": "< 20 %",
             "faixa_aceitacao_operador": None,
             "faixa_aceitacao_minimo": None,
             "faixa_aceitacao_maximo": None,
@@ -53,14 +53,14 @@ class NormalizationTest(unittest.TestCase):
         self.assertEqual(out.loc[0, "resultado_tratado"], 0.5)
         self.assertEqual(out.loc[0, "qualificador"], "<")
         self.assertEqual(out.loc[0, "unidade"], "mg/L")
-        self.assertEqual(out.loc[0, "lq_original"], "0,1 \u00b5S/cm")
+        self.assertEqual(out.loc[0, "lq"], "0,1 \u00b5S/cm")
         self.assertEqual(out.loc[0, "lq_minimo"], 0.1)
         self.assertEqual(out.loc[0, "lq_maximo"], 0.1)
         self.assertEqual(out.loc[0, "lq_unidade"], "\u00b5S/cm")
-        self.assertEqual(out.loc[0, "incerteza_original"], "0,030 %")
+        self.assertEqual(out.loc[0, "incerteza"], "0,030 %")
         self.assertEqual(out.loc[0, "incerteza_valor"], 0.03)
         self.assertEqual(out.loc[0, "incerteza_unidade"], "%")
-        self.assertEqual(out.loc[0, "faixa_aceitacao_original"], "< 20 %")
+        self.assertEqual(out.loc[0, "faixa_aceitacao"], "< 20 %")
         self.assertEqual(out.loc[0, "faixa_aceitacao_operador"], "<")
         self.assertEqual(out.loc[0, "faixa_aceitacao_minimo"], 20.0)
         self.assertEqual(out.loc[0, "faixa_aceitacao_maximo"], 20.0)

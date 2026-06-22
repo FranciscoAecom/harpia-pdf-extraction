@@ -3,10 +3,10 @@ import pandas as pd
 
 PRESERVE_TEXT_COLUMNS = {
     "resultado",
-    "ld_original",
-    "lq_original",
-    "incerteza_original",
-    "faixa_aceitacao_original",
+    "ld",
+    "lq",
+    "incerteza",
+    "faixa_aceitacao",
 }
 
 

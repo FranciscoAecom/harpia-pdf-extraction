@@ -47,7 +47,7 @@ def parse_medida(original: Any, prefixo: str, duplicar_valor_simples: bool = Fal
     texto = re.sub(r"\s+", " ", str(original or "")).strip()
     is_empty = texto_vazio(texto)
     base = {
-        f"{prefixo}_original": None if is_empty else texto,
+        prefixo: None if is_empty else texto,
         f"{prefixo}_operador": None,
         f"{prefixo}_minimo": None,
         f"{prefixo}_maximo": None,

@@ -58,24 +58,24 @@ class ResultsExtractRow(BaseModel):
 
     criterio_conformidade: str | None = None
 
-    ld_original: str | None = None
+    ld: str | None = None
     ld_minimo: float | None = None
     ld_maximo: float | None = None
     ld_unidade: str | None = None
 
-    lq_original: str | None = None
+    lq: str | None = None
     lq_minimo: float | None = None
     lq_maximo: float | None = None
     lq_unidade: str | None = None
 
     referencia: str | None = None
-    incerteza_original: str | None = None
+    incerteza: str | None = None
     incerteza_valor: float | None = None
     incerteza_unidade: str | None = None
     numero_cq: str | None = None
     duplicata: str | None = None
 
-    faixa_aceitacao_original: str | None = None
+    faixa_aceitacao: str | None = None
     faixa_aceitacao_operador: OPERADOR | None = None
     faixa_aceitacao_minimo: float | None = None
     faixa_aceitacao_maximo: float | None = None

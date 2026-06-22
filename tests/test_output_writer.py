@@ -15,12 +15,12 @@ class OutputWriterTest(unittest.TestCase):
         row = _valid_row()
         row["resultado"] = "< 0,100 mg/L"
         row["resultado_tratado"] = 0.1
-        row["lq_original"] = "0,0200 mg/L"
+        row["lq"] = "0,0200 mg/L"
         row["lq_minimo"] = 0.02
         row["lq_maximo"] = 0.02
-        row["incerteza_original"] = "0,030 %"
+        row["incerteza"] = "0,030 %"
         row["incerteza_valor"] = 0.03
-        row["faixa_aceitacao_original"] = "75,00 a 125,000 %"
+        row["faixa_aceitacao"] = "75,00 a 125,000 %"
         row["faixa_aceitacao_minimo"] = 75.0
         row["faixa_aceitacao_maximo"] = 125.0
         row["variacao_percentual"] = "4,50"
