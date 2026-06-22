@@ -87,7 +87,6 @@ def processar_linha(row: list, estado: dict, config) -> dict | None:
         "data_inicio": cell(row, layout.get("data_inicio_col")),
         "conama": cell(row, layout.get("conama_col")),
         "copam_cerh": cell(row, layout.get("copam_cerh_col")),
-        "criterio_conformidade": cell(row, layout.get("criterio_conformidade_col")),
         "ld": cell(row, layout.get("ld_col")),
         "lq": cell(row, layout.get("lq_col")),
         "referencia": cell(row, layout.get("referencia_col")),

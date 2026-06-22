@@ -24,7 +24,6 @@ def format_results_extract(df: pd.DataFrame, config, context=None) -> pd.DataFra
         "data_inicio": df["data_inicio"],
         "conama": df.get("conama"),
         "copam_cerh": df.get("copam_cerh"),
-        "criterio_conformidade": df["criterio_conformidade"],
         "ld": df["ld"],
         "ld_minimo": None,
         "ld_maximo": None,

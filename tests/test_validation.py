@@ -24,7 +24,6 @@ def _valid_row() -> dict:
         "data_inicio": None,
         "conama": None,
         "copam_cerh": None,
-        "criterio_conformidade": None,
         "lq": None,
         "lq_minimo": None,
         "lq_maximo": None,

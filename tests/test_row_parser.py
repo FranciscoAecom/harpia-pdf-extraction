@@ -15,7 +15,7 @@ class RowParserTest(unittest.TestCase):
                     "ld_col": 2,
                     "lq_col": 3,
                     "incerteza_col": 5,
-                    "criterio_conformidade_col": 6,
+                    "conama_col": 6,
                     "referencia_col": 7,
                     "data_inicio_col": 8,
                 }
@@ -93,7 +93,6 @@ class RowParserTest(unittest.TestCase):
         self.assertIsNotNone(dado)
         assert dado is not None
         self.assertEqual(dado["copam_cerh"], "6,0 a 9,0")
-        self.assertIsNone(dado["criterio_conformidade"])
 
 
 if __name__ == "__main__":

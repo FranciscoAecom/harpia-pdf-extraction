@@ -26,7 +26,6 @@ STATIC_REGEX_ALIASES = [
     ("recuperacao_percentual_col", re.compile(r"recuperacao", re.IGNORECASE)),
     ("copam_cerh_col", re.compile(r"copam|cerh|deliberacao normativa", re.IGNORECASE)),
     ("conama_col", re.compile(r"conama", re.IGNORECASE)),
-    ("criterio_conformidade_col", re.compile(r"criterio", re.IGNORECASE)),
 ]
 
 

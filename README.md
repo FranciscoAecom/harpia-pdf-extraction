@@ -257,7 +257,6 @@ Resultados analiticos e QA/QC extraidos do PDF.
 - `data_inicio`: Data de inicio da analise.
 - `conama`: Valor extraido da coluna normativa CONAMA, quando esse cabecalho existir na tabela.
 - `copam_cerh`: Valor extraido da coluna normativa COPAM/CERH, quando esse cabecalho existir na tabela.
-- `criterio_conformidade`: Valor extraido de uma coluna generica de criterio de conformidade, quando o cabecalho nao for CONAMA nem COPAM/CERH.
 - `lq`: Texto original do LQ.
 - `lq_minimo`: Valor minimo do LQ gravado como numero no Excel, com casas decimais preservadas conforme o LQ original.
 - `lq_maximo`: Valor maximo do LQ gravado como numero no Excel, com casas decimais preservadas conforme o LQ original.

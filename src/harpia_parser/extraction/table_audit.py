@@ -13,7 +13,6 @@ FIELD_OUTPUT_NAMES = {
     "data_inicio_col": "data_inicio",
     "conama_col": "conama",
     "copam_cerh_col": "copam_cerh",
-    "criterio_conformidade_col": "criterio_conformidade",
     "ld_col": "ld",
     "lq_col": "lq",
     "referencia_col": "referencia",

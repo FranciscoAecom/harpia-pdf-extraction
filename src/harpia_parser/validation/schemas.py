@@ -58,7 +58,6 @@ class ResultsExtractRow(BaseModel):
 
     conama: str | None = None
     copam_cerh: str | None = None
-    criterio_conformidade: str | None = None
 
     ld: str | None = None
     ld_minimo: float | None = None
