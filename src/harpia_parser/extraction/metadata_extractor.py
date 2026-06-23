@@ -28,6 +28,11 @@ def extract_sample(texto: str, metadata: dict, config) -> pd.DataFrame:
             if pd.notna(campo) and pd.notna(regex) and str(regex) != "DERIVADO_DO_NOME_DO_PDF":
                 extracted[str(campo)] = search_group(str(regex), texto)
 
+    if extracted.get("descricao_nao_conformidade"):
+        extracted["descricao_nao_conformidade"] = _clean_descricao_nao_conformidade(
+            extracted["descricao_nao_conformidade"]
+        )
+
     latitude = parse_decimal_pt(metadata.get("latitude"))
     longitude = parse_decimal_pt(metadata.get("longitude"))
     coordenadas = f"{latitude},{longitude}" if latitude is not None and longitude is not None else None
@@ -57,6 +62,16 @@ def extract_sample(texto: str, metadata: dict, config) -> pd.DataFrame:
         "descricao_nao_conformidade": extracted.get("descricao_nao_conformidade"),
     }
     return pd.DataFrame([sample], columns=SAMPLE_COLUMNS)
+
+
+def _clean_descricao_nao_conformidade(value: str) -> str:
+    value = re.sub(
+        r"\s*Planejamento de Amostragem:\s*\S+\s*",
+        " ",
+        value,
+        flags=re.IGNORECASE,
+    )
+    return re.sub(r"\s+", " ", value).strip()
 
 
 def extract_client(texto: str, metadata: dict, config) -> pd.DataFrame:
