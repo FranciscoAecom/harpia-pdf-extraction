@@ -73,8 +73,8 @@ def build_table_audit_row(
         observacao = "Tabela processada sem cabecalho detectado; usado layout cadastrado na taxonomia."
         return {
             "nome_do_arquivo": context.nome_do_arquivo,
-            "template_id": context.template_id,
-            "tipo_laudo": context.tipo_laudo,
+            "id_taxonomia": context.id_taxonomia,
+            "nome_taxonomia": context.nome_taxonomia,
             "pagina": page_number,
             "tabela_indice": table_index,
             "categoria": estado.get("categoria"),
@@ -131,8 +131,8 @@ def build_table_audit_row(
 
     return {
         "nome_do_arquivo": context.nome_do_arquivo,
-        "template_id": context.template_id,
-        "tipo_laudo": context.tipo_laudo,
+        "id_taxonomia": context.id_taxonomia,
+        "nome_taxonomia": context.nome_taxonomia,
         "pagina": page_number,
         "tabela_indice": table_index,
         "categoria": estado.get("categoria"),

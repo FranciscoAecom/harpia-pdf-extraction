@@ -74,8 +74,8 @@ class OutputWriterTest(unittest.TestCase):
         df = pd.DataFrame([row], columns=RESULTS_EXTRACT_COLUMNS)
         table_audit_df = pd.DataFrame([{
             "nome_do_arquivo": "a.pdf",
-            "template_id": "template_laudo_agua_v1",
-            "tipo_laudo": "laudo_agua",
+            "id_taxonomia": 1,
+            "nome_taxonomia": "Agua Superficial",
             "pagina": 1,
             "tabela_indice": 1,
             "status": "ok",

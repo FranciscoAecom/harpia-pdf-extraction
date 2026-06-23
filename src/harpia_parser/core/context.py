@@ -18,6 +18,8 @@ class TemplateScore:
 class ClassificationResult:
     template_id: str | None
     tipo_laudo: str | None
+    id_taxonomia: int | str | None
+    nome_taxonomia: str | None
     scores: list[TemplateScore]
 
     def to_dataframe(self, nome_do_arquivo: str) -> pd.DataFrame:
@@ -25,8 +27,8 @@ class ClassificationResult:
         for score in self.scores:
             rows.append({
                 "nome_do_arquivo": nome_do_arquivo,
-                "template_id": self.template_id,
-                "tipo_laudo": self.tipo_laudo,
+                "id_taxonomia": self.id_taxonomia,
+                "nome_taxonomia": self.nome_taxonomia,
                 "template_avaliado": score.template_id,
                 "score": score.score,
                 "score_minimo": score.score_minimo,
@@ -36,8 +38,8 @@ class ClassificationResult:
             })
         return pd.DataFrame(rows, columns=[
             "nome_do_arquivo",
-            "template_id",
-            "tipo_laudo",
+            "id_taxonomia",
+            "nome_taxonomia",
             "template_avaliado",
             "score",
             "score_minimo",
@@ -53,4 +55,6 @@ class DocumentContext:
     nome_do_arquivo: str
     template_id: str
     tipo_laudo: str | None
+    id_taxonomia: int | str | None
+    nome_taxonomia: str | None
     classification: ClassificationResult

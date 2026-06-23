@@ -199,8 +199,8 @@ O arquivo de extracao padrao e separado por tema em `output/<tipo_laudo>/extract
 Resultados analiticos e QA/QC extraidos do PDF.
 
 - `nome_do_arquivo`: Nome do PDF de origem da extracao.
-- `template_id`: Template/modelo de laudo reconhecido pela taxonomia.
-- `tipo_laudo`: Tema/familia do documento identificado pela taxonomia, como `laudo_agua`, `laudo_fito` ou `laudo_sedimento`.
+- `id_taxonomia`: Identificador da taxonomia reconhecida, conforme `item_taxonomia.id_taxonomia`.
+- `nome_taxonomia`: Nome da taxonomia reconhecida, conforme `item_taxonomia.nome`.
 - `id_sample`: Identificador da amostra na aba `results_extract`.
 - `tipo`: Natureza do registro/tabela extraida: Amostra, Branco, Duplicata ou Recuperacao.
 - `categoria`: Bloco principal do PDF, como `Resultados Analíticos`, `Controle de Qualidade` ou `Provedores Externos`.
@@ -245,9 +245,10 @@ Resultados analiticos e QA/QC extraidos do PDF.
 Dados cadastrais, coleta e cabecalho da amostra.
 
 - `nome_do_arquivo`: Nome do PDF de origem da extracao.
-- `template_id`: Template/modelo de laudo reconhecido pela taxonomia.
-- `tipo_laudo`: Tema/familia do documento identificado pela taxonomia, como `laudo_agua`, `laudo_fito` ou `laudo_sedimento`.
+- `id_taxonomia`: Identificador da taxonomia reconhecida, conforme `item_taxonomia.id_taxonomia`.
+- `nome_taxonomia`: Nome da taxonomia reconhecida, conforme `item_taxonomia.nome`.
 - `id_amostra`: Identificador da amostra.
+- `identificacao_amostra`: Identificacao textual da linha `Informacoes da Amostra - No:`, como `68659-1/2024.0 - ECR 01R - P50`.
 - `tipo_amostra`: Tipo de amostra informado no cabecalho.
 - `criterio_conformidade`: Criterio de conformidade textual do cabecalho da amostra.
 - `data_coleta`: Data de coleta da amostra.
@@ -273,8 +274,8 @@ Dados cadastrais, coleta e cabecalho da amostra.
 Dados da tabela de identificacao do cliente.
 
 - `nome_do_arquivo`: Nome do PDF de origem da extracao.
-- `template_id`: Template/modelo de laudo reconhecido pela taxonomia.
-- `tipo_laudo`: Tema/familia do documento identificado pela taxonomia, como `laudo_agua`, `laudo_fito` ou `laudo_sedimento`.
+- `id_taxonomia`: Identificador da taxonomia reconhecida, conforme `item_taxonomia.id_taxonomia`.
+- `nome_taxonomia`: Nome da taxonomia reconhecida, conforme `item_taxonomia.nome`.
 - `id_amostra`: Identificador da amostra.
 - `proposta_comercial`: Codigo da proposta comercial.
 - `cliente`: Nome do cliente.
@@ -287,8 +288,8 @@ Dados da tabela de identificacao do cliente.
 Auditoria da etapa de identificacao do template. Essa aba ajuda a validar se o PDF entrou no escopo correto antes da extracao.
 
 - `nome_do_arquivo`: Nome do PDF avaliado.
-- `template_id`: Template vencedor escolhido pela taxonomia.
-- `tipo_laudo`: Tema/familia associado ao template vencedor.
+- `id_taxonomia`: Identificador da taxonomia reconhecida pelo template vencedor.
+- `nome_taxonomia`: Nome da taxonomia reconhecida pelo template vencedor.
 - `template_avaliado`: Template candidato avaliado.
 - `score`: Pontuacao obtida pelo template candidato.
 - `score_minimo`: Pontuacao minima exigida para aceitar o template.
@@ -300,8 +301,8 @@ Auditoria da etapa de identificacao do template. Essa aba ajuda a validar se o P
 Auditoria generica das tabelas processadas. Essa aba ajuda a conferir se as colunas detectadas no PDF batem com o layout esperado na taxonomia.
 
 - `nome_do_arquivo`: Nome do PDF avaliado.
-- `template_id`: Template/modelo identificado.
-- `tipo_laudo`: Tema/familia do documento.
+- `id_taxonomia`: Identificador da taxonomia reconhecida.
+- `nome_taxonomia`: Nome da taxonomia reconhecida.
 - `pagina`: Pagina onde a tabela foi encontrada.
 - `tabela_indice`: Ordem da tabela dentro da pagina.
 - `categoria`: Bloco principal atribuido a tabela.

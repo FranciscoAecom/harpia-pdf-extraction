@@ -31,6 +31,17 @@ def _first_value(dataframes: list[pd.DataFrame], column: str) -> str | None:
     return None
 
 
+def _winner_template_id(audit_df: pd.DataFrame) -> str | None:
+    if audit_df.empty or "template_avaliado" not in audit_df.columns:
+        return None
+    if "status" in audit_df.columns:
+        winners = audit_df[audit_df["status"].astype(str) == "winner"]["template_avaliado"].dropna()
+        if not winners.empty:
+            return str(winners.iloc[0])
+    values = audit_df["template_avaliado"].dropna()
+    return str(values.iloc[0]) if not values.empty else None
+
+
 def _list_pdfs(input_dir: Path) -> list[Path]:
     if not input_dir.exists():
         raise FileNotFoundError(f"Pasta de entrada nao encontrada: {input_dir}")
@@ -59,8 +70,8 @@ def classify_batch(input_dir: Path, output_path: Path, max_pages: int | None = 3
             rows.append({
                 "arquivo": pdf.name,
                 "caminho": str(pdf),
-                "template_id": result.template_id,
-                "tipo_laudo": result.tipo_laudo,
+                "id_taxonomia": result.id_taxonomia,
+                "nome_taxonomia": result.nome_taxonomia,
                 "status": "identificado" if result.template_id else "fora_escopo",
                 "scores": "; ".join(
                     f"{score.template_id}:{score.status}:{score.score}/{score.score_minimo}"
@@ -71,8 +82,8 @@ def classify_batch(input_dir: Path, output_path: Path, max_pages: int | None = 3
             rows.append({
                 "arquivo": pdf.name,
                 "caminho": str(pdf),
-                "template_id": None,
-                "tipo_laudo": None,
+                "id_taxonomia": None,
+                "nome_taxonomia": None,
                 "status": "erro",
                 "scores": f"{type(exc).__name__}: {exc}",
             })
@@ -96,16 +107,19 @@ def extract_batch(input_dir: Path, output_dir: Path) -> None:
         log.info("[%d/%d] Extraindo %s", index, len(pdfs), pdf.name)
         try:
             df, sample_df, client_df, audit_df, table_audit_df = run_pipeline_document(pdf, config)
-            template_id = _first_value([df, sample_df, client_df], "template_id")
-            tipo_laudo = _first_value([df, sample_df, client_df], "tipo_laudo")
+            template_id = _winner_template_id(audit_df)
+            template = config.templates.get(template_id or "", {})
+            tipo_laudo = str(template.get("theme_id") or "") if template else None
+            id_taxonomia = _first_value([df, sample_df, client_df], "id_taxonomia")
+            nome_taxonomia = _first_value([df, sample_df, client_df], "nome_taxonomia")
 
             if not template_id or not tipo_laudo:
                 summary.append({
                     "arquivo": pdf.name,
                     "caminho": str(pdf),
                     "status": "fora_escopo",
-                    "template_id": None,
-                    "tipo_laudo": None,
+                    "id_taxonomia": None,
+                    "nome_taxonomia": None,
                     "results_rows": 0,
                     "sample_rows": 0,
                     "client_rows": 0,
@@ -121,8 +135,8 @@ def extract_batch(input_dir: Path, output_dir: Path) -> None:
                 "arquivo": pdf.name,
                 "caminho": str(pdf),
                 "status": "extraido",
-                "template_id": template_id,
-                "tipo_laudo": tipo_laudo,
+                "id_taxonomia": id_taxonomia,
+                "nome_taxonomia": nome_taxonomia,
                 "results_rows": len(df),
                 "sample_rows": len(sample_df),
                 "client_rows": len(client_df),
@@ -132,8 +146,8 @@ def extract_batch(input_dir: Path, output_dir: Path) -> None:
                 "arquivo": pdf.name,
                 "caminho": str(pdf),
                 "status": "erro",
-                "template_id": None,
-                "tipo_laudo": None,
+                "id_taxonomia": None,
+                "nome_taxonomia": None,
                 "results_rows": 0,
                 "sample_rows": 0,
                 "client_rows": 0,
@@ -148,7 +162,7 @@ def extract_batch(input_dir: Path, output_dir: Path) -> None:
         audit_df = pd.concat(all_audits.get(tipo_laudo, []), ignore_index=True) if all_audits.get(tipo_laudo) else pd.DataFrame()
         table_audit_df = pd.concat(all_table_audits.get(tipo_laudo, []), ignore_index=True) if all_table_audits.get(tipo_laudo) else pd.DataFrame()
 
-        template_id = _first_value([results_df, sample_df, client_df], "template_id")
+        template_id = _winner_template_id(audit_df)
         output_tabs = output_tabs_for_template(config, template_id) if template_id else None
         salvar(
             results_df,

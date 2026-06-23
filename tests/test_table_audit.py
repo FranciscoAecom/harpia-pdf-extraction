@@ -10,6 +10,8 @@ def _context():
         nome_do_arquivo="a.pdf",
         template_id="template_laudo_agua_v1",
         tipo_laudo="laudo_agua",
+        id_taxonomia=1,
+        nome_taxonomia="Agua Superficial",
     )
 
 

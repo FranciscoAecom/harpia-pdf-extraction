@@ -49,9 +49,24 @@ def _first_nonempty_value(dataframes: list[pd.DataFrame], column: str) -> str | 
     return None
 
 
+def _winner_template_id(classification_audit_df: pd.DataFrame) -> str | None:
+    if classification_audit_df.empty or "template_avaliado" not in classification_audit_df.columns:
+        return None
+    if "status" in classification_audit_df.columns:
+        winners = classification_audit_df[
+            classification_audit_df["status"].astype(str) == "winner"
+        ]["template_avaliado"].dropna()
+        if not winners.empty:
+            return str(winners.iloc[0])
+    values = classification_audit_df["template_avaliado"].dropna()
+    return str(values.iloc[0]) if not values.empty else None
+
+
 def _default_output_path(base_dir: Path, df: pd.DataFrame, sample_df: pd.DataFrame, client_df: pd.DataFrame) -> Path:
-    tipo_laudo = _first_nonempty_value([df, sample_df, client_df], "tipo_laudo") or "sem_tema"
-    return base_dir / "output" / tipo_laudo / "extracted_data.xlsx"
+    tipo_laudo = _first_nonempty_value([df, sample_df, client_df], "tipo_laudo")
+    nome_taxonomia = _first_nonempty_value([df, sample_df, client_df], "nome_taxonomia")
+    output_group = tipo_laudo or (nome_taxonomia.lower().replace(" ", "_") if nome_taxonomia else "sem_tema")
+    return base_dir / "output" / output_group / "extracted_data.xlsx"
 
 
 def _empty_outputs() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
@@ -74,6 +89,8 @@ def _build_context(pdf_path: Path, texto: str, config) -> DocumentContext | None
         nome_do_arquivo=pdf_path.name,
         template_id=classification.template_id,
         tipo_laudo=classification.tipo_laudo,
+        id_taxonomia=classification.id_taxonomia,
+        nome_taxonomia=classification.nome_taxonomia,
         classification=classification,
     )
 
@@ -83,11 +100,11 @@ def _extract_header_tables(texto: str, context: DocumentContext, extraction_conf
     client_df = extract_client(texto, metadata, extraction_config)
     sample_df = extract_sample(texto, metadata, extraction_config)
     client_df["nome_do_arquivo"] = context.nome_do_arquivo
-    client_df["template_id"] = context.template_id
-    client_df["tipo_laudo"] = context.tipo_laudo
+    client_df["id_taxonomia"] = context.id_taxonomia
+    client_df["nome_taxonomia"] = context.nome_taxonomia
     sample_df["nome_do_arquivo"] = context.nome_do_arquivo
-    sample_df["template_id"] = context.template_id
-    sample_df["tipo_laudo"] = context.tipo_laudo
+    sample_df["id_taxonomia"] = context.id_taxonomia
+    sample_df["nome_taxonomia"] = context.nome_taxonomia
     return metadata, sample_df, client_df
 
 
@@ -141,8 +158,8 @@ def _extract_result_rows(paginas, metadata: dict, sample_df: pd.DataFrame, conte
 
                 resultados.append({
                     "nome_do_arquivo": context.nome_do_arquivo,
-                    "template_id": context.template_id,
-                    "tipo_laudo": context.tipo_laudo,
+                    "id_taxonomia": context.id_taxonomia,
+                    "nome_taxonomia": context.nome_taxonomia,
                     "id_amostra": metadata.get("id_amostra"),
                     **dado,
                 })
@@ -215,7 +232,7 @@ def main(argv=None) -> int:
         log.warning("Nenhum dado extraido. Verifique o PDF e as regras da taxonomy.")
         return 0
 
-    template_id = _first_nonempty_value([df, sample_df, client_df], "template_id")
+    template_id = _winner_template_id(classification_audit_df)
     output_tabs = output_tabs_for_template(config, template_id) if template_id else None
     output_path = Path(args.output) if args.output else _default_output_path(PROJECT_ROOT, df, sample_df, client_df)
     salvar(df, output_path, sample_df, client_df, output_tabs, classification_audit_df, table_audit_df)

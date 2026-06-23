@@ -1,7 +1,7 @@
 RESULTS_EXTRACT_COLUMNS = [
     "nome_do_arquivo",
-    "template_id",
-    "tipo_laudo",
+    "id_taxonomia",
+    "nome_taxonomia",
     "id_sample",
     "tipo",
     "categoria",
@@ -49,9 +49,10 @@ RESULTS_EXTRACT_COLUMNS = [
 
 SAMPLE_COLUMNS = [
     "nome_do_arquivo",
-    "template_id",
-    "tipo_laudo",
+    "id_taxonomia",
+    "nome_taxonomia",
     "id_amostra",
+    "identificacao_amostra",
     "tipo_amostra",
     "criterio_conformidade",
     "data_coleta",
@@ -76,8 +77,8 @@ SAMPLE_COLUMNS = [
 
 CLIENT_COLUMNS = [
     "nome_do_arquivo",
-    "template_id",
-    "tipo_laudo",
+    "id_taxonomia",
+    "nome_taxonomia",
     "id_amostra",
     "proposta_comercial",
     "cliente",
@@ -89,8 +90,8 @@ CLIENT_COLUMNS = [
 
 TABLE_EXTRACTION_AUDIT_COLUMNS = [
     "nome_do_arquivo",
-    "template_id",
-    "tipo_laudo",
+    "id_taxonomia",
+    "nome_taxonomia",
     "pagina",
     "tabela_indice",
     "categoria",

@@ -9,8 +9,8 @@ from harpia_parser.validation.schemas import validate_results_extract
 def _valid_row() -> dict:
     return {
         "nome_do_arquivo": "relatorio.pdf",
-        "template_id": "relatorio_analitico_atual",
-        "tipo_laudo": "agua",
+        "id_taxonomia": 1,
+        "nome_taxonomia": "Agua Superficial",
         "id_sample": "717727",
         "tipo": "Duplicata",
         "categoria": "QA/QC",

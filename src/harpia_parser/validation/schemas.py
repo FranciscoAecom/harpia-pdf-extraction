@@ -42,8 +42,8 @@ class ResultsExtractRow(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     nome_do_arquivo: str
-    template_id: str
-    tipo_laudo: str | None = None
+    id_taxonomia: int | str
+    nome_taxonomia: str | None = None
     id_sample: int | str
     tipo: TIPO_REGISTRO
     categoria: str
@@ -99,7 +99,7 @@ class ResultsExtractRow(BaseModel):
     def normalize_empty(cls, value: Any) -> Any:
         return _empty_to_none(value)
 
-    @field_validator("nome_do_arquivo", "template_id", "id_sample", "categoria", "parameter")
+    @field_validator("nome_do_arquivo", "id_taxonomia", "id_sample", "categoria", "parameter")
     @classmethod
     def required_text(cls, value: Any) -> Any:
         if value is None or str(value).strip() == "":

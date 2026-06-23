@@ -34,6 +34,7 @@ def extract_sample(texto: str, metadata: dict, config) -> pd.DataFrame:
 
     sample = {
         "id_amostra": metadata.get("id_amostra"),
+        "identificacao_amostra": extracted.get("identificacao_amostra"),
         "tipo_amostra": extracted.get("tipo_amostra"),
         "criterio_conformidade": extracted.get("criterio_conformidade"),
         "data_coleta": metadata.get("data_coleta"),

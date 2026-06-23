@@ -127,8 +127,11 @@ def _map_templates(workbook: TaxonomyWorkbook, identities: dict[Any, dict[str, A
     for _, row in workbook.template.iterrows():
         taxonomy_row = taxonomy_by_id.get(row.get("id_item_taxonomia"))
         taxonomy_name = taxonomy_row.get("nome") if taxonomy_row is not None else None
+        id_taxonomia = taxonomy_row.get("id_taxonomia") if taxonomy_row is not None else None
         rows.append({
             **identities[row.get("id")],
+            "id_taxonomia": id_taxonomia,
+            "nome_taxonomia": taxonomy_name,
             "regex": row.get("regex"),
             "descricao": taxonomy_name,
             "prioridade": int_value(_optional_number(row, "prioridade", row.get("id") or 999), default=999),

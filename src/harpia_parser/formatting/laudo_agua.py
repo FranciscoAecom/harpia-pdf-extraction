@@ -9,8 +9,8 @@ def format_results_extract(df: pd.DataFrame, config, context=None) -> pd.DataFra
 
     out = pd.DataFrame({
         "nome_do_arquivo": df["nome_do_arquivo"],
-        "template_id": df["template_id"],
-        "tipo_laudo": df["tipo_laudo"],
+        "id_taxonomia": df["id_taxonomia"],
+        "nome_taxonomia": df["nome_taxonomia"],
         "id_sample": df["id_amostra"],
         "tipo": df["tipo_registro"].map(TIPO_LABELS).fillna(df["tipo_registro"]),
         "categoria": df["categoria"],
