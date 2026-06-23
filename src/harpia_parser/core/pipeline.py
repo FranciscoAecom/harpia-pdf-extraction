@@ -7,10 +7,17 @@ from pathlib import Path
 import pandas as pd
 
 from ..config.loader import filter_config_for_template, load_config, output_tabs_for_template
-from ..constants import CLIENT_COLUMNS, RESULTS_EXTRACT_COLUMNS, SAMPLE_COLUMNS, TABLE_EXTRACTION_AUDIT_COLUMNS
+from ..constants import (
+    CLIENT_COLUMNS,
+    PACKAGING_PRESERVATIVES_COLUMNS,
+    RESULTS_EXTRACT_COLUMNS,
+    SAMPLE_COLUMNS,
+    TABLE_EXTRACTION_AUDIT_COLUMNS,
+)
 from .context import DocumentContext
 from ..formatting.common import format_results_extract
 from ..extraction.metadata_extractor import extract_client, extract_metadata, extract_sample
+from ..extraction.packaging_preservatives import extract_packaging_preservatives
 from ..normalization import normalize_outputs
 from ..formatting.output_writer import salvar
 from ..extraction.pdf_reader import read_pdf
@@ -69,11 +76,12 @@ def _default_output_path(base_dir: Path, df: pd.DataFrame, sample_df: pd.DataFra
     return base_dir / "output" / output_group / "extracted_data.xlsx"
 
 
-def _empty_outputs() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+def _empty_outputs() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     return (
         pd.DataFrame(columns=RESULTS_EXTRACT_COLUMNS),
         pd.DataFrame(columns=SAMPLE_COLUMNS),
         pd.DataFrame(columns=CLIENT_COLUMNS),
+        pd.DataFrame(columns=PACKAGING_PRESERVATIVES_COLUMNS),
         pd.DataFrame(),
         pd.DataFrame(columns=TABLE_EXTRACTION_AUDIT_COLUMNS),
     )
@@ -169,7 +177,7 @@ def _extract_result_rows(paginas, metadata: dict, sample_df: pd.DataFrame, conte
     return pd.DataFrame(resultados), dh_inicio_atividade, pd.DataFrame(table_audit_rows, columns=TABLE_EXTRACTION_AUDIT_COLUMNS)
 
 
-def run_pipeline_document(pdf_path, config=None) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+def run_pipeline_document(pdf_path, config=None) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     pdf_path = Path(pdf_path)
     config = config or load_config(PROJECT_ROOT)
     log.info("Processando: %s", pdf_path)
@@ -190,21 +198,23 @@ def run_pipeline_document(pdf_path, config=None) -> tuple[pd.DataFrame, pd.DataF
         context,
         extraction_config,
     )
+    packaging_preservatives_df = extract_packaging_preservatives(paginas, context, extraction_config)
 
     df = format_results_extract(raw_results_df, extraction_config, context)
     if pd.notna(dh_inicio_atividade):
         sample_df.loc[0, "dh_inicio_atividade"] = dh_inicio_atividade
     sample_df = sample_df.reindex(columns=SAMPLE_COLUMNS)
     client_df = client_df.reindex(columns=CLIENT_COLUMNS)
+    packaging_preservatives_df = packaging_preservatives_df.reindex(columns=PACKAGING_PRESERVATIVES_COLUMNS)
     df, sample_df, client_df = normalize_outputs(df, sample_df, client_df, context)
     classification_audit_df = context.classification.to_dataframe(context.nome_do_arquivo)
 
     log.info("Pipeline concluido: %d registros extraidos de %s", len(df), pdf_path.name)
-    return df, sample_df, client_df, classification_audit_df, table_audit_df
+    return df, sample_df, client_df, packaging_preservatives_df, classification_audit_df, table_audit_df
 
 
 def run_pipeline(pdf_path) -> pd.DataFrame:
-    df, _, _, _, _ = run_pipeline_document(pdf_path)
+    df, _, _, _, _, _ = run_pipeline_document(pdf_path)
     return df
 
 
@@ -227,7 +237,7 @@ def main(argv=None) -> int:
         return 1
 
     config = load_config(PROJECT_ROOT)
-    df, sample_df, client_df, classification_audit_df, table_audit_df = run_pipeline_document(pdf_path, config)
+    df, sample_df, client_df, packaging_preservatives_df, classification_audit_df, table_audit_df = run_pipeline_document(pdf_path, config)
     if df.empty and sample_df.empty and client_df.empty:
         log.warning("Nenhum dado extraido. Verifique o PDF e as regras da taxonomy.")
         return 0
@@ -235,7 +245,16 @@ def main(argv=None) -> int:
     template_id = _winner_template_id(classification_audit_df)
     output_tabs = output_tabs_for_template(config, template_id) if template_id else None
     output_path = Path(args.output) if args.output else _default_output_path(PROJECT_ROOT, df, sample_df, client_df)
-    salvar(df, output_path, sample_df, client_df, output_tabs, classification_audit_df, table_audit_df)
+    salvar(
+        df,
+        output_path,
+        sample_df,
+        client_df,
+        output_tabs,
+        classification_audit_df,
+        table_audit_df,
+        packaging_preservatives_df=packaging_preservatives_df,
+    )
     log.info("Resultado salvo em: %s  (%d registros)", output_path, len(df))
     if not df.empty:
         _print_dataframe(df)

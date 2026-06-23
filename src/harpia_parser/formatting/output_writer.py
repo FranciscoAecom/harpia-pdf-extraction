@@ -155,6 +155,7 @@ def salvar(
     output_tabs: list[str] | None = None,
     classification_audit_df: pd.DataFrame | None = None,
     table_extraction_audit_df: pd.DataFrame | None = None,
+    packaging_preservatives_df: pd.DataFrame | None = None,
 ) -> None:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     ext = output_path.suffix.lower()
@@ -162,6 +163,7 @@ def salvar(
         "results_extract",
         "sample",
         "client",
+        "packaging_preservatives",
         "table_extraction_audit",
         "classification_audit",
         "validation_errors",
@@ -199,6 +201,9 @@ def salvar(
                 elif sheet_name == "client" and client_df is not None:
                     client_df.to_excel(writer, sheet_name="client", index=False)
                     written_sheets.append("client")
+                elif sheet_name == "packaging_preservatives" and packaging_preservatives_df is not None:
+                    packaging_preservatives_df.to_excel(writer, sheet_name="packaging_preservatives", index=False)
+                    written_sheets.append("packaging_preservatives")
                 elif sheet_name == "classification_audit" and classification_audit_df is not None:
                     classification_audit_df.to_excel(writer, sheet_name="classification_audit", index=False)
                     written_sheets.append("classification_audit")

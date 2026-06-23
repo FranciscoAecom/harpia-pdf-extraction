@@ -3,7 +3,7 @@ from typing import Iterable
 
 import pandas as pd
 
-from ..constants import CLIENT_COLUMNS, LAYOUT_FIELD_KEYS, RESULTS_EXTRACT_COLUMNS, SAMPLE_COLUMNS
+from ..constants import CLIENT_COLUMNS, LAYOUT_FIELD_KEYS, PACKAGING_PRESERVATIVES_COLUMNS, RESULTS_EXTRACT_COLUMNS, SAMPLE_COLUMNS
 from .common import is_empty_marker, normalize_token, parse_attrs
 from .reader import TaxonomyWorkbook
 
@@ -23,6 +23,7 @@ KNOWN_ITEM_TEMPLATE_SCHEMAS = {
     "metadata",
     "sample",
     "client",
+    "packaging_preservatives",
     "layout",
     "header_alias",
     "category_type",
@@ -127,6 +128,11 @@ def validate_contract_frames(frames: dict[str, pd.DataFrame], template_ids: set[
     validate_output_model("results_extract", frames["results_extract_model"], RESULTS_EXTRACT_COLUMNS)
     validate_output_model("sample", frames["sample_output_model"], SAMPLE_COLUMNS)
     validate_output_model("client", frames["client_output_model"], CLIENT_COLUMNS)
+    validate_output_model(
+        "packaging_preservatives",
+        frames["packaging_preservatives_model"],
+        PACKAGING_PRESERVATIVES_COLUMNS,
+    )
     validate_detection_sources("template_rules", frames["template_rules"])
 
     for sheet_name, df in {
@@ -135,6 +141,7 @@ def validate_contract_frames(frames: dict[str, pd.DataFrame], template_ids: set[
         "output_tabs": frames["output_tabs"],
         "metadata_text_rules": frames["metadata_text_rules"],
         "client_text_rules": frames["client_text_rules"],
+        "packaging_preservatives_rules": frames["packaging_preservatives_rules"],
         "sample_text_rules": frames["sample_text_rules"],
         "category_type_rules": frames["category_type_rules"],
         "category_alias_rules": frames["category_alias_rules"],
@@ -145,6 +152,7 @@ def validate_contract_frames(frames: dict[str, pd.DataFrame], template_ids: set[
         "results_extract_model": frames["results_extract_model"],
         "sample_output_model": frames["sample_output_model"],
         "client_output_model": frames["client_output_model"],
+        "packaging_preservatives_model": frames["packaging_preservatives_model"],
     }.items():
         validate_boolean_columns(sheet_name, df)
         validate_template_ids(sheet_name, df, template_ids)

@@ -4,7 +4,7 @@ from pathlib import Path
 import pandas as pd
 
 from harpia_parser.config.loader import filter_config_for_template, load_config
-from harpia_parser.constants import CLIENT_COLUMNS, RESULTS_EXTRACT_COLUMNS, SAMPLE_COLUMNS
+from harpia_parser.constants import CLIENT_COLUMNS, PACKAGING_PRESERVATIVES_COLUMNS, RESULTS_EXTRACT_COLUMNS, SAMPLE_COLUMNS
 
 
 class ConfigLoaderTest(unittest.TestCase):
@@ -14,6 +14,10 @@ class ConfigLoaderTest(unittest.TestCase):
         self.assertEqual(config.df_results_extract_model["campo"].tolist(), RESULTS_EXTRACT_COLUMNS)
         self.assertEqual(config.df_sample_output_model["campo"].tolist(), SAMPLE_COLUMNS)
         self.assertEqual(config.df_client_output_model["campo"].tolist(), CLIENT_COLUMNS)
+        self.assertEqual(
+            config.df_packaging_preservatives_model["campo"].tolist(),
+            PACKAGING_PRESERVATIVES_COLUMNS,
+        )
 
     def test_template_filter_keeps_only_explicit_template_rules(self):
         config = load_config(Path.cwd())
@@ -62,6 +66,7 @@ class ConfigLoaderTest(unittest.TestCase):
             "metadata": config.df_metadata_text_rules,
             "client": config.df_client_text_rules,
             "sample": config.df_sample_text_rules,
+            "packaging_preservatives": config.df_packaging_preservatives_rules,
             "category_type": config.df_category_type_rules,
             "category_alias": config.df_category_alias_rules,
             "subcategory_alias": config.df_subcategory_alias_rules,
@@ -71,6 +76,7 @@ class ConfigLoaderTest(unittest.TestCase):
             "results_extract_model": config.df_results_extract_model,
             "sample_output_model": config.df_sample_output_model,
             "client_output_model": config.df_client_output_model,
+            "packaging_preservatives_model": config.df_packaging_preservatives_model,
         }.items():
             for column in boolean_columns & set(df.columns):
                 with self.subTest(sheet_name=sheet_name, column=column):
@@ -129,6 +135,7 @@ class ConfigLoaderTest(unittest.TestCase):
                 "results_extract",
                 "sample",
                 "client",
+                "packaging_preservatives",
                 "table_extraction_audit",
                 "classification_audit",
                 "validation_errors",

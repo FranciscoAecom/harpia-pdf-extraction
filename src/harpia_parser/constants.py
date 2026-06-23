@@ -88,6 +88,18 @@ CLIENT_COLUMNS = [
     "endereco",
 ]
 
+PACKAGING_PRESERVATIVES_COLUMNS = [
+    "nome_do_arquivo",
+    "id_taxonomia",
+    "nome_taxonomia",
+    "id_sample",
+    "identificacao_amostra",
+    "embalagem",
+    "volume",
+    "preservacao",
+    "metodos",
+]
+
 TABLE_EXTRACTION_AUDIT_COLUMNS = [
     "nome_do_arquivo",
     "id_taxonomia",

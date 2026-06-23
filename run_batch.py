@@ -98,6 +98,7 @@ def extract_batch(input_dir: Path, output_dir: Path) -> None:
     all_results: dict[str, list[pd.DataFrame]] = {}
     all_samples: dict[str, list[pd.DataFrame]] = {}
     all_clients: dict[str, list[pd.DataFrame]] = {}
+    all_packaging_preservatives: dict[str, list[pd.DataFrame]] = {}
     all_audits: dict[str, list[pd.DataFrame]] = {}
     all_table_audits: dict[str, list[pd.DataFrame]] = {}
     summary = []
@@ -106,12 +107,12 @@ def extract_batch(input_dir: Path, output_dir: Path) -> None:
     for index, pdf in enumerate(pdfs, start=1):
         log.info("[%d/%d] Extraindo %s", index, len(pdfs), pdf.name)
         try:
-            df, sample_df, client_df, audit_df, table_audit_df = run_pipeline_document(pdf, config)
+            df, sample_df, client_df, packaging_preservatives_df, audit_df, table_audit_df = run_pipeline_document(pdf, config)
             template_id = _winner_template_id(audit_df)
             template = config.templates.get(template_id or "", {})
             tipo_laudo = str(template.get("theme_id") or "") if template else None
-            id_taxonomia = _first_value([df, sample_df, client_df], "id_taxonomia")
-            nome_taxonomia = _first_value([df, sample_df, client_df], "nome_taxonomia")
+            id_taxonomia = _first_value([df, sample_df, client_df, packaging_preservatives_df], "id_taxonomia")
+            nome_taxonomia = _first_value([df, sample_df, client_df, packaging_preservatives_df], "nome_taxonomia")
 
             if not template_id or not tipo_laudo:
                 summary.append({
@@ -129,6 +130,7 @@ def extract_batch(input_dir: Path, output_dir: Path) -> None:
             all_results.setdefault(tipo_laudo, []).append(df)
             all_samples.setdefault(tipo_laudo, []).append(sample_df)
             all_clients.setdefault(tipo_laudo, []).append(client_df)
+            all_packaging_preservatives.setdefault(tipo_laudo, []).append(packaging_preservatives_df)
             all_audits.setdefault(tipo_laudo, []).append(audit_df)
             all_table_audits.setdefault(tipo_laudo, []).append(table_audit_df)
             summary.append({
@@ -140,6 +142,7 @@ def extract_batch(input_dir: Path, output_dir: Path) -> None:
                 "results_rows": len(df),
                 "sample_rows": len(sample_df),
                 "client_rows": len(client_df),
+                "packaging_preservatives_rows": len(packaging_preservatives_df),
             })
         except Exception as exc:
             summary.append({
@@ -155,10 +158,15 @@ def extract_batch(input_dir: Path, output_dir: Path) -> None:
             })
 
     output_dir.mkdir(parents=True, exist_ok=True)
-    for tipo_laudo in sorted(set(all_results) | set(all_samples) | set(all_clients)):
+    for tipo_laudo in sorted(set(all_results) | set(all_samples) | set(all_clients) | set(all_packaging_preservatives)):
         results_df = pd.concat(all_results.get(tipo_laudo, []), ignore_index=True) if all_results.get(tipo_laudo) else pd.DataFrame()
         sample_df = pd.concat(all_samples.get(tipo_laudo, []), ignore_index=True) if all_samples.get(tipo_laudo) else pd.DataFrame()
         client_df = pd.concat(all_clients.get(tipo_laudo, []), ignore_index=True) if all_clients.get(tipo_laudo) else pd.DataFrame()
+        packaging_preservatives_df = (
+            pd.concat(all_packaging_preservatives.get(tipo_laudo, []), ignore_index=True)
+            if all_packaging_preservatives.get(tipo_laudo)
+            else pd.DataFrame()
+        )
         audit_df = pd.concat(all_audits.get(tipo_laudo, []), ignore_index=True) if all_audits.get(tipo_laudo) else pd.DataFrame()
         table_audit_df = pd.concat(all_table_audits.get(tipo_laudo, []), ignore_index=True) if all_table_audits.get(tipo_laudo) else pd.DataFrame()
 
@@ -172,6 +180,7 @@ def extract_batch(input_dir: Path, output_dir: Path) -> None:
             output_tabs=output_tabs,
             classification_audit_df=audit_df,
             table_extraction_audit_df=table_audit_df,
+            packaging_preservatives_df=packaging_preservatives_df,
         )
 
     summary_df = pd.DataFrame(summary)

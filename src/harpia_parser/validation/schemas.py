@@ -211,6 +211,7 @@ def validate_outputs(
         "results_extract",
         "sample",
         "client",
+        "packaging_preservatives",
         "table_extraction_audit",
         "classification_audit",
         "validation_errors",

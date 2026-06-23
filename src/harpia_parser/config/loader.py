@@ -27,9 +27,11 @@ class PipelineConfig:
     df_subcategory_alias_rules: pd.DataFrame
     df_sample_text_rules: pd.DataFrame
     df_client_text_rules: pd.DataFrame
+    df_packaging_preservatives_rules: pd.DataFrame
     df_results_extract_model: pd.DataFrame
     df_sample_output_model: pd.DataFrame
     df_client_output_model: pd.DataFrame
+    df_packaging_preservatives_model: pd.DataFrame
     df_template_rules: pd.DataFrame
     df_output_tabs: pd.DataFrame
     df_table_extraction_rules: pd.DataFrame
@@ -265,6 +267,7 @@ def output_tabs_for_template(config: PipelineConfig, template_id: str) -> list[s
         "results_extract",
         "sample",
         "client",
+        "packaging_preservatives",
         "table_extraction_audit",
         "classification_audit",
         "validation_errors",
@@ -278,6 +281,7 @@ def filter_config_for_template(config: PipelineConfig, template_id: str) -> Pipe
     df_subcategory_alias_rules = _filter_rules_dataframe(config.df_subcategory_alias_rules, template_id)
     df_sample_text_rules = _filter_rules_dataframe(config.df_sample_text_rules, template_id)
     df_client_text_rules = _filter_rules_dataframe(config.df_client_text_rules, template_id)
+    df_packaging_preservatives_rules = _filter_rules_dataframe(config.df_packaging_preservatives_rules, template_id)
     df_table_extraction_rules = _filter_rules_dataframe(config.df_table_extraction_rules, template_id)
     df_header_alias_rules = _filter_rules_dataframe(config.df_header_alias_rules, template_id)
     df_continuation_rules = _filter_rules_dataframe(config.df_continuation_rules, template_id)
@@ -290,6 +294,7 @@ def filter_config_for_template(config: PipelineConfig, template_id: str) -> Pipe
         df_subcategory_alias_rules=df_subcategory_alias_rules,
         df_sample_text_rules=df_sample_text_rules,
         df_client_text_rules=df_client_text_rules,
+        df_packaging_preservatives_rules=df_packaging_preservatives_rules,
         df_table_extraction_rules=df_table_extraction_rules,
         df_header_alias_rules=df_header_alias_rules,
         df_continuation_rules=df_continuation_rules,
@@ -339,9 +344,11 @@ def load_config(base_dir: Path, taxonomy_file: str = "config/taxonomy.xlsx") -> 
         df_subcategory_alias_rules=frames["subcategory_alias_rules"],
         df_sample_text_rules=frames["sample_text_rules"],
         df_client_text_rules=frames["client_text_rules"],
+        df_packaging_preservatives_rules=frames["packaging_preservatives_rules"],
         df_results_extract_model=frames["results_extract_model"],
         df_sample_output_model=frames["sample_output_model"],
         df_client_output_model=frames["client_output_model"],
+        df_packaging_preservatives_model=frames["packaging_preservatives_model"],
         df_template_rules=frames["template_rules"],
         df_output_tabs=frames["output_tabs"],
         df_table_extraction_rules=frames["table_layouts"],

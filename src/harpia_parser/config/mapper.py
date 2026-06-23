@@ -20,9 +20,10 @@ OUTPUT_ORDER = {
     "results_extract": 1,
     "sample": 2,
     "client": 3,
-    "table_extraction_audit": 4,
-    "classification_audit": 5,
-    "validation_errors": 6,
+    "packaging_preservatives": 4,
+    "table_extraction_audit": 5,
+    "classification_audit": 6,
+    "validation_errors": 7,
 }
 
 
@@ -63,9 +64,11 @@ def map_taxonomy_to_runtime_frames(workbook: TaxonomyWorkbook) -> dict[str, pd.D
         ]),
         "sample_text_rules": _text_rules(base_items, "sample"),
         "client_text_rules": _text_rules(base_items, "client", include_description=True),
+        "packaging_preservatives_rules": _text_rules(base_items, "packaging_preservatives", include_description=True),
         "results_extract_model": _fields_from_item_schema(workbook.item_schema, "results_extract"),
         "sample_output_model": _fields_from_item_schema(workbook.item_schema, "sample"),
         "client_output_model": _fields_from_item_schema(workbook.item_schema, "client"),
+        "packaging_preservatives_model": _fields_from_item_schema(workbook.item_schema, "packaging_preservatives"),
         "table_layouts": _layout_rules(base_items),
         "header_alias_rules": _header_alias_rules(base_items),
         "continuation_rules": _continuation_rules(base_items),
