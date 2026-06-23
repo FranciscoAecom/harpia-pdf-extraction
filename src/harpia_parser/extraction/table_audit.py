@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 from typing import Any
+import re
 
 from .header_aliases import field_from_header_cell
 from .section_classifier import linha_header
 from ..constants import LAYOUT_FIELD_KEYS
+from ..utils import normalizar
 
 
 FIELD_OUTPUT_NAMES = {
@@ -23,6 +25,25 @@ FIELD_OUTPUT_NAMES = {
     "variacao_percentual_col": "variacao_percentual",
     "quantidade_adicionada_col": "quantidade_adicionada",
     "recuperacao_percentual_col": "recuperacao_percentual",
+}
+
+PAGE_HEADER_PATTERNS = {
+    "parameter": re.compile(r"\b(analise|parametros?)\b", re.IGNORECASE),
+    "resultado": re.compile(r"\bresultados?\b", re.IGNORECASE),
+    "unidade": re.compile(r"\b(unidade|unid)\b", re.IGNORECASE),
+    "data_inicio": re.compile(r"data\s+(de\s+)?inicio", re.IGNORECASE),
+    "conama": re.compile(r"conama", re.IGNORECASE),
+    "copam_cerh": re.compile(r"copam|cerh|deliberacao\s+normativa", re.IGNORECASE),
+    "ld": re.compile(r"(^|\s)ld($|\s)|limite\s+de\s+deteccao", re.IGNORECASE),
+    "lq": re.compile(r"(^|\s)lq($|\s)|limite\s+de\s+quantificacao", re.IGNORECASE),
+    "referencia": re.compile(r"referencia", re.IGNORECASE),
+    "incerteza": re.compile(r"incerteza", re.IGNORECASE),
+    "numero_cq": re.compile(r"numero\s+do\s+cq|(^|\s)cq($|\s)", re.IGNORECASE),
+    "duplicata": re.compile(r"duplicata", re.IGNORECASE),
+    "faixa_aceitacao": re.compile(r"faixa\s+de\s+aceitacao", re.IGNORECASE),
+    "variacao_percentual": re.compile(r"variacao", re.IGNORECASE),
+    "quantidade_adicionada": re.compile(r"quantidade\s+adicionada|qtd\s+adicionada", re.IGNORECASE),
+    "recuperacao_percentual": re.compile(r"recuperacao", re.IGNORECASE),
 }
 
 
@@ -54,6 +75,80 @@ def _detect_header(rows: list[list[Any]]) -> tuple[int | None, list[Any] | None]
     return None, None
 
 
+def _fields_from_page_header_text(text: str, expected: list[str]) -> list[str]:
+    normalized_text = normalizar(text)
+    found = []
+    for field in expected:
+        pattern = PAGE_HEADER_PATTERNS.get(field)
+        if pattern and pattern.search(normalized_text):
+            found.append(field)
+    return found
+
+
+def _detect_page_header_context(page_text: str | None, expected: list[str]) -> tuple[str | None, list[str]]:
+    if not page_text:
+        return None, []
+
+    lines = [line.strip() for line in page_text.splitlines() if line.strip()]
+    candidates: list[tuple[str, list[str]]] = []
+    for start in range(len(lines)):
+        for size in range(1, 5):
+            chunk = " ".join(lines[start:start + size])
+            if not chunk:
+                continue
+            fields = _fields_from_page_header_text(chunk, expected)
+            if "parameter" in fields and len(fields) >= 3:
+                candidates.append((chunk, fields))
+
+    if not candidates:
+        return None, []
+
+    candidates.sort(key=lambda item: (-len(item[1]), len(item[0])))
+    return candidates[0]
+
+
+def _layout_positions(tipo_registro: str | None, config) -> dict[str, int]:
+    layout = config.table_layouts.get(tipo_registro) or config.table_layouts.get("AMOSTRA") or {}
+    positions: dict[str, int] = {}
+    for key in LAYOUT_FIELD_KEYS:
+        value = layout.get(key)
+        if value is None:
+            continue
+        positions[_field_output_name(key)] = int(value)
+    positions["parameter"] = 0
+    return positions
+
+
+def _layout_confidence(rows: list[list[Any]], tipo_registro: str | None, expected: list[str], config) -> tuple[bool, str]:
+    positions = _layout_positions(tipo_registro, config)
+    expected_positions = [positions[field] for field in expected if field in positions]
+    if not expected_positions:
+        return False, "Layout sem posicoes cadastradas para os campos esperados."
+
+    max_position = max(expected_positions)
+    data_rows = [row for row in rows if any(_clean_cell(value) for value in row)]
+    if not data_rows:
+        return False, "Tabela sem linhas de dados avaliaveis."
+
+    rows_with_enough_columns = sum(1 for row in data_rows if len(row) > max_position)
+    result_position = positions.get("resultado")
+    rows_with_result_value = 0
+    if result_position is not None:
+        for row in data_rows:
+            value = row[result_position] if len(row) > result_position else None
+            if re.search(r"(^[<>]=?|[+-]?\d)", str(value or "")):
+                rows_with_result_value += 1
+
+    enough_columns_ratio = rows_with_enough_columns / len(data_rows)
+    result_value_ratio = rows_with_result_value / len(data_rows) if result_position is not None else 1
+    is_confident = enough_columns_ratio >= 0.8 and result_value_ratio >= 0.8
+    detail = (
+        f"Compatibilidade do layout: {rows_with_enough_columns}/{len(data_rows)} linhas com colunas suficientes"
+        f"; {rows_with_result_value}/{len(data_rows)} linhas com valor na coluna de resultado."
+    )
+    return is_confident, detail
+
+
 def build_table_audit_row(
     *,
     context,
@@ -63,14 +158,31 @@ def build_table_audit_row(
     estado: dict[str, Any],
     config,
     is_qaqc_continuacao: bool,
+    page_text: str | None = None,
 ) -> dict[str, Any]:
     tipo_registro = estado.get("tipo_registro")
     header_index, header = _detect_header(rows)
     expected = _expected_fields(tipo_registro, config)
 
     if header is None:
-        status = "fallback"
-        observacao = "Tabela processada sem cabecalho detectado; usado layout cadastrado na taxonomia."
+        page_header_text, page_header_fields = _detect_page_header_context(page_text, expected)
+        layout_is_confident, layout_detail = _layout_confidence(rows, tipo_registro, expected, config)
+
+        if page_header_text and layout_is_confident:
+            status = "fallback_cabecalho_texto_layout_confiavel"
+        elif page_header_text:
+            status = "fallback_cabecalho_texto_layout_incompleto"
+        elif layout_is_confident:
+            status = "fallback_layout_confiavel"
+        else:
+            status = "fallback"
+
+        observations = ["Tabela processada sem cabecalho detectado na malha extraida pelo PDF."]
+        if page_header_text:
+            observations.append(f"Cabecalho contextual encontrado no texto da pagina: {_clean_cell(page_header_text)}.")
+            observations.append(f"Campos encontrados no texto da pagina: {_join(page_header_fields)}.")
+        observations.append(layout_detail)
+        observations.append("Foi usado o layout cadastrado na taxonomia.")
         return {
             "nome_do_arquivo": context.nome_do_arquivo,
             "id_taxonomia": context.id_taxonomia,
@@ -81,7 +193,7 @@ def build_table_audit_row(
             "subcategoria": estado.get("subcategoria"),
             "tipo_registro": tipo_registro,
             "modo_auditoria": "contrato_e_descoberta",
-            "cabecalho_detectado": None,
+            "cabecalho_detectado": _clean_cell(page_header_text) if page_header_text else None,
             "colunas_detectadas": None,
             "colunas_mapeadas": None,
             "colunas_sem_mapeamento": None,
@@ -90,7 +202,7 @@ def build_table_audit_row(
             "campos_opcionais_ausentes": None,
             "usou_fallback": True,
             "status": status,
-            "observacao": observacao,
+            "observacao": " ".join(observations),
         }
 
     detected_columns = [_clean_cell(value) for value in header if _clean_cell(value)]

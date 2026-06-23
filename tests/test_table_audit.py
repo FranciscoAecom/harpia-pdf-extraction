@@ -111,6 +111,45 @@ class TableAuditTest(unittest.TestCase):
         self.assertEqual(row["colunas_sem_mapeamento"], "")
         self.assertIn("copam_cerh", row["colunas_mapeadas"])
 
+    def test_fallback_uses_page_text_header_and_marks_confident_layout(self):
+        row = build_table_audit_row(
+            context=_context(),
+            page_number=1,
+            table_index=1,
+            rows=[
+                ["Fosfato", "mg/L", "0,01", "0,02", "0,100", "5%", "NA", "SMWW", "01/01/2025"],
+                ["Nitrato", "mg/L", "0,01", "0,02", "1,500", "5%", "NA", "SMWW", "01/01/2025"],
+            ],
+            estado={"categoria": "Resultados", "subcategoria": "Amostragem", "tipo_registro": "AMOSTRA"},
+            config=_config(),
+            is_qaqc_continuacao=False,
+            page_text="Análise Unidade LD LQ Resultado Incerteza CONAMA Referência Data de Início",
+        )
+
+        self.assertEqual(row["status"], "fallback_cabecalho_texto_layout_confiavel")
+        self.assertTrue(row["usou_fallback"])
+        self.assertIn("Cabecalho contextual encontrado", row["observacao"])
+        self.assertIn("resultado", row["observacao"])
+
+    def test_fallback_uses_page_text_header_and_marks_incomplete_layout(self):
+        row = build_table_audit_row(
+            context=_context(),
+            page_number=1,
+            table_index=1,
+            rows=[
+                ["Carbono Orgânico Dissolvido", "1,76 mg/L", "16/11/2024", "NA", "0,500 mg/L", "SMWW", "9,39%"],
+                ["Carbono Orgânico Total", "1,82 mg/L", "16/11/2024", "Máx. 3 mg/L", "0,500 mg/L", "SMWW", "9,39%"],
+            ],
+            estado={"categoria": "Resultados", "subcategoria": "Amostragem", "tipo_registro": "AMOSTRA"},
+            config=_config(),
+            is_qaqc_continuacao=False,
+            page_text="Análise Resultado Data de Início CONAMA LQ Referência Incerteza",
+        )
+
+        self.assertEqual(row["status"], "fallback_cabecalho_texto_layout_incompleto")
+        self.assertTrue(row["usou_fallback"])
+        self.assertIn("colunas suficientes", row["observacao"])
+
 
 if __name__ == "__main__":
     unittest.main()

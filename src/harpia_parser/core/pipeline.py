@@ -147,6 +147,7 @@ def _extract_result_rows(paginas, metadata: dict, sample_df: pd.DataFrame, conte
                     estado=estado,
                     config=extraction_config,
                     is_qaqc_continuacao=is_qaqc_continuacao,
+                    page_text=page_text,
                 )
             )
 
