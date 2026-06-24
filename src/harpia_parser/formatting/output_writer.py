@@ -156,6 +156,10 @@ def salvar(
     classification_audit_df: pd.DataFrame | None = None,
     table_extraction_audit_df: pd.DataFrame | None = None,
     packaging_preservatives_df: pd.DataFrame | None = None,
+    notes_df: pd.DataFrame | None = None,
+    general_considerations_df: pd.DataFrame | None = None,
+    conformity_statement_df: pd.DataFrame | None = None,
+    validation_key_df: pd.DataFrame | None = None,
 ) -> None:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     ext = output_path.suffix.lower()
@@ -164,6 +168,10 @@ def salvar(
         "sample",
         "client",
         "packaging_preservatives",
+        "notes",
+        "general_considerations",
+        "conformity_statement",
+        "validation_key",
         "table_extraction_audit",
         "classification_audit",
         "validation_errors",
@@ -216,6 +224,18 @@ def salvar(
                 elif sheet_name == "packaging_preservatives" and packaging_preservatives_df is not None:
                     packaging_preservatives_df.to_excel(writer, sheet_name="packaging_preservatives", index=False)
                     written_sheets.append("packaging_preservatives")
+                elif sheet_name == "notes" and notes_df is not None:
+                    notes_df.to_excel(writer, sheet_name="notes", index=False)
+                    written_sheets.append("notes")
+                elif sheet_name == "general_considerations" and general_considerations_df is not None:
+                    general_considerations_df.to_excel(writer, sheet_name="general_considerations", index=False)
+                    written_sheets.append("general_considerations")
+                elif sheet_name == "conformity_statement" and conformity_statement_df is not None:
+                    conformity_statement_df.to_excel(writer, sheet_name="conformity_statement", index=False)
+                    written_sheets.append("conformity_statement")
+                elif sheet_name == "validation_key" and validation_key_df is not None:
+                    validation_key_df.to_excel(writer, sheet_name="validation_key", index=False)
+                    written_sheets.append("validation_key")
                 elif sheet_name == "classification_audit" and classification_audit_df is not None:
                     classification_audit_df.to_excel(writer, sheet_name="classification_audit", index=False)
                     written_sheets.append("classification_audit")

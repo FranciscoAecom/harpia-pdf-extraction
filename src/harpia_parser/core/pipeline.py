@@ -9,14 +9,19 @@ import pandas as pd
 from ..config.loader import filter_config_for_template, load_config, output_tabs_for_template
 from ..constants import (
     CLIENT_COLUMNS,
+    CONFORMITY_STATEMENT_COLUMNS,
+    GENERAL_CONSIDERATIONS_COLUMNS,
+    NOTES_COLUMNS,
     PACKAGING_PRESERVATIVES_COLUMNS,
     RESULTS_EXTRACT_COLUMNS,
     SAMPLE_COLUMNS,
     TABLE_EXTRACTION_AUDIT_COLUMNS,
+    VALIDATION_KEY_COLUMNS,
 )
 from .context import DocumentContext
 from ..formatting.common import format_results_extract
 from ..extraction.metadata_extractor import extract_client, extract_metadata, extract_sample
+from ..extraction.document_sections import extract_document_section
 from ..extraction.packaging_preservatives import extract_packaging_preservatives
 from ..normalization import normalize_outputs
 from ..formatting.output_writer import salvar
@@ -76,12 +81,27 @@ def _default_output_path(base_dir: Path, df: pd.DataFrame, sample_df: pd.DataFra
     return base_dir / "output" / output_group / "extracted_data.xlsx"
 
 
-def _empty_outputs() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+def _empty_outputs() -> tuple[
+    pd.DataFrame,
+    pd.DataFrame,
+    pd.DataFrame,
+    pd.DataFrame,
+    pd.DataFrame,
+    pd.DataFrame,
+    pd.DataFrame,
+    pd.DataFrame,
+    pd.DataFrame,
+    pd.DataFrame,
+]:
     return (
         pd.DataFrame(columns=RESULTS_EXTRACT_COLUMNS),
         pd.DataFrame(columns=SAMPLE_COLUMNS),
         pd.DataFrame(columns=CLIENT_COLUMNS),
         pd.DataFrame(columns=PACKAGING_PRESERVATIVES_COLUMNS),
+        pd.DataFrame(columns=NOTES_COLUMNS),
+        pd.DataFrame(columns=GENERAL_CONSIDERATIONS_COLUMNS),
+        pd.DataFrame(columns=CONFORMITY_STATEMENT_COLUMNS),
+        pd.DataFrame(columns=VALIDATION_KEY_COLUMNS),
         pd.DataFrame(),
         pd.DataFrame(columns=TABLE_EXTRACTION_AUDIT_COLUMNS),
     )
@@ -178,7 +198,18 @@ def _extract_result_rows(paginas, metadata: dict, sample_df: pd.DataFrame, conte
     return pd.DataFrame(resultados), dh_inicio_atividade, pd.DataFrame(table_audit_rows, columns=TABLE_EXTRACTION_AUDIT_COLUMNS)
 
 
-def run_pipeline_document(pdf_path, config=None) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+def run_pipeline_document(pdf_path, config=None) -> tuple[
+    pd.DataFrame,
+    pd.DataFrame,
+    pd.DataFrame,
+    pd.DataFrame,
+    pd.DataFrame,
+    pd.DataFrame,
+    pd.DataFrame,
+    pd.DataFrame,
+    pd.DataFrame,
+    pd.DataFrame,
+]:
     pdf_path = Path(pdf_path)
     config = config or load_config(PROJECT_ROOT)
     log.info("Processando: %s", pdf_path)
@@ -200,6 +231,34 @@ def run_pipeline_document(pdf_path, config=None) -> tuple[pd.DataFrame, pd.DataF
         extraction_config,
     )
     packaging_preservatives_df = extract_packaging_preservatives(paginas, context, extraction_config)
+    notes_df = extract_document_section(
+        paginas,
+        context,
+        metadata,
+        extraction_config.df_notes_rules,
+        columns=NOTES_COLUMNS,
+    )
+    general_considerations_df = extract_document_section(
+        paginas,
+        context,
+        metadata,
+        extraction_config.df_general_considerations_rules,
+        columns=GENERAL_CONSIDERATIONS_COLUMNS,
+    )
+    conformity_statement_df = extract_document_section(
+        paginas,
+        context,
+        metadata,
+        extraction_config.df_conformity_statement_rules,
+        columns=CONFORMITY_STATEMENT_COLUMNS,
+    )
+    validation_key_df = extract_document_section(
+        paginas,
+        context,
+        metadata,
+        extraction_config.df_validation_key_rules,
+        columns=VALIDATION_KEY_COLUMNS,
+    )
 
     df = format_results_extract(raw_results_df, extraction_config, context)
     if pd.notna(dh_inicio_atividade):
@@ -207,15 +266,30 @@ def run_pipeline_document(pdf_path, config=None) -> tuple[pd.DataFrame, pd.DataF
     sample_df = sample_df.reindex(columns=SAMPLE_COLUMNS)
     client_df = client_df.reindex(columns=CLIENT_COLUMNS)
     packaging_preservatives_df = packaging_preservatives_df.reindex(columns=PACKAGING_PRESERVATIVES_COLUMNS)
+    notes_df = notes_df.reindex(columns=NOTES_COLUMNS)
+    general_considerations_df = general_considerations_df.reindex(columns=GENERAL_CONSIDERATIONS_COLUMNS)
+    conformity_statement_df = conformity_statement_df.reindex(columns=CONFORMITY_STATEMENT_COLUMNS)
+    validation_key_df = validation_key_df.reindex(columns=VALIDATION_KEY_COLUMNS)
     df, sample_df, client_df = normalize_outputs(df, sample_df, client_df, context)
     classification_audit_df = context.classification.to_dataframe(context.nome_do_arquivo)
 
     log.info("Pipeline concluido: %d registros extraidos de %s", len(df), pdf_path.name)
-    return df, sample_df, client_df, packaging_preservatives_df, classification_audit_df, table_audit_df
+    return (
+        df,
+        sample_df,
+        client_df,
+        packaging_preservatives_df,
+        notes_df,
+        general_considerations_df,
+        conformity_statement_df,
+        validation_key_df,
+        classification_audit_df,
+        table_audit_df,
+    )
 
 
 def run_pipeline(pdf_path) -> pd.DataFrame:
-    df, _, _, _, _, _ = run_pipeline_document(pdf_path)
+    df, *_ = run_pipeline_document(pdf_path)
     return df
 
 
@@ -238,7 +312,18 @@ def main(argv=None) -> int:
         return 1
 
     config = load_config(PROJECT_ROOT)
-    df, sample_df, client_df, packaging_preservatives_df, classification_audit_df, table_audit_df = run_pipeline_document(pdf_path, config)
+    (
+        df,
+        sample_df,
+        client_df,
+        packaging_preservatives_df,
+        notes_df,
+        general_considerations_df,
+        conformity_statement_df,
+        validation_key_df,
+        classification_audit_df,
+        table_audit_df,
+    ) = run_pipeline_document(pdf_path, config)
     if df.empty and sample_df.empty and client_df.empty:
         log.warning("Nenhum dado extraido. Verifique o PDF e as regras da taxonomy.")
         return 0
@@ -255,6 +340,10 @@ def main(argv=None) -> int:
         classification_audit_df,
         table_audit_df,
         packaging_preservatives_df=packaging_preservatives_df,
+        notes_df=notes_df,
+        general_considerations_df=general_considerations_df,
+        conformity_statement_df=conformity_statement_df,
+        validation_key_df=validation_key_df,
     )
     log.info("Resultado salvo em: %s  (%d registros)", output_path, len(df))
     if not df.empty:

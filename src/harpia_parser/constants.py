@@ -100,6 +100,42 @@ PACKAGING_PRESERVATIVES_COLUMNS = [
     "metodos",
 ]
 
+NOTES_COLUMNS = [
+    "nome_do_arquivo",
+    "id_taxonomia",
+    "nome_taxonomia",
+    "id_amostra",
+    "pagina",
+    "texto",
+]
+
+GENERAL_CONSIDERATIONS_COLUMNS = [
+    "nome_do_arquivo",
+    "id_taxonomia",
+    "nome_taxonomia",
+    "id_amostra",
+    "pagina",
+    "texto",
+]
+
+CONFORMITY_STATEMENT_COLUMNS = [
+    "nome_do_arquivo",
+    "id_taxonomia",
+    "nome_taxonomia",
+    "id_amostra",
+    "pagina",
+    "texto",
+]
+
+VALIDATION_KEY_COLUMNS = [
+    "nome_do_arquivo",
+    "id_taxonomia",
+    "nome_taxonomia",
+    "id_amostra",
+    "pagina",
+    "chave_validacao",
+]
+
 TABLE_EXTRACTION_AUDIT_COLUMNS = [
     "nome_do_arquivo",
     "id_taxonomia",

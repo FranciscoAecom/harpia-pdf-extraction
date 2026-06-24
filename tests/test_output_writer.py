@@ -227,6 +227,52 @@ class OutputWriterTest(unittest.TestCase):
             self.assertIn(("sample", "data_coleta"), observed)
             self.assertIn(("client", "id_amostra"), observed)
 
+    def test_document_section_sheets_are_written_when_requested(self):
+        row = _valid_row()
+        df = pd.DataFrame([row], columns=RESULTS_EXTRACT_COLUMNS)
+        notes_df = pd.DataFrame([{
+            "nome_do_arquivo": "a.pdf",
+            "id_taxonomia": 1,
+            "nome_taxonomia": "Agua Superficial",
+            "id_amostra": "687944",
+            "pagina": 5,
+            "texto": "Texto de nota.",
+        }])
+        general_considerations_df = notes_df.copy()
+        conformity_statement_df = notes_df.copy()
+        validation_key_df = pd.DataFrame([{
+            "nome_do_arquivo": "a.pdf",
+            "id_taxonomia": 1,
+            "nome_taxonomia": "Agua Superficial",
+            "id_amostra": "687944",
+            "pagina": 5,
+            "chave_validacao": "ABC-123",
+        }])
+
+        with tempfile.TemporaryDirectory() as tmp:
+            output_path = Path(tmp) / "out.xlsx"
+            salvar(
+                df,
+                output_path,
+                output_tabs=[
+                    "results_extract",
+                    "notes",
+                    "general_considerations",
+                    "conformity_statement",
+                    "validation_key",
+                    "validation_errors",
+                ],
+                notes_df=notes_df,
+                general_considerations_df=general_considerations_df,
+                conformity_statement_df=conformity_statement_df,
+                validation_key_df=validation_key_df,
+            )
+
+            workbook = load_workbook(output_path, data_only=False)
+            for sheet_name in ["notes", "general_considerations", "conformity_statement", "validation_key"]:
+                self.assertIn(sheet_name, workbook.sheetnames)
+            self.assertEqual(workbook["validation_key"].cell(row=2, column=6).value, "ABC-123")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -193,7 +193,7 @@ Campos de cada aba/tabela de saida.
 
 ## Saidas
 
-O arquivo de extracao padrao e separado por tema em `output/<tipo_laudo>/extracted_data.xlsx`. As abas criadas sao definidas em `schema` e seus campos em `item_schema`. No estado atual, o template de agua gera `results_extract`, `sample`, `client`, `packaging_preservatives`, `table_extraction_audit`, `classification_audit` e `validation_errors`.
+O arquivo de extracao padrao e separado por tema em `output/<tipo_laudo>/extracted_data.xlsx`. As abas criadas sao definidas em `schema` e seus campos em `item_schema`. No estado atual, o template de agua gera `results_extract`, `sample`, `client`, `packaging_preservatives`, `notes`, `general_considerations`, `conformity_statement`, `validation_key`, `table_extraction_audit`, `classification_audit` e `validation_errors`.
 
 ## Auditorias
 
@@ -324,6 +324,59 @@ Dados da tabela de identificacao do cliente.
 - `contato`: Nome do contato do cliente.
 - `telefone`: Telefone do contato.
 - `endereco`: Endereco do cliente, quando informado.
+
+### `packaging_preservatives`
+Dados do quadro de embalagens e preservantes.
+
+- `nome_do_arquivo`: Nome do PDF de origem da extracao.
+- `id_taxonomia`: Identificador da taxonomia reconhecida.
+- `nome_taxonomia`: Nome da taxonomia reconhecida.
+- `id_amostra`: Identificador da amostra associada ao quadro.
+- `identificacao_amostra`: Texto da identificacao da amostra no quadro.
+- `embalagem`: Tipo de embalagem.
+- `volume`: Volume informado.
+- `preservacao`: Preservacao informada.
+- `metodos`: Metodo(s) associado(s) ao item.
+
+### `notes`
+Textos extraidos da secao `Notas` do PDF.
+
+- `nome_do_arquivo`: Nome do PDF de origem da extracao.
+- `id_taxonomia`: Identificador da taxonomia reconhecida.
+- `nome_taxonomia`: Nome da taxonomia reconhecida.
+- `id_amostra`: Identificador da amostra.
+- `pagina`: Pagina onde o texto foi encontrado.
+- `texto`: Conteudo textual da secao.
+
+### `general_considerations`
+Textos extraidos da secao `Consideracoes Gerais` do PDF.
+
+- `nome_do_arquivo`: Nome do PDF de origem da extracao.
+- `id_taxonomia`: Identificador da taxonomia reconhecida.
+- `nome_taxonomia`: Nome da taxonomia reconhecida.
+- `id_amostra`: Identificador da amostra.
+- `pagina`: Pagina onde o texto foi encontrado.
+- `texto`: Conteudo textual da secao.
+
+### `conformity_statement`
+Textos extraidos da secao `Declaracao de Conformidade` do PDF.
+
+- `nome_do_arquivo`: Nome do PDF de origem da extracao.
+- `id_taxonomia`: Identificador da taxonomia reconhecida.
+- `nome_taxonomia`: Nome da taxonomia reconhecida.
+- `id_amostra`: Identificador da amostra.
+- `pagina`: Pagina onde o texto foi encontrado.
+- `texto`: Conteudo textual da declaracao.
+
+### `validation_key`
+Chave de validacao do laudo, quando informada no PDF.
+
+- `nome_do_arquivo`: Nome do PDF de origem da extracao.
+- `id_taxonomia`: Identificador da taxonomia reconhecida.
+- `nome_taxonomia`: Nome da taxonomia reconhecida.
+- `id_amostra`: Identificador da amostra.
+- `pagina`: Primeira pagina onde a chave foi encontrada.
+- `chave_validacao`: Chave de validacao extraida.
 
 ### `classification_audit`
 Auditoria da etapa de identificacao do template. Essa aba ajuda a validar se o PDF entrou no escopo correto antes da extracao.

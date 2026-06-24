@@ -3,7 +3,17 @@ from typing import Iterable
 
 import pandas as pd
 
-from ..constants import CLIENT_COLUMNS, LAYOUT_FIELD_KEYS, PACKAGING_PRESERVATIVES_COLUMNS, RESULTS_EXTRACT_COLUMNS, SAMPLE_COLUMNS
+from ..constants import (
+    CLIENT_COLUMNS,
+    CONFORMITY_STATEMENT_COLUMNS,
+    GENERAL_CONSIDERATIONS_COLUMNS,
+    LAYOUT_FIELD_KEYS,
+    NOTES_COLUMNS,
+    PACKAGING_PRESERVATIVES_COLUMNS,
+    RESULTS_EXTRACT_COLUMNS,
+    SAMPLE_COLUMNS,
+    VALIDATION_KEY_COLUMNS,
+)
 from .common import is_empty_marker, normalize_token, parse_attrs
 from .reader import TaxonomyWorkbook
 
@@ -24,6 +34,10 @@ KNOWN_ITEM_TEMPLATE_SCHEMAS = {
     "sample",
     "client",
     "packaging_preservatives",
+    "notes",
+    "general_considerations",
+    "conformity_statement",
+    "validation_key",
     "layout",
     "header_alias",
     "category_type",
@@ -133,6 +147,18 @@ def validate_contract_frames(frames: dict[str, pd.DataFrame], template_ids: set[
         frames["packaging_preservatives_model"],
         PACKAGING_PRESERVATIVES_COLUMNS,
     )
+    validate_output_model("notes", frames["notes_model"], NOTES_COLUMNS)
+    validate_output_model(
+        "general_considerations",
+        frames["general_considerations_model"],
+        GENERAL_CONSIDERATIONS_COLUMNS,
+    )
+    validate_output_model(
+        "conformity_statement",
+        frames["conformity_statement_model"],
+        CONFORMITY_STATEMENT_COLUMNS,
+    )
+    validate_output_model("validation_key", frames["validation_key_model"], VALIDATION_KEY_COLUMNS)
     validate_detection_sources("template_rules", frames["template_rules"])
 
     for sheet_name, df in {
@@ -142,6 +168,10 @@ def validate_contract_frames(frames: dict[str, pd.DataFrame], template_ids: set[
         "metadata_text_rules": frames["metadata_text_rules"],
         "client_text_rules": frames["client_text_rules"],
         "packaging_preservatives_rules": frames["packaging_preservatives_rules"],
+        "notes_rules": frames["notes_rules"],
+        "general_considerations_rules": frames["general_considerations_rules"],
+        "conformity_statement_rules": frames["conformity_statement_rules"],
+        "validation_key_rules": frames["validation_key_rules"],
         "sample_text_rules": frames["sample_text_rules"],
         "category_type_rules": frames["category_type_rules"],
         "category_alias_rules": frames["category_alias_rules"],
@@ -153,6 +183,10 @@ def validate_contract_frames(frames: dict[str, pd.DataFrame], template_ids: set[
         "sample_output_model": frames["sample_output_model"],
         "client_output_model": frames["client_output_model"],
         "packaging_preservatives_model": frames["packaging_preservatives_model"],
+        "notes_model": frames["notes_model"],
+        "general_considerations_model": frames["general_considerations_model"],
+        "conformity_statement_model": frames["conformity_statement_model"],
+        "validation_key_model": frames["validation_key_model"],
     }.items():
         validate_boolean_columns(sheet_name, df)
         validate_template_ids(sheet_name, df, template_ids)

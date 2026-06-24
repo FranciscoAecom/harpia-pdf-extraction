@@ -4,7 +4,16 @@ from pathlib import Path
 import pandas as pd
 
 from harpia_parser.config.loader import filter_config_for_template, load_config
-from harpia_parser.constants import CLIENT_COLUMNS, PACKAGING_PRESERVATIVES_COLUMNS, RESULTS_EXTRACT_COLUMNS, SAMPLE_COLUMNS
+from harpia_parser.constants import (
+    CLIENT_COLUMNS,
+    CONFORMITY_STATEMENT_COLUMNS,
+    GENERAL_CONSIDERATIONS_COLUMNS,
+    NOTES_COLUMNS,
+    PACKAGING_PRESERVATIVES_COLUMNS,
+    RESULTS_EXTRACT_COLUMNS,
+    SAMPLE_COLUMNS,
+    VALIDATION_KEY_COLUMNS,
+)
 
 
 class ConfigLoaderTest(unittest.TestCase):
@@ -18,6 +27,10 @@ class ConfigLoaderTest(unittest.TestCase):
             config.df_packaging_preservatives_model["campo"].tolist(),
             PACKAGING_PRESERVATIVES_COLUMNS,
         )
+        self.assertEqual(config.df_notes_model["campo"].tolist(), NOTES_COLUMNS)
+        self.assertEqual(config.df_general_considerations_model["campo"].tolist(), GENERAL_CONSIDERATIONS_COLUMNS)
+        self.assertEqual(config.df_conformity_statement_model["campo"].tolist(), CONFORMITY_STATEMENT_COLUMNS)
+        self.assertEqual(config.df_validation_key_model["campo"].tolist(), VALIDATION_KEY_COLUMNS)
 
     def test_template_filter_keeps_only_explicit_template_rules(self):
         config = load_config(Path.cwd())
@@ -67,6 +80,10 @@ class ConfigLoaderTest(unittest.TestCase):
             "client": config.df_client_text_rules,
             "sample": config.df_sample_text_rules,
             "packaging_preservatives": config.df_packaging_preservatives_rules,
+            "notes": config.df_notes_rules,
+            "general_considerations": config.df_general_considerations_rules,
+            "conformity_statement": config.df_conformity_statement_rules,
+            "validation_key": config.df_validation_key_rules,
             "category_type": config.df_category_type_rules,
             "category_alias": config.df_category_alias_rules,
             "subcategory_alias": config.df_subcategory_alias_rules,
@@ -77,6 +94,10 @@ class ConfigLoaderTest(unittest.TestCase):
             "sample_output_model": config.df_sample_output_model,
             "client_output_model": config.df_client_output_model,
             "packaging_preservatives_model": config.df_packaging_preservatives_model,
+            "notes_model": config.df_notes_model,
+            "general_considerations_model": config.df_general_considerations_model,
+            "conformity_statement_model": config.df_conformity_statement_model,
+            "validation_key_model": config.df_validation_key_model,
         }.items():
             for column in boolean_columns & set(df.columns):
                 with self.subTest(sheet_name=sheet_name, column=column):
@@ -136,6 +157,10 @@ class ConfigLoaderTest(unittest.TestCase):
                 "sample",
                 "client",
                 "packaging_preservatives",
+                "notes",
+                "general_considerations",
+                "conformity_statement",
+                "validation_key",
                 "table_extraction_audit",
                 "classification_audit",
                 "validation_errors",

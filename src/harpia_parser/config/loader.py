@@ -28,10 +28,18 @@ class PipelineConfig:
     df_sample_text_rules: pd.DataFrame
     df_client_text_rules: pd.DataFrame
     df_packaging_preservatives_rules: pd.DataFrame
+    df_notes_rules: pd.DataFrame
+    df_general_considerations_rules: pd.DataFrame
+    df_conformity_statement_rules: pd.DataFrame
+    df_validation_key_rules: pd.DataFrame
     df_results_extract_model: pd.DataFrame
     df_sample_output_model: pd.DataFrame
     df_client_output_model: pd.DataFrame
     df_packaging_preservatives_model: pd.DataFrame
+    df_notes_model: pd.DataFrame
+    df_general_considerations_model: pd.DataFrame
+    df_conformity_statement_model: pd.DataFrame
+    df_validation_key_model: pd.DataFrame
     df_template_rules: pd.DataFrame
     df_output_tabs: pd.DataFrame
     df_table_extraction_rules: pd.DataFrame
@@ -268,6 +276,10 @@ def output_tabs_for_template(config: PipelineConfig, template_id: str) -> list[s
         "sample",
         "client",
         "packaging_preservatives",
+        "notes",
+        "general_considerations",
+        "conformity_statement",
+        "validation_key",
         "table_extraction_audit",
         "classification_audit",
         "validation_errors",
@@ -282,6 +294,10 @@ def filter_config_for_template(config: PipelineConfig, template_id: str) -> Pipe
     df_sample_text_rules = _filter_rules_dataframe(config.df_sample_text_rules, template_id)
     df_client_text_rules = _filter_rules_dataframe(config.df_client_text_rules, template_id)
     df_packaging_preservatives_rules = _filter_rules_dataframe(config.df_packaging_preservatives_rules, template_id)
+    df_notes_rules = _filter_rules_dataframe(config.df_notes_rules, template_id)
+    df_general_considerations_rules = _filter_rules_dataframe(config.df_general_considerations_rules, template_id)
+    df_conformity_statement_rules = _filter_rules_dataframe(config.df_conformity_statement_rules, template_id)
+    df_validation_key_rules = _filter_rules_dataframe(config.df_validation_key_rules, template_id)
     df_table_extraction_rules = _filter_rules_dataframe(config.df_table_extraction_rules, template_id)
     df_header_alias_rules = _filter_rules_dataframe(config.df_header_alias_rules, template_id)
     df_continuation_rules = _filter_rules_dataframe(config.df_continuation_rules, template_id)
@@ -295,6 +311,10 @@ def filter_config_for_template(config: PipelineConfig, template_id: str) -> Pipe
         df_sample_text_rules=df_sample_text_rules,
         df_client_text_rules=df_client_text_rules,
         df_packaging_preservatives_rules=df_packaging_preservatives_rules,
+        df_notes_rules=df_notes_rules,
+        df_general_considerations_rules=df_general_considerations_rules,
+        df_conformity_statement_rules=df_conformity_statement_rules,
+        df_validation_key_rules=df_validation_key_rules,
         df_table_extraction_rules=df_table_extraction_rules,
         df_header_alias_rules=df_header_alias_rules,
         df_continuation_rules=df_continuation_rules,
@@ -345,10 +365,18 @@ def load_config(base_dir: Path, taxonomy_file: str = "config/taxonomy.xlsx") -> 
         df_sample_text_rules=frames["sample_text_rules"],
         df_client_text_rules=frames["client_text_rules"],
         df_packaging_preservatives_rules=frames["packaging_preservatives_rules"],
+        df_notes_rules=frames["notes_rules"],
+        df_general_considerations_rules=frames["general_considerations_rules"],
+        df_conformity_statement_rules=frames["conformity_statement_rules"],
+        df_validation_key_rules=frames["validation_key_rules"],
         df_results_extract_model=frames["results_extract_model"],
         df_sample_output_model=frames["sample_output_model"],
         df_client_output_model=frames["client_output_model"],
         df_packaging_preservatives_model=frames["packaging_preservatives_model"],
+        df_notes_model=frames["notes_model"],
+        df_general_considerations_model=frames["general_considerations_model"],
+        df_conformity_statement_model=frames["conformity_statement_model"],
+        df_validation_key_model=frames["validation_key_model"],
         df_template_rules=frames["template_rules"],
         df_output_tabs=frames["output_tabs"],
         df_table_extraction_rules=frames["table_layouts"],
