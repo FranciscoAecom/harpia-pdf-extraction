@@ -2,7 +2,7 @@ import re
 import unittest
 from types import SimpleNamespace
 
-from harpia_parser.extraction.section_classifier import estado_from_section_title, tabela_resultado
+from harpia_parser.extraction.section_classifier import aplicar_section_pdf, estado_from_section_title, pending_section_from_page_text, tabela_resultado
 
 
 class SectionClassifierTest(unittest.TestCase):
@@ -72,6 +72,53 @@ class SectionClassifierTest(unittest.TestCase):
         assert estado is not None
         self.assertEqual(estado["tipo_registro"], "RECUPERACAO")
         self.assertEqual(estado["subcategoria"], "Recupera\u00e7\u00e3o - Metais")
+
+    def test_pending_section_keeps_specific_subcategory_over_later_generic_line(self):
+        config = SimpleNamespace(
+            category_alias_rules=[{
+                "regex": re.compile(r"^(provedores?\s+externos?|ethica\s+ambiental)", re.IGNORECASE),
+                "categoria": "Provedores Externos",
+                "subcategoria": None,
+                "local": "laboratorio",
+            }],
+            subcategory_alias_rules=[{
+                "regex": re.compile(r"^ethica\s+ambiental.*", re.IGNORECASE),
+                "categoria": "Provedores Externos",
+                "subcategoria": "Ethica Ambiental",
+                "tipo_registro": "AMOSTRA",
+                "local": "laboratorio",
+            }],
+        )
+
+        pending = pending_section_from_page_text(
+            "Provedores Externos\nEthica Ambiental - CRL 1371\nProvedores externos",
+            config,
+        )
+
+        self.assertIsNotNone(pending)
+        assert pending is not None
+        self.assertEqual(pending["subcategoria"], "Ethica Ambiental")
+
+    def test_generic_section_line_does_not_clear_existing_specific_subcategory(self):
+        config = SimpleNamespace(
+            category_alias_rules=[{
+                "regex": re.compile(r"^(provedores?\s+externos?|ethica\s+ambiental)", re.IGNORECASE),
+                "categoria": "Provedores Externos",
+                "subcategoria": None,
+                "local": "laboratorio",
+            }],
+            subcategory_alias_rules=[],
+            category_type_rules=[],
+        )
+        estado = {
+            "categoria": "Provedores Externos",
+            "subcategoria": "Ethica Ambiental",
+            "tipo_registro": "AMOSTRA",
+            "local": "laboratorio",
+        }
+
+        self.assertTrue(aplicar_section_pdf("Provedores externos", estado, config))
+        self.assertEqual(estado["subcategoria"], "Ethica Ambiental")
 
 
 if __name__ == "__main__":

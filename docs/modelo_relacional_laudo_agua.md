@@ -75,19 +75,19 @@ erDiagram
         string sample_id FK
         string parameter
         string resultado
-        decimal resultado_tratado
-        string qualificador
-        string unidade
+        decimal acm_resultado_tratado
+        string acm_qualificador
+        string acm_unidade
         date data_inicio
         string criterio_conformidade
         string lq_original
-        decimal lq_minimo
-        decimal lq_maximo
-        string lq_unidade
+        decimal acm_lq_minimo
+        decimal acm_lq_maximo
+        string acm_lq_unidade
         string referencia
         string incerteza_original
-        decimal incerteza_valor
-        string incerteza_unidade
+        decimal acm_incerteza_valor
+        string acm_incerteza_unidade
     }
 
     QUALITY_CONTROL_RESULT {
@@ -98,14 +98,14 @@ erDiagram
         string parameter
         string numero_cq
         string resultado
-        decimal resultado_tratado
-        string unidade
+        decimal acm_resultado_tratado
+        string acm_unidade
         string duplicata
         string faixa_aceitacao_original
-        string faixa_aceitacao_operador
-        decimal faixa_aceitacao_minimo
-        decimal faixa_aceitacao_maximo
-        string faixa_aceitacao_unidade
+        string acm_faixa_aceitacao_operador
+        decimal acm_faixa_aceitacao_minimo
+        decimal acm_faixa_aceitacao_maximo
+        string acm_faixa_aceitacao_unidade
         string variacao_percentual
         string quantidade_adicionada
         string recuperacao_percentual
@@ -183,19 +183,19 @@ Representa os resultados analiticos principais da amostra.
 - `sample_id`: Amostra associada.
 - `parameter`: Parametro analisado.
 - `resultado`: Resultado textual preservado como aparece no PDF.
-- `resultado_tratado`: Resultado numerico tratado, quando aplicavel.
-- `qualificador`: Qualificador, como `<` ou `>`.
-- `unidade`: Unidade do resultado.
+- `acm_resultado_tratado`: Resultado numerico tratado, quando aplicavel.
+- `acm_qualificador`: Qualificador, como `<` ou `>`.
+- `acm_unidade`: Unidade do resultado.
 - `data_inicio`: Data de inicio da analise.
 - `criterio_conformidade`: Criterio de conformidade da linha.
 - `lq_original`: LQ textual original.
-- `lq_minimo`: Valor minimo do LQ.
-- `lq_maximo`: Valor maximo do LQ.
-- `lq_unidade`: Unidade do LQ.
+- `acm_lq_minimo`: Valor minimo do LQ.
+- `acm_lq_maximo`: Valor maximo do LQ.
+- `acm_lq_unidade`: Unidade do LQ.
 - `referencia`: Metodo/referencia.
 - `incerteza_original`: Incerteza textual original.
-- `incerteza_valor`: Valor numerico da incerteza.
-- `incerteza_unidade`: Unidade da incerteza.
+- `acm_incerteza_valor`: Valor numerico da incerteza.
+- `acm_incerteza_unidade`: Unidade da incerteza.
 
 ### `quality_control_result`
 
@@ -208,14 +208,14 @@ Representa resultados de controle de qualidade, como branco, duplicata e recuper
 - `parameter`: Parametro analisado.
 - `numero_cq`: Numero do controle de qualidade.
 - `resultado`: Resultado textual preservado.
-- `resultado_tratado`: Resultado numerico tratado, quando aplicavel.
-- `unidade`: Unidade do resultado.
+- `acm_resultado_tratado`: Resultado numerico tratado, quando aplicavel.
+- `acm_unidade`: Unidade do resultado.
 - `duplicata`: Valor de duplicata.
 - `faixa_aceitacao_original`: Faixa de aceitacao textual original.
-- `faixa_aceitacao_operador`: Operador da faixa, como `<`, `>` ou `=`.
-- `faixa_aceitacao_minimo`: Valor minimo da faixa.
-- `faixa_aceitacao_maximo`: Valor maximo da faixa.
-- `faixa_aceitacao_unidade`: Unidade da faixa.
+- `acm_faixa_aceitacao_operador`: Operador da faixa, como `<`, `>` ou `=`.
+- `acm_faixa_aceitacao_minimo`: Valor minimo da faixa.
+- `acm_faixa_aceitacao_maximo`: Valor maximo da faixa.
+- `acm_faixa_aceitacao_unidade`: Unidade da faixa.
 - `variacao_percentual`: Variacao percentual.
 - `quantidade_adicionada`: Quantidade adicionada.
 - `recuperacao_percentual`: Recuperacao percentual.

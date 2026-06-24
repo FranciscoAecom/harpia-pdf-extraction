@@ -103,18 +103,18 @@ def _format_numeric_results_sheet(writer: pd.ExcelWriter, df: pd.DataFrame) -> N
         _apply_numeric_format_to_column(worksheet, df, column)
 
     source_mapped_columns = [
-        ("resultado_tratado", "resultado", 0),
-        ("conama_minimo", "conama", 0),
-        ("conama_maximo", "conama", 1),
-        ("copam_cerh_minimo", "copam_cerh", 0),
-        ("copam_cerh_maximo", "copam_cerh", 1),
-        ("ld_minimo", "ld", 0),
-        ("ld_maximo", "ld", 1),
-        ("lq_minimo", "lq", 0),
-        ("lq_maximo", "lq", 1),
-        ("incerteza_valor", "incerteza", 0),
-        ("faixa_aceitacao_minimo", "faixa_aceitacao", 0),
-        ("faixa_aceitacao_maximo", "faixa_aceitacao", 1),
+        ("acm_resultado_tratado", "resultado", 0),
+        ("acm_conama_minimo", "conama", 0),
+        ("acm_conama_maximo", "conama", 1),
+        ("acm_copam_cerh_minimo", "copam_cerh", 0),
+        ("acm_copam_cerh_maximo", "copam_cerh", 1),
+        ("acm_ld_minimo", "ld", 0),
+        ("acm_ld_maximo", "ld", 1),
+        ("acm_lq_minimo", "lq", 0),
+        ("acm_lq_maximo", "lq", 1),
+        ("acm_incerteza_valor", "incerteza", 0),
+        ("acm_faixa_aceitacao_minimo", "faixa_aceitacao", 0),
+        ("acm_faixa_aceitacao_maximo", "faixa_aceitacao", 1),
     ]
     for column, source, source_number_index in source_mapped_columns:
         _apply_numeric_format_to_column(worksheet, df, column, source, source_number_index)

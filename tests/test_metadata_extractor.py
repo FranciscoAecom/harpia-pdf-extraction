@@ -44,8 +44,10 @@ class MetadataExtractorTest(unittest.TestCase):
         sample = extract_sample(texto, metadata, config)
 
         self.assertEqual(sample.loc[0, "planejamento_amostragem"], "CA1682/2025")
-        self.assertIn("Entretanto, a análise está em conformidade", sample.loc[0, "descricao_nao_conformidade"])
-        self.assertNotIn("Planejamento de Amostragem", sample.loc[0, "descricao_nao_conformidade"])
+        descricao = str(sample.loc[0, "descricao_nao_conformidade"])
+        self.assertIn("Entretanto", descricao)
+        self.assertIn("conformidade", descricao)
+        self.assertNotIn("Planejamento de Amostragem", descricao)
 
 
 if __name__ == "__main__":

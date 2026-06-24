@@ -207,36 +207,36 @@ Resultados analiticos e QA/QC extraidos do PDF.
 - `subcategoria`: Secao interna do bloco principal, preservando o nome cadastrado/original do PDF, como `Metais` ou `Recuperação - Especiação`.
 - `parameter`: Parametro/analise da linha de resultado.
 - `resultado`: Resultado textual preservado como aparece no PDF.
-- `resultado_tratado`: Resultado convertido para numero no Excel, com casas decimais preservadas e notacao cientifica exibida como decimal normal.
-- `qualificador`: Qualificador do resultado, como `<` ou `>`.
-- `unidade`: Unidade de medida do resultado.
+- `acm_resultado_tratado`: Resultado convertido para numero no Excel, com casas decimais preservadas e notacao cientifica exibida como decimal normal.
+- `acm_qualificador`: Qualificador do resultado, como `<` ou `>`.
+- `acm_unidade`: Unidade de medida do resultado.
 - `local`: Local da medicao/analise, como campo ou laboratorio.
 - `data_inicio`: Data de inicio da analise.
 - `conama`: Valor extraido da coluna normativa CONAMA, quando esse cabecalho existir na tabela.
-- `conama_operador`: Operador extraido do valor CONAMA.
-- `conama_minimo`: Valor minimo extraido do campo CONAMA.
-- `conama_maximo`: Valor maximo extraido do campo CONAMA.
-- `conama_unidade`: Unidade de medida extraida do campo CONAMA.
+- `acm_conama_operador`: Operador extraido do valor CONAMA.
+- `acm_conama_minimo`: Valor minimo extraido do campo CONAMA.
+- `acm_conama_maximo`: Valor maximo extraido do campo CONAMA.
+- `acm_conama_unidade`: Unidade de medida extraida do campo CONAMA.
 - `copam_cerh`: Valor extraido da coluna normativa COPAM/CERH, quando esse cabecalho existir na tabela.
-- `copam_cerh_operador`: Operador extraido do valor COPAM/CERH.
-- `copam_cerh_minimo`: Valor minimo extraido do campo COPAM/CERH.
-- `copam_cerh_maximo`: Valor maximo extraido do campo COPAM/CERH.
-- `copam_cerh_unidade`: Unidade de medida extraida do campo COPAM/CERH.
+- `acm_copam_cerh_operador`: Operador extraido do valor COPAM/CERH.
+- `acm_copam_cerh_minimo`: Valor minimo extraido do campo COPAM/CERH.
+- `acm_copam_cerh_maximo`: Valor maximo extraido do campo COPAM/CERH.
+- `acm_copam_cerh_unidade`: Unidade de medida extraida do campo COPAM/CERH.
 - `lq`: Texto original do LQ.
-- `lq_minimo`: Valor minimo do LQ gravado como numero no Excel, com casas decimais preservadas conforme o LQ original.
-- `lq_maximo`: Valor maximo do LQ gravado como numero no Excel, com casas decimais preservadas conforme o LQ original.
-- `lq_unidade`: Unidade de medida do LQ.
+- `acm_lq_minimo`: Valor minimo do LQ gravado como numero no Excel, com casas decimais preservadas conforme o LQ original.
+- `acm_lq_maximo`: Valor maximo do LQ gravado como numero no Excel, com casas decimais preservadas conforme o LQ original.
+- `acm_lq_unidade`: Unidade de medida do LQ.
 - `referencia`: Referencia normativa/metodologica.
 - `incerteza`: Texto original da incerteza.
-- `incerteza_valor`: Valor da incerteza gravado como numero no Excel, com casas decimais preservadas conforme a incerteza original.
-- `incerteza_unidade`: Unidade da incerteza, usualmente `%`.
+- `acm_incerteza_valor`: Valor da incerteza gravado como numero no Excel, com casas decimais preservadas conforme a incerteza original.
+- `acm_incerteza_unidade`: Unidade da incerteza, usualmente `%`.
 - `numero_cq`: Numero de controle de qualidade.
 - `duplicata`: Valor de duplicata extraido diretamente do PDF; validado como texto numerico.
 - `faixa_aceitacao`: Texto original da faixa/limite de aceitacao.
-- `faixa_aceitacao_operador`: Operador da faixa/limite de aceitacao.
-- `faixa_aceitacao_minimo`: Valor minimo da aceitacao gravado como numero no Excel, com casas decimais preservadas conforme a faixa original.
-- `faixa_aceitacao_maximo`: Valor maximo da aceitacao gravado como numero no Excel, com casas decimais preservadas conforme a faixa original.
-- `faixa_aceitacao_unidade`: Unidade da faixa/limite de aceitacao.
+- `acm_faixa_aceitacao_operador`: Operador da faixa/limite de aceitacao.
+- `acm_faixa_aceitacao_minimo`: Valor minimo da aceitacao gravado como numero no Excel, com casas decimais preservadas conforme a faixa original.
+- `acm_faixa_aceitacao_maximo`: Valor maximo da aceitacao gravado como numero no Excel, com casas decimais preservadas conforme a faixa original.
+- `acm_faixa_aceitacao_unidade`: Unidade da faixa/limite de aceitacao.
 - `variacao_percentual`: Variacao percentual gravada como numero no Excel, com casas decimais preservadas conforme o PDF.
 - `quantidade_adicionada`: Quantidade adicionada gravada como numero no Excel, com casas decimais preservadas conforme o PDF.
 - `recuperacao_percentual`: Recuperacao percentual gravada como numero no Excel, com casas decimais preservadas conforme o PDF.

@@ -50,45 +50,45 @@ class ResultsExtractRow(BaseModel):
     subcategoria: str | None = None
     parameter: str
     resultado: str | None = None
-    resultado_tratado: float | None = None
-    qualificador: Literal["<", ">"] | None = None
-    unidade: str | None = None
+    acm_resultado_tratado: float | None = None
+    acm_qualificador: Literal["<", ">"] | None = None
+    acm_unidade: str | None = None
     local: LOCAL
     data_inicio: str | None = Field(default=None, pattern=r"^\d{2}/\d{2}/\d{4}$")
 
     conama: str | None = None
-    conama_operador: OPERADOR | None = None
-    conama_minimo: float | None = None
-    conama_maximo: float | None = None
-    conama_unidade: str | None = None
+    acm_conama_operador: OPERADOR | None = None
+    acm_conama_minimo: float | None = None
+    acm_conama_maximo: float | None = None
+    acm_conama_unidade: str | None = None
     copam_cerh: str | None = None
-    copam_cerh_operador: OPERADOR | None = None
-    copam_cerh_minimo: float | None = None
-    copam_cerh_maximo: float | None = None
-    copam_cerh_unidade: str | None = None
+    acm_copam_cerh_operador: OPERADOR | None = None
+    acm_copam_cerh_minimo: float | None = None
+    acm_copam_cerh_maximo: float | None = None
+    acm_copam_cerh_unidade: str | None = None
 
     ld: str | None = None
-    ld_minimo: float | None = None
-    ld_maximo: float | None = None
-    ld_unidade: str | None = None
+    acm_ld_minimo: float | None = None
+    acm_ld_maximo: float | None = None
+    acm_ld_unidade: str | None = None
 
     lq: str | None = None
-    lq_minimo: float | None = None
-    lq_maximo: float | None = None
-    lq_unidade: str | None = None
+    acm_lq_minimo: float | None = None
+    acm_lq_maximo: float | None = None
+    acm_lq_unidade: str | None = None
 
     referencia: str | None = None
     incerteza: str | None = None
-    incerteza_valor: float | None = None
-    incerteza_unidade: str | None = None
+    acm_incerteza_valor: float | None = None
+    acm_incerteza_unidade: str | None = None
     numero_cq: str | None = None
     duplicata: str | None = None
 
     faixa_aceitacao: str | None = None
-    faixa_aceitacao_operador: OPERADOR | None = None
-    faixa_aceitacao_minimo: float | None = None
-    faixa_aceitacao_maximo: float | None = None
-    faixa_aceitacao_unidade: str | None = None
+    acm_faixa_aceitacao_operador: OPERADOR | None = None
+    acm_faixa_aceitacao_minimo: float | None = None
+    acm_faixa_aceitacao_maximo: float | None = None
+    acm_faixa_aceitacao_unidade: str | None = None
 
     variacao_percentual: float | None = None
     quantidade_adicionada: float | None = None
@@ -119,7 +119,7 @@ class ResultsExtractRow(BaseModel):
         return text
 
     @field_validator(
-        "resultado_tratado",
+        "acm_resultado_tratado",
         "variacao_percentual",
         "quantidade_adicionada",
         "recuperacao_percentual",
@@ -141,11 +141,11 @@ class ResultsExtractRow(BaseModel):
         return self
 
     def _validate_measure(self, prefix: str) -> None:
-        minimo = getattr(self, f"{prefix}_minimo")
-        maximo = getattr(self, f"{prefix}_maximo")
+        minimo = getattr(self, f"acm_{prefix}_minimo")
+        maximo = getattr(self, f"acm_{prefix}_maximo")
 
         if minimo is not None and maximo is not None and minimo > maximo:
-            raise ValueError(f"{prefix}_minimo maior que {prefix}_maximo")
+            raise ValueError(f"acm_{prefix}_minimo maior que acm_{prefix}_maximo")
 
 
 def validate_results_extract(df: pd.DataFrame) -> pd.DataFrame:

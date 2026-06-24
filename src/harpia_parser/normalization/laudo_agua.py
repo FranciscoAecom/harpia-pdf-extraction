@@ -26,9 +26,9 @@ def _normalize_lq(df: pd.DataFrame) -> pd.DataFrame:
     for index, value in df["lq"].items():
         parsed = parse_medida(value, "lq")
         df.at[index, "lq"] = _original_or_none(value)
-        df.at[index, "lq_minimo"] = parsed["lq_minimo"]
-        df.at[index, "lq_maximo"] = parsed["lq_maximo"]
-        df.at[index, "lq_unidade"] = parsed["lq_unidade"]
+        df.at[index, "acm_lq_minimo"] = parsed["lq_minimo"]
+        df.at[index, "acm_lq_maximo"] = parsed["lq_maximo"]
+        df.at[index, "acm_lq_unidade"] = parsed["lq_unidade"]
     return df
 
 
@@ -39,9 +39,9 @@ def _normalize_ld(df: pd.DataFrame) -> pd.DataFrame:
     for index, value in df["ld"].items():
         parsed = parse_medida(value, "ld")
         df.at[index, "ld"] = _original_or_none(value)
-        df.at[index, "ld_minimo"] = parsed["ld_minimo"]
-        df.at[index, "ld_maximo"] = parsed["ld_maximo"]
-        df.at[index, "ld_unidade"] = parsed["ld_unidade"]
+        df.at[index, "acm_ld_minimo"] = parsed["ld_minimo"]
+        df.at[index, "acm_ld_maximo"] = parsed["ld_maximo"]
+        df.at[index, "acm_ld_unidade"] = parsed["ld_unidade"]
     return df
 
 
@@ -52,10 +52,10 @@ def _normalize_normative_field(df: pd.DataFrame, field: str) -> pd.DataFrame:
     for index, value in df[field].items():
         parsed = parse_medida(value, field)
         df.at[index, field] = _pdf_text_or_none(value)
-        df.at[index, f"{field}_operador"] = parsed[f"{field}_operador"]
-        df.at[index, f"{field}_minimo"] = parsed[f"{field}_minimo"]
-        df.at[index, f"{field}_maximo"] = parsed[f"{field}_maximo"]
-        df.at[index, f"{field}_unidade"] = parsed[f"{field}_unidade"]
+        df.at[index, f"acm_{field}_operador"] = parsed[f"{field}_operador"]
+        df.at[index, f"acm_{field}_minimo"] = parsed[f"{field}_minimo"]
+        df.at[index, f"acm_{field}_maximo"] = parsed[f"{field}_maximo"]
+        df.at[index, f"acm_{field}_unidade"] = parsed[f"{field}_unidade"]
     return df
 
 
@@ -64,15 +64,15 @@ def _normalize_resultado(df: pd.DataFrame) -> pd.DataFrame:
         return df
 
     for index, value in df["resultado"].items():
-        unidade_fallback = _optional_text(df.at[index, "unidade"]) if "unidade" in df.columns else None
+        unidade_fallback = _optional_text(df.at[index, "acm_unidade"]) if "acm_unidade" in df.columns else None
         valor, qualificador, unidade = parse_resultado(value, unidade_fallback)
         parametro = df.at[index, "parameter"] if "parameter" in df.columns else None
         if unidade is None and normalizar(str(parametro or "")) == "ph":
             unidade = "pH"
 
-        df.at[index, "resultado_tratado"] = valor
-        df.at[index, "qualificador"] = qualificador
-        df.at[index, "unidade"] = unidade
+        df.at[index, "acm_resultado_tratado"] = valor
+        df.at[index, "acm_qualificador"] = qualificador
+        df.at[index, "acm_unidade"] = unidade
     return df
 
 
@@ -83,8 +83,8 @@ def _normalize_incerteza(df: pd.DataFrame) -> pd.DataFrame:
     for index, value in df["incerteza"].items():
         parsed = parse_medida(value, "incerteza")
         df.at[index, "incerteza"] = _original_or_none(value)
-        df.at[index, "incerteza_valor"] = parsed["incerteza_minimo"]
-        df.at[index, "incerteza_unidade"] = parsed["incerteza_unidade"]
+        df.at[index, "acm_incerteza_valor"] = parsed["incerteza_minimo"]
+        df.at[index, "acm_incerteza_unidade"] = parsed["incerteza_unidade"]
     return df
 
 
@@ -95,10 +95,10 @@ def _normalize_faixa_aceitacao(df: pd.DataFrame) -> pd.DataFrame:
     for index, value in df["faixa_aceitacao"].items():
         parsed = parse_medida(value, "faixa_aceitacao", duplicar_valor_simples=True)
         df.at[index, "faixa_aceitacao"] = _original_or_none(value)
-        df.at[index, "faixa_aceitacao_operador"] = parsed["faixa_aceitacao_operador"]
-        df.at[index, "faixa_aceitacao_minimo"] = parsed["faixa_aceitacao_minimo"]
-        df.at[index, "faixa_aceitacao_maximo"] = parsed["faixa_aceitacao_maximo"]
-        df.at[index, "faixa_aceitacao_unidade"] = parsed["faixa_aceitacao_unidade"]
+        df.at[index, "acm_faixa_aceitacao_operador"] = parsed["faixa_aceitacao_operador"]
+        df.at[index, "acm_faixa_aceitacao_minimo"] = parsed["faixa_aceitacao_minimo"]
+        df.at[index, "acm_faixa_aceitacao_maximo"] = parsed["faixa_aceitacao_maximo"]
+        df.at[index, "acm_faixa_aceitacao_unidade"] = parsed["faixa_aceitacao_unidade"]
     return df
 
 

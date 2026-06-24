@@ -201,11 +201,18 @@ def _validate_layout_fields(workbook: TaxonomyWorkbook) -> None:
         .astype(str)
     )
     valid_layout_fields = {field.removesuffix("_col") for field in LAYOUT_FIELD_KEYS}
+    layout_output_field = {
+        "unidade": "acm_unidade",
+    }
 
     layout_rows = workbook.item_template[workbook.item_template["schema"].astype(str) == "layout"]
     layout_fields = set(layout_rows["campo"].dropna().astype(str))
     unknown_layout_fields = sorted(layout_fields - valid_layout_fields)
-    missing_output_fields = sorted(layout_fields - result_fields)
+    missing_output_fields = sorted({
+        field
+        for field in layout_fields
+        if layout_output_field.get(field, field) not in result_fields
+    })
     if unknown_layout_fields:
         raise ValueError(f"Aba item_template/layout contem campos desconhecidos: {unknown_layout_fields}")
     if missing_output_fields:
@@ -213,7 +220,7 @@ def _validate_layout_fields(workbook: TaxonomyWorkbook) -> None:
 
     header_rows = workbook.item_template[workbook.item_template["schema"].astype(str) == "header_alias"]
     header_fields = set(header_rows["campo"].dropna().astype(str))
-    allowed_header_fields = result_fields | {"parameter"}
+    allowed_header_fields = result_fields | valid_layout_fields | {"parameter"}
     unknown_header_fields = sorted(header_fields - allowed_header_fields)
     if unknown_header_fields:
         raise ValueError(f"Aba item_template/header_alias contem campos sem saida correspondente: {unknown_header_fields}")

@@ -62,6 +62,12 @@ def _apply_section_title(txt: str, estado: dict, config) -> bool:
 
     for rule in config.category_alias_rules:
         if rule["regex"].search(section_norm) or rule["regex"].search(norm):
+            if (
+                estado.get("categoria") == rule["categoria"]
+                and estado.get("subcategoria")
+                and not rule["subcategoria"]
+            ):
+                return True
             estado["categoria"] = rule["categoria"]
             estado["subcategoria"] = rule["subcategoria"] or subcat_from_tipo
             estado["tipo_registro"] = tipo_registro
@@ -87,6 +93,13 @@ def pending_section_from_page_text(page_text: str, config) -> dict | None:
     for line in page_text.splitlines():
         candidate = estado_from_section_title(line, config)
         if candidate:
+            if (
+                pending
+                and pending.get("categoria") == candidate.get("categoria")
+                and pending.get("subcategoria")
+                and not candidate.get("subcategoria")
+            ):
+                continue
             pending = candidate
     return pending
 

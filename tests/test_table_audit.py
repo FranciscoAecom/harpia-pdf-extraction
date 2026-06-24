@@ -78,8 +78,9 @@ class TableAuditTest(unittest.TestCase):
         )
 
         self.assertEqual(row["status"], "ok_com_opcional_ausente")
-        self.assertIn("ld", row["campos_opcionais_ausentes"])
-        self.assertIn("unidade", row["campos_opcionais_ausentes"])
+        campos_opcionais_ausentes = str(row["campos_opcionais_ausentes"])
+        self.assertIn("ld", campos_opcionais_ausentes)
+        self.assertIn("acm_unidade", campos_opcionais_ausentes)
 
     def test_header_alias_from_taxonomy_maps_copam_criterion(self):
         config = _config()
@@ -107,9 +108,11 @@ class TableAuditTest(unittest.TestCase):
             is_qaqc_continuacao=False,
         )
 
-        self.assertNotIn("alerta_descoberta", row["status"])
+        status = str(row["status"])
+        colunas_mapeadas = str(row["colunas_mapeadas"])
+        self.assertNotIn("alerta_descoberta", status)
         self.assertEqual(row["colunas_sem_mapeamento"], "")
-        self.assertIn("copam_cerh", row["colunas_mapeadas"])
+        self.assertIn("copam_cerh", colunas_mapeadas)
 
     def test_fallback_uses_page_text_header_and_marks_confident_layout(self):
         row = build_table_audit_row(
@@ -128,10 +131,11 @@ class TableAuditTest(unittest.TestCase):
 
         self.assertEqual(row["status"], "fallback_cabecalho_texto_layout_confiavel")
         self.assertTrue(row["usou_fallback"])
-        self.assertIn("Cabecalho contextual encontrado", row["observacao"])
-        self.assertIn("resultado", row["observacao"])
+        observacao = str(row["observacao"])
+        self.assertIn("Cabecalho contextual encontrado", observacao)
+        self.assertIn("resultado", observacao)
 
-    def test_fallback_uses_page_text_header_and_marks_incomplete_layout(self):
+    def test_fallback_uses_page_text_header_and_marks_confident_compact_layout(self):
         row = build_table_audit_row(
             context=_context(),
             page_number=1,
@@ -146,9 +150,48 @@ class TableAuditTest(unittest.TestCase):
             page_text="Análise Resultado Data de Início CONAMA LQ Referência Incerteza",
         )
 
-        self.assertEqual(row["status"], "fallback_cabecalho_texto_layout_incompleto")
+        self.assertEqual(row["status"], "fallback_cabecalho_texto_layout_confiavel")
         self.assertTrue(row["usou_fallback"])
-        self.assertIn("colunas suficientes", row["observacao"])
+        self.assertIn("colunas suficientes", str(row["observacao"]))
+        self.assertEqual(
+            row["campos_esperados"],
+            "parameter; resultado; data_inicio; conama; lq; referencia; incerteza",
+        )
+
+    def test_fallback_uses_previous_header_layout_override(self):
+        config = _config()
+        row = build_table_audit_row(
+            context=_context(),
+            page_number=2,
+            table_index=1,
+            rows=[
+                ["Antimônio Dissolvido", "< 0,00005 mg/L", "13/11/2024", "NA", "NA", "0,00005 mg/L", "EPA", "15,28%"],
+                ["Antimônio Total", "< 0,0000500 mg/L", "13/11/2024", "Máx 0,005 mg/L", "Máx. 0,005 mg/L", "0,0000500 mg/L", "EPA", "15,28%"],
+            ],
+            estado={
+                "categoria": "Resultados",
+                "subcategoria": "Metais",
+                "tipo_registro": "AMOSTRA",
+                "layout_override_tipo": "AMOSTRA",
+                "layout_override": {
+                    "resultado_col": 1,
+                    "data_inicio_col": 2,
+                    "copam_cerh_col": 3,
+                    "conama_col": 4,
+                    "lq_col": 5,
+                    "referencia_col": 6,
+                    "incerteza_col": 7,
+                },
+            },
+            config=config,
+            is_qaqc_continuacao=False,
+        )
+
+        self.assertEqual(row["status"], "fallback_layout_confiavel")
+        self.assertEqual(
+            row["campos_esperados"],
+            "parameter; resultado; data_inicio; copam_cerh; conama; lq; referencia; incerteza",
+        )
 
 
 if __name__ == "__main__":

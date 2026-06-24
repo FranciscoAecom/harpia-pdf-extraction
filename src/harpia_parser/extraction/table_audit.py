@@ -11,7 +11,7 @@ from ..utils import normalizar
 
 FIELD_OUTPUT_NAMES = {
     "resultado_col": "resultado",
-    "unidade_col": "unidade",
+    "unidade_col": "acm_unidade",
     "data_inicio_col": "data_inicio",
     "conama_col": "conama",
     "copam_cerh_col": "copam_cerh",
@@ -31,6 +31,7 @@ PAGE_HEADER_PATTERNS = {
     "parameter": re.compile(r"\b(analise|parametros?)\b", re.IGNORECASE),
     "resultado": re.compile(r"\bresultados?\b", re.IGNORECASE),
     "unidade": re.compile(r"\b(unidade|unid)\b", re.IGNORECASE),
+    "acm_unidade": re.compile(r"\b(unidade|unid)\b", re.IGNORECASE),
     "data_inicio": re.compile(r"data\s+(de\s+)?inicio", re.IGNORECASE),
     "conama": re.compile(r"conama", re.IGNORECASE),
     "copam_cerh": re.compile(r"copam|cerh|deliberacao\s+normativa", re.IGNORECASE),
@@ -77,10 +78,18 @@ def _detect_header(rows: list[list[Any]]) -> tuple[int | None, list[Any] | None]
 
 def _fields_from_page_header_text(text: str, expected: list[str]) -> list[str]:
     normalized_text = normalizar(text)
-    found = []
+    found_with_position = []
     for field in expected:
         pattern = PAGE_HEADER_PATTERNS.get(field)
-        if pattern and pattern.search(normalized_text):
+        if not pattern:
+            continue
+        match = pattern.search(normalized_text)
+        if match:
+            found_with_position.append((match.start(), field))
+    found_with_position.sort()
+    found = []
+    for _, field in found_with_position:
+        if field not in found:
             found.append(field)
     return found
 
@@ -107,8 +116,7 @@ def _detect_page_header_context(page_text: str | None, expected: list[str]) -> t
     return candidates[0]
 
 
-def _layout_positions(tipo_registro: str | None, config) -> dict[str, int]:
-    layout = config.table_layouts.get(tipo_registro) or config.table_layouts.get("AMOSTRA") or {}
+def _positions_from_layout(layout: dict[str, int | None]) -> dict[str, int]:
     positions: dict[str, int] = {}
     for key in LAYOUT_FIELD_KEYS:
         value = layout.get(key)
@@ -119,16 +127,46 @@ def _layout_positions(tipo_registro: str | None, config) -> dict[str, int]:
     return positions
 
 
-def _layout_confidence(rows: list[list[Any]], tipo_registro: str | None, expected: list[str], config) -> tuple[bool, str]:
-    positions = _layout_positions(tipo_registro, config)
+def _layout_positions(
+    tipo_registro: str | None,
+    config,
+    estado: dict[str, Any] | None = None,
+    page_header_fields: list[str] | None = None,
+) -> dict[str, int]:
+    if page_header_fields and "parameter" in page_header_fields and "resultado" in page_header_fields:
+        return {field: index for index, field in enumerate(page_header_fields)}
+
+    if estado and estado.get("layout_override_tipo") == tipo_registro:
+        layout_override = estado.get("layout_override") or {}
+        if layout_override:
+            return _positions_from_layout(layout_override)
+
+    layout = config.table_layouts.get(tipo_registro) or config.table_layouts.get("AMOSTRA") or {}
+    return _positions_from_layout(layout)
+
+
+def _expected_from_positions(positions: dict[str, int]) -> list[str]:
+    ordered = sorted(positions.items(), key=lambda item: item[1])
+    return [field for field, _ in ordered]
+
+
+def _layout_confidence(
+    rows: list[list[Any]],
+    tipo_registro: str | None,
+    expected: list[str],
+    config,
+    estado: dict[str, Any] | None = None,
+    page_header_fields: list[str] | None = None,
+) -> tuple[bool, str, dict[str, int]]:
+    positions = _layout_positions(tipo_registro, config, estado, page_header_fields)
     expected_positions = [positions[field] for field in expected if field in positions]
     if not expected_positions:
-        return False, "Layout sem posicoes cadastradas para os campos esperados."
+        return False, "Layout sem posicoes cadastradas para os campos esperados.", positions
 
     max_position = max(expected_positions)
     data_rows = [row for row in rows if any(_clean_cell(value) for value in row)]
     if not data_rows:
-        return False, "Tabela sem linhas de dados avaliaveis."
+        return False, "Tabela sem linhas de dados avaliaveis.", positions
 
     rows_with_enough_columns = sum(1 for row in data_rows if len(row) > max_position)
     result_position = positions.get("resultado")
@@ -146,7 +184,7 @@ def _layout_confidence(rows: list[list[Any]], tipo_registro: str | None, expecte
         f"Compatibilidade do layout: {rows_with_enough_columns}/{len(data_rows)} linhas com colunas suficientes"
         f"; {rows_with_result_value}/{len(data_rows)} linhas com valor na coluna de resultado."
     )
-    return is_confident, detail
+    return is_confident, detail, positions
 
 
 def build_table_audit_row(
@@ -166,7 +204,15 @@ def build_table_audit_row(
 
     if header is None:
         page_header_text, page_header_fields = _detect_page_header_context(page_text, expected)
-        layout_is_confident, layout_detail = _layout_confidence(rows, tipo_registro, expected, config)
+        layout_is_confident, layout_detail, positions = _layout_confidence(
+            rows,
+            tipo_registro,
+            page_header_fields or expected,
+            config,
+            estado,
+            page_header_fields,
+        )
+        effective_expected = page_header_fields or _expected_from_positions(positions) or expected
 
         if page_header_text and layout_is_confident:
             status = "fallback_cabecalho_texto_layout_confiavel"
@@ -197,7 +243,7 @@ def build_table_audit_row(
             "colunas_detectadas": None,
             "colunas_mapeadas": None,
             "colunas_sem_mapeamento": None,
-            "campos_esperados": _join(expected),
+            "campos_esperados": _join(effective_expected),
             "campos_obrigatorios_ausentes": None,
             "campos_opcionais_ausentes": None,
             "usou_fallback": True,
