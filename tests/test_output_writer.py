@@ -105,7 +105,7 @@ class OutputWriterTest(unittest.TestCase):
             "nome_do_arquivo": "a.pdf",
             "id_taxonomia": 1,
             "nome_taxonomia": "Agua Superficial",
-            "id_sample": "687944",
+            "id_amostra": "687944",
             "identificacao_amostra": "687944 - ECR 01R - P50",
             "embalagem": "Polietileno",
             "volume": "1000 mL",
@@ -128,6 +128,39 @@ class OutputWriterTest(unittest.TestCase):
             self.assertEqual(worksheet.cell(row=2, column=1).value, "a.pdf")
             self.assertEqual(worksheet.cell(row=2, column=6).value, "Polietileno")
             self.assertEqual(worksheet.freeze_panes, "A2")
+
+    def test_packaging_preservatives_validation_errors_are_written(self):
+        row = _valid_row()
+        df = pd.DataFrame([row], columns=RESULTS_EXTRACT_COLUMNS)
+        packaging_df = pd.DataFrame([{
+            "nome_do_arquivo": "a.pdf",
+            "id_taxonomia": 1,
+            "nome_taxonomia": "Agua Superficial",
+            "id_amostra": "687944",
+            "identificacao_amostra": "687944 - ECR 01R - P50",
+            "embalagem": "Polietileno",
+            "volume": "1000 mL",
+            "preservacao": "0 a 6ºC",
+            "metodos": "",
+        }], columns=PACKAGING_PRESERVATIVES_COLUMNS)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            output_path = Path(tmp) / "out.xlsx"
+            salvar(
+                df,
+                output_path,
+                output_tabs=["results_extract", "packaging_preservatives", "validation_errors"],
+                packaging_preservatives_df=packaging_df,
+            )
+
+            workbook = load_workbook(output_path, data_only=False)
+            worksheet = workbook["validation_errors"]
+            headers = [worksheet.cell(row=1, column=column).value for column in range(1, worksheet.max_column + 1)]
+            row_values = [worksheet.cell(row=2, column=column).value for column in range(1, worksheet.max_column + 1)]
+            payload = dict(zip(headers, row_values, strict=False))
+
+            self.assertEqual(payload["sheet"], "packaging_preservatives")
+            self.assertEqual(payload["field"], "metodos")
 
 
 if __name__ == "__main__":

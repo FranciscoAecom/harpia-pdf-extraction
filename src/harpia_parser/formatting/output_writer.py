@@ -5,7 +5,7 @@ import pandas as pd
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 
-from ..validation.schemas import validate_outputs
+from ..validation.schemas import VALIDATION_ERROR_COLUMNS, validate_outputs
 
 
 NUMERIC_TEXT = re.compile(r"^([+-]?\d+(?:[,.]\d+)?)(?:\s*x\s*10\s*([+-]?\d+))?$", re.IGNORECASE)
@@ -168,7 +168,19 @@ def salvar(
         "classification_audit",
         "validation_errors",
     ]
-    validation_errors = validate_outputs(df, sample_df, client_df, sheets_to_write).get("results_extract", pd.DataFrame())
+    validations = validate_outputs(
+        df,
+        sample_df,
+        client_df,
+        packaging_preservatives_df,
+        sheets_to_write,
+    )
+    validation_frames = [errors for errors in validations.values() if errors is not None and not errors.empty]
+    validation_errors = (
+        pd.concat(validation_frames, ignore_index=True)
+        if validation_frames
+        else pd.DataFrame(columns=VALIDATION_ERROR_COLUMNS)
+    )
 
     if ext == ".csv":
         df.to_csv(output_path, index=False, encoding="utf-8-sig")

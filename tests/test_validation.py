@@ -2,8 +2,8 @@
 
 import pandas as pd
 
-from harpia_parser.constants import RESULTS_EXTRACT_COLUMNS
-from harpia_parser.validation.schemas import validate_results_extract
+from harpia_parser.constants import PACKAGING_PRESERVATIVES_COLUMNS, RESULTS_EXTRACT_COLUMNS
+from harpia_parser.validation.schemas import validate_packaging_preservatives, validate_results_extract
 
 
 def _valid_row() -> dict:
@@ -11,7 +11,7 @@ def _valid_row() -> dict:
         "nome_do_arquivo": "relatorio.pdf",
         "id_taxonomia": 1,
         "nome_taxonomia": "Agua Superficial",
-        "id_sample": "717727",
+        "id_amostra": "717727",
         "tipo": "Duplicata",
         "categoria": "QA/QC",
         "subcategoria": None,
@@ -71,6 +71,26 @@ class ValidationTest(unittest.TestCase):
         self.assertFalse(errors.empty)
         fields = set(errors["field"].astype(str).tolist())
         self.assertIn("recuperacao_percentual", fields)
+
+    def test_packaging_preservatives_required_fields_are_validated(self):
+        row = {
+            "nome_do_arquivo": "relatorio.pdf",
+            "id_taxonomia": 1,
+            "nome_taxonomia": "Agua Superficial",
+            "id_amostra": "687944",
+            "identificacao_amostra": "687944 - ECR 01R - P50",
+            "embalagem": "Polietileno",
+            "volume": "1000 mL",
+            "preservacao": "0 a 6ºC",
+            "metodos": "",
+        }
+        df = pd.DataFrame([row], columns=PACKAGING_PRESERVATIVES_COLUMNS)
+
+        errors = validate_packaging_preservatives(df)
+
+        self.assertFalse(errors.empty)
+        self.assertEqual(errors.loc[0, "sheet"], "packaging_preservatives")
+        self.assertEqual(errors.loc[0, "field"], "metodos")
 
 
 if __name__ == "__main__":

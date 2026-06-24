@@ -193,7 +193,48 @@ Campos de cada aba/tabela de saida.
 
 ## Saidas
 
-O arquivo de extracao padrao e separado por tema em `output/<tipo_laudo>/extracted_data.xlsx`. As abas criadas sao definidas em `schema` e seus campos em `item_schema`. No estado atual, o template de agua gera `results_extract`, `sample`, `client`, `table_extraction_audit`, `classification_audit` e `validation_errors`.
+O arquivo de extracao padrao e separado por tema em `output/<tipo_laudo>/extracted_data.xlsx`. As abas criadas sao definidas em `schema` e seus campos em `item_schema`. No estado atual, o template de agua gera `results_extract`, `sample`, `client`, `packaging_preservatives`, `table_extraction_audit`, `classification_audit` e `validation_errors`.
+
+## Auditorias
+
+As auditorias sao abas de controle criadas junto com os dados extraidos. Elas nao corrigem nem alteram valores do PDF; servem para indicar se o documento foi classificado corretamente, se as tabelas foram lidas com o layout esperado e se a saida final respeita o contrato definido.
+
+### Fluxo de auditoria
+
+- `classification_audit`: verifica qual taxonomia/template o PDF acionou antes da extracao. Use essa aba para confirmar se o documento entrou no escopo correto.
+- `table_extraction_audit`: verifica cada tabela encontrada, comparando cabecalhos detectados, campos mapeados e campos esperados pela taxonomia.
+- `validation_errors`: valida a saida final com Pydantic. Use essa aba para encontrar campos obrigatorios vazios, tipos invalidos, colunas ausentes ou colunas inesperadas.
+
+### Como interpretar
+
+- `classification_audit.status = winner`: template escolhido para extrair o PDF.
+- `classification_audit.status = candidate`: template que atingiu o score minimo, mas nao foi o vencedor.
+- `classification_audit.status = below_minimum`: regras positivas encontradas, mas score insuficiente para aceitar o template.
+- `classification_audit.status = required_missing`: regra obrigatoria do template nao foi encontrada.
+- `classification_audit.status = negative_matched`: regra negativa encontrada; o template foi bloqueado.
+- `table_extraction_audit.status = ok`: cabecalho detectado e campos mapeados conforme esperado.
+- `table_extraction_audit.status = ok_com_opcional_ausente`: a tabela foi extraida, mas algum campo esperado pela taxonomia nao apareceu no cabecalho. Normalmente exige revisao se o campo deveria existir naquele tipo de tabela.
+- `table_extraction_audit.status = alerta_descoberta`: o PDF trouxe coluna detectada sem mapeamento na taxonomia. Pode indicar coluna nova que precisa ser cadastrada.
+- `table_extraction_audit.status = alerta_descoberta_com_opcional_ausente`: existe coluna nova sem mapeamento e tambem campo esperado ausente. Esse status merece revisao prioritaria.
+- `table_extraction_audit.status = fallback_cabecalho_texto_layout_confiavel`: o cabecalho nao veio na malha da tabela, mas apareceu no texto da pagina e o layout cadastrado ficou consistente.
+- `table_extraction_audit.status = fallback_cabecalho_texto_layout_incompleto`: o cabecalho apareceu no texto da pagina, mas o layout nao ficou totalmente consistente. Revisar a taxonomia antes de confiar cegamente.
+- `table_extraction_audit.status = fallback_layout_confiavel`: o cabecalho nao foi detectado, mas a estrutura da tabela bateu com o layout cadastrado.
+- `table_extraction_audit.status = fallback`: a tabela foi processada usando apenas o layout cadastrado, sem cabecalho detectado e sem evidencia forte de confianca. Esse e o principal status para revisao manual.
+- `validation_errors` sem linhas: a saida validada esta consistente com o contrato atual.
+- `validation_errors` com linhas: ha erro de contrato na aba indicada em `sheet`; o valor original deve ser preservado, e o erro deve ser usado para corrigir taxonomia, extracao ou regra de validacao.
+
+### Status observados na extracao atual
+
+Na execucao atual dos laudos de agua, os status observados em `table_extraction_audit` foram:
+
+- `ok`: tabela com cabecalho detectado e campos mapeados.
+- `ok_com_opcional_ausente`: tabela extraida, mas com campo previsto no layout que nao apareceu no cabecalho detectado.
+- `fallback_cabecalho_texto_layout_incompleto`: cabecalho encontrado no texto da pagina, mas layout ainda incompleto.
+- `fallback_cabecalho_texto_layout_confiavel`: cabecalho encontrado no texto da pagina e layout consistente.
+- `fallback_layout_confiavel`: sem cabecalho detectado, mas estrutura compativel com o layout.
+- `fallback`: sem cabecalho detectado e sem evidencia forte de confianca.
+
+Os status `alerta_descoberta` e `alerta_descoberta_com_opcional_ausente` continuam previstos no motor, mas nao apareceram na ultima execucao analisada. Eles surgem quando uma tabela traz coluna detectada sem mapeamento na taxonomia.
 
 ### `results_extract`
 Resultados analiticos e QA/QC extraidos do PDF.
@@ -201,7 +242,7 @@ Resultados analiticos e QA/QC extraidos do PDF.
 - `nome_do_arquivo`: Nome do PDF de origem da extracao.
 - `id_taxonomia`: Identificador da taxonomia reconhecida, conforme `item_taxonomia.id_taxonomia`.
 - `nome_taxonomia`: Nome da taxonomia reconhecida, conforme `item_taxonomia.nome`.
-- `id_sample`: Identificador da amostra na aba `results_extract`.
+- `id_amostra`: Identificador da amostra na aba `results_extract`.
 - `tipo`: Natureza do registro/tabela extraida: Amostra, Branco, Duplicata ou Recuperacao.
 - `categoria`: Bloco principal do PDF, como `Resultados Analíticos`, `Controle de Qualidade` ou `Provedores Externos`.
 - `subcategoria`: Secao interna do bloco principal, preservando o nome cadastrado/original do PDF, como `Metais` ou `Recuperação - Especiação`.
@@ -294,7 +335,7 @@ Auditoria da etapa de identificacao do template. Essa aba ajuda a validar se o P
 - `score`: Pontuacao obtida pelo template candidato.
 - `score_minimo`: Pontuacao minima exigida para aceitar o template.
 - `prioridade`: Prioridade usada como desempate entre templates aceitos.
-- `status`: Resultado da avaliacao, como `winner`, `candidate`, `below_score`, `missing_required` ou `blocked_by_negative`.
+- `status`: Resultado da avaliacao, como `winner`, `candidate`, `below_minimum`, `required_missing` ou `negative_matched`.
 - `regras_encontradas`: Regras de deteccao que casaram no texto do PDF.
 
 ### `table_extraction_audit`
@@ -317,15 +358,16 @@ Auditoria generica das tabelas processadas. Essa aba ajuda a conferir se as colu
 - `campos_obrigatorios_ausentes`: Reservado para regras obrigatorias por tabela quando forem cadastradas na taxonomia.
 - `campos_opcionais_ausentes`: Campos previstos no layout que nao apareceram no cabecalho detectado.
 - `usou_fallback`: Indica se a tabela foi processada sem cabecalho detectado, usando apenas o layout cadastrado.
-- `status`: Resultado da auditoria da tabela, como `ok`, `ok_com_opcional_ausente`, `alerta_descoberta`, `alerta_descoberta_com_opcional_ausente` ou `fallback`.
+- `status`: Resultado da auditoria da tabela. Pode indicar leitura direta por cabecalho (`ok`, `ok_com_opcional_ausente`), descoberta de coluna nova (`alerta_descoberta`, `alerta_descoberta_com_opcional_ausente`) ou uso de fallback (`fallback_cabecalho_texto_layout_confiavel`, `fallback_cabecalho_texto_layout_incompleto`, `fallback_layout_confiavel`, `fallback`).
 - `observacao`: Detalhe textual sobre ausencias, colunas novas ou uso de fallback.
 
 ### `validation_errors`
-Erros encontrados pela validacao final com Pydantic. Quando a extracao esta consistente, a aba e criada apenas com cabecalhos e sem linhas.
+Erros encontrados pela validacao final com Pydantic nas abas de saida validadas, como `results_extract` e `packaging_preservatives`. Quando a extracao esta consistente, a aba e criada apenas com cabecalhos e sem linhas.
 
+- `sheet`: Aba validada onde o erro ocorreu.
 - `row_number`: Numero da linha na aba validada.
-- `id_sample`: Identificador da amostra na aba `results_extract`.
-- `parameter`: Parametro/analise da linha de resultado.
+- `id_amostra`: Identificador da amostra, quando aplicavel.
+- `parameter`: Parametro/analise da linha de resultado ou metodo da linha de embalagem/preservante, quando aplicavel.
 - `field`: Campo onde ocorreu o erro de validacao.
 - `error_type`: Tipo tecnico do erro Pydantic.
 - `message`: Mensagem de validacao.

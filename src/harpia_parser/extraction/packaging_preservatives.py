@@ -101,13 +101,13 @@ def extract_packaging_preservatives(
                 continue
 
             identificacao_amostra = _sample_identification(table, header_index, sample_patterns)
-            id_sample = _sample_id(identificacao_amostra)
+            id_amostra = _sample_id(identificacao_amostra)
             for embalagem, volume, preservacao, metodos in _data_rows(table, header_index):
                 output_rows.append({
                     "nome_do_arquivo": context.nome_do_arquivo,
                     "id_taxonomia": context.id_taxonomia,
                     "nome_taxonomia": context.nome_taxonomia,
-                    "id_sample": id_sample,
+                    "id_amostra": id_amostra,
                     "identificacao_amostra": identificacao_amostra,
                     "embalagem": _clean_text(embalagem),
                     "volume": _clean_text(volume),

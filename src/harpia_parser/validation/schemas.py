@@ -4,7 +4,7 @@ from typing import Any, Literal
 import pandas as pd
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
 
-from ..constants import RESULTS_EXTRACT_COLUMNS
+from ..constants import PACKAGING_PRESERVATIVES_COLUMNS, RESULTS_EXTRACT_COLUMNS
 
 
 TIPO_REGISTRO = Literal["Amostra", "Branco", "Duplicata", "Recupera\u00e7\u00e3o"]
@@ -44,7 +44,7 @@ class ResultsExtractRow(BaseModel):
     nome_do_arquivo: str
     id_taxonomia: int | str
     nome_taxonomia: str | None = None
-    id_sample: int | str
+    id_amostra: int | str
     tipo: TIPO_REGISTRO
     categoria: str
     subcategoria: str | None = None
@@ -99,7 +99,7 @@ class ResultsExtractRow(BaseModel):
     def normalize_empty(cls, value: Any) -> Any:
         return _empty_to_none(value)
 
-    @field_validator("nome_do_arquivo", "id_taxonomia", "id_sample", "categoria", "parameter")
+    @field_validator("nome_do_arquivo", "id_taxonomia", "id_amostra", "categoria", "parameter")
     @classmethod
     def required_text(cls, value: Any) -> Any:
         if value is None or str(value).strip() == "":
@@ -148,15 +148,74 @@ class ResultsExtractRow(BaseModel):
             raise ValueError(f"acm_{prefix}_minimo maior que acm_{prefix}_maximo")
 
 
-def validate_results_extract(df: pd.DataFrame) -> pd.DataFrame:
-    missing_columns = [column for column in RESULTS_EXTRACT_COLUMNS if column not in df.columns]
-    extra_columns = [column for column in df.columns if column not in RESULTS_EXTRACT_COLUMNS]
+class PackagingPreservativesRow(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    nome_do_arquivo: str
+    id_taxonomia: int | str
+    nome_taxonomia: str | None = None
+    id_amostra: int | str
+    identificacao_amostra: str
+    embalagem: str
+    volume: str
+    preservacao: str
+    metodos: str
+
+    @field_validator("*", mode="before")
+    @classmethod
+    def normalize_empty(cls, value: Any) -> Any:
+        return _empty_to_none(value)
+
+    @field_validator(
+        "nome_do_arquivo",
+        "id_taxonomia",
+        "id_amostra",
+        "identificacao_amostra",
+        "embalagem",
+        "volume",
+        "preservacao",
+        "metodos",
+    )
+    @classmethod
+    def required_text(cls, value: Any) -> Any:
+        if value is None or str(value).strip() == "":
+            raise ValueError("campo obrigatorio vazio")
+        return value
+
+
+VALIDATION_ERROR_COLUMNS = [
+    "sheet",
+    "row_number",
+    "id_amostra",
+    "parameter",
+    "field",
+    "error_type",
+    "message",
+    "value",
+]
+
+
+def _error_frame(errors: list[dict[str, Any]]) -> pd.DataFrame:
+    return pd.DataFrame(errors, columns=VALIDATION_ERROR_COLUMNS)
+
+
+def _validate_dataframe(
+    df: pd.DataFrame,
+    *,
+    sheet_name: str,
+    expected_columns: list[str],
+    row_model: type[BaseModel],
+    parameter_field: str | None = None,
+) -> pd.DataFrame:
+    missing_columns = [column for column in expected_columns if column not in df.columns]
+    extra_columns = [column for column in df.columns if column not in expected_columns]
     errors: list[dict[str, Any]] = []
 
     for column in missing_columns:
         errors.append({
+            "sheet": sheet_name,
             "row_number": None,
-            "id_sample": None,
+            "id_amostra": None,
             "parameter": None,
             "field": column,
             "error_type": "missing_column",
@@ -166,8 +225,9 @@ def validate_results_extract(df: pd.DataFrame) -> pd.DataFrame:
 
     for column in extra_columns:
         errors.append({
+            "sheet": sheet_name,
             "row_number": None,
-            "id_sample": None,
+            "id_amostra": None,
             "parameter": None,
             "field": column,
             "error_type": "extra_column",
@@ -176,28 +236,46 @@ def validate_results_extract(df: pd.DataFrame) -> pd.DataFrame:
         })
 
     if missing_columns:
-        return pd.DataFrame(errors)
+        return _error_frame(errors)
 
-    for row_index, (_, row) in enumerate(df[RESULTS_EXTRACT_COLUMNS].iterrows(), start=2):
-        payload = {column: _empty_to_none(row[column]) for column in RESULTS_EXTRACT_COLUMNS}
+    for row_index, (_, row) in enumerate(df[expected_columns].iterrows(), start=2):
+        payload = {column: _empty_to_none(row[column]) for column in expected_columns}
         try:
-            ResultsExtractRow.model_validate(payload)
+            row_model.model_validate(payload)
         except ValidationError as exc:
             for error in exc.errors():
                 field = ".".join(str(part) for part in error["loc"]) or "__row__"
                 errors.append({
+                    "sheet": sheet_name,
                     "row_number": row_index,
-                    "id_sample": payload.get("id_sample"),
-                    "parameter": payload.get("parameter"),
+                    "id_amostra": payload.get("id_amostra"),
+                    "parameter": payload.get(parameter_field) if parameter_field else None,
                     "field": field,
                     "error_type": error["type"],
                     "message": error["msg"],
                     "value": payload.get(field),
                 })
 
-    return pd.DataFrame(
-        errors,
-        columns=["row_number", "id_sample", "parameter", "field", "error_type", "message", "value"],
+    return _error_frame(errors)
+
+
+def validate_results_extract(df: pd.DataFrame) -> pd.DataFrame:
+    return _validate_dataframe(
+        df,
+        sheet_name="results_extract",
+        expected_columns=RESULTS_EXTRACT_COLUMNS,
+        row_model=ResultsExtractRow,
+        parameter_field="parameter",
+    )
+
+
+def validate_packaging_preservatives(df: pd.DataFrame) -> pd.DataFrame:
+    return _validate_dataframe(
+        df,
+        sheet_name="packaging_preservatives",
+        expected_columns=PACKAGING_PRESERVATIVES_COLUMNS,
+        row_model=PackagingPreservativesRow,
+        parameter_field="metodos",
     )
 
 
@@ -205,6 +283,7 @@ def validate_outputs(
     df: pd.DataFrame,
     sample_df: pd.DataFrame | None = None,
     client_df: pd.DataFrame | None = None,
+    packaging_preservatives_df: pd.DataFrame | None = None,
     output_tabs: list[str] | None = None,
 ) -> dict[str, pd.DataFrame]:
     sheets = output_tabs or [
@@ -219,4 +298,6 @@ def validate_outputs(
     validations: dict[str, pd.DataFrame] = {}
     if "results_extract" in sheets:
         validations["results_extract"] = validate_results_extract(df)
+    if "packaging_preservatives" in sheets and packaging_preservatives_df is not None:
+        validations["packaging_preservatives"] = validate_packaging_preservatives(packaging_preservatives_df)
     return validations
