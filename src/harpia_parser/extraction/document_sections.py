@@ -41,7 +41,7 @@ def extract_document_section(
         return pd.DataFrame(columns=columns)
 
     rows: list[dict[str, Any]] = []
-    seen: set[tuple[int, str, str]] = set()
+    seen: set[tuple[str, str]] = set()
     for page_number, (page_text, _) in enumerate(paginas, start=1):
         text = page_text or ""
         for field, patterns in rules.items():
