@@ -2,8 +2,13 @@
 
 import pandas as pd
 
-from harpia_parser.constants import PACKAGING_PRESERVATIVES_COLUMNS, RESULTS_EXTRACT_COLUMNS
-from harpia_parser.validation.schemas import validate_packaging_preservatives, validate_results_extract
+from harpia_parser.constants import CLIENT_COLUMNS, PACKAGING_PRESERVATIVES_COLUMNS, RESULTS_EXTRACT_COLUMNS, SAMPLE_COLUMNS
+from harpia_parser.validation.schemas import (
+    validate_client,
+    validate_packaging_preservatives,
+    validate_results_extract,
+    validate_sample,
+)
 
 
 def _valid_row() -> dict:
@@ -91,6 +96,63 @@ class ValidationTest(unittest.TestCase):
         self.assertFalse(errors.empty)
         self.assertEqual(errors.loc[0, "sheet"], "packaging_preservatives")
         self.assertEqual(errors.loc[0, "field"], "metodos")
+
+    def test_sample_dates_are_validated(self):
+        row = {
+            "nome_do_arquivo": "relatorio.pdf",
+            "id_taxonomia": 1,
+            "nome_taxonomia": "Agua Superficial",
+            "id_amostra": "687944",
+            "identificacao_amostra": "687944 - ECR 01R - P50",
+            "tipo_amostra": "Agua superficial",
+            "criterio_conformidade": None,
+            "data_coleta": "2025-01-22",
+            "dh_coleta": "08:30",
+            "data_publicacao": "22/01/2025",
+            "dh_publicacao": "10:15",
+            "data_recebimento": "22/01/2025",
+            "dh_recebimento": "11:00",
+            "observacoes": None,
+            "dh_inicio_atividade": "22/01/2025 12:00",
+            "localizacao": None,
+            "latitude": "-19,123",
+            "longitude": "-43.123",
+            "coordenadas": None,
+            "clima_ultimas_24h": None,
+            "clima": None,
+            "tipo_coleta": None,
+            "responsavel_amostra": None,
+            "planejamento_amostragem": None,
+            "descricao_nao_conformidade": None,
+        }
+        df = pd.DataFrame([row], columns=SAMPLE_COLUMNS)
+
+        errors = validate_sample(df)
+
+        self.assertFalse(errors.empty)
+        self.assertEqual(errors.loc[0, "sheet"], "sample")
+        self.assertEqual(errors.loc[0, "field"], "data_coleta")
+
+    def test_client_required_keys_are_validated(self):
+        row = {
+            "nome_do_arquivo": "relatorio.pdf",
+            "id_taxonomia": 1,
+            "nome_taxonomia": "Agua Superficial",
+            "id_amostra": "",
+            "proposta_comercial": "PC-1",
+            "cliente": "Cliente",
+            "cnpj_cpf": "00.000.000/0001-00",
+            "contato": None,
+            "telefone": None,
+            "endereco": None,
+        }
+        df = pd.DataFrame([row], columns=CLIENT_COLUMNS)
+
+        errors = validate_client(df)
+
+        self.assertFalse(errors.empty)
+        self.assertEqual(errors.loc[0, "sheet"], "client")
+        self.assertEqual(errors.loc[0, "field"], "id_amostra")
 
 
 if __name__ == "__main__":

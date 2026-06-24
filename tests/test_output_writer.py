@@ -5,7 +5,7 @@ from pathlib import Path
 import pandas as pd
 from openpyxl import load_workbook
 
-from harpia_parser.constants import PACKAGING_PRESERVATIVES_COLUMNS, RESULTS_EXTRACT_COLUMNS
+from harpia_parser.constants import CLIENT_COLUMNS, PACKAGING_PRESERVATIVES_COLUMNS, RESULTS_EXTRACT_COLUMNS, SAMPLE_COLUMNS
 from harpia_parser.formatting.output_writer import salvar
 from test_validation import _valid_row
 
@@ -161,6 +161,71 @@ class OutputWriterTest(unittest.TestCase):
 
             self.assertEqual(payload["sheet"], "packaging_preservatives")
             self.assertEqual(payload["field"], "metodos")
+
+    def test_sample_and_client_validation_errors_are_written(self):
+        row = _valid_row()
+        df = pd.DataFrame([row], columns=RESULTS_EXTRACT_COLUMNS)
+        sample_df = pd.DataFrame([{
+            "nome_do_arquivo": "a.pdf",
+            "id_taxonomia": 1,
+            "nome_taxonomia": "Agua Superficial",
+            "id_amostra": "687944",
+            "identificacao_amostra": "687944 - ECR 01R - P50",
+            "tipo_amostra": "Agua superficial",
+            "criterio_conformidade": None,
+            "data_coleta": "2025-01-22",
+            "dh_coleta": "08:30",
+            "data_publicacao": "22/01/2025",
+            "dh_publicacao": "10:15",
+            "data_recebimento": "22/01/2025",
+            "dh_recebimento": "11:00",
+            "observacoes": None,
+            "dh_inicio_atividade": "22/01/2025 12:00",
+            "localizacao": None,
+            "latitude": "-19,123",
+            "longitude": "-43.123",
+            "coordenadas": None,
+            "clima_ultimas_24h": None,
+            "clima": None,
+            "tipo_coleta": None,
+            "responsavel_amostra": None,
+            "planejamento_amostragem": None,
+            "descricao_nao_conformidade": None,
+        }], columns=SAMPLE_COLUMNS)
+        client_df = pd.DataFrame([{
+            "nome_do_arquivo": "a.pdf",
+            "id_taxonomia": 1,
+            "nome_taxonomia": "Agua Superficial",
+            "id_amostra": "",
+            "proposta_comercial": "PC-1",
+            "cliente": "Cliente",
+            "cnpj_cpf": "00.000.000/0001-00",
+            "contato": None,
+            "telefone": None,
+            "endereco": None,
+        }], columns=CLIENT_COLUMNS)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            output_path = Path(tmp) / "out.xlsx"
+            salvar(
+                df,
+                output_path,
+                sample_df=sample_df,
+                client_df=client_df,
+                output_tabs=["results_extract", "sample", "client", "validation_errors"],
+            )
+
+            workbook = load_workbook(output_path, data_only=False)
+            worksheet = workbook["validation_errors"]
+            headers = [worksheet.cell(row=1, column=column).value for column in range(1, worksheet.max_column + 1)]
+            rows = [
+                dict(zip(headers, [worksheet.cell(row=row, column=column).value for column in range(1, worksheet.max_column + 1)], strict=False))
+                for row in range(2, worksheet.max_row + 1)
+            ]
+            observed = {(row["sheet"], row["field"]) for row in rows}
+
+            self.assertIn(("sample", "data_coleta"), observed)
+            self.assertIn(("client", "id_amostra"), observed)
 
 
 if __name__ == "__main__":

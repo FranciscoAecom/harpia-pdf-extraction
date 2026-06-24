@@ -4,13 +4,16 @@ from typing import Any, Literal
 import pandas as pd
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
 
-from ..constants import PACKAGING_PRESERVATIVES_COLUMNS, RESULTS_EXTRACT_COLUMNS
+from ..constants import CLIENT_COLUMNS, PACKAGING_PRESERVATIVES_COLUMNS, RESULTS_EXTRACT_COLUMNS, SAMPLE_COLUMNS
 
 
 TIPO_REGISTRO = Literal["Amostra", "Branco", "Duplicata", "Recupera\u00e7\u00e3o"]
 LOCAL = Literal["campo", "laboratorio"]
 OPERADOR = Literal["max", "min", "<", ">", "<=", ">=", "="]
 NUMERO_PT = re.compile(r"^([+-]?\d+(?:[,.]\d+)?)(?:\s*x\s*10\s*([+-]?\d+))?$", re.IGNORECASE)
+DATA_PT = r"^\d{2}/\d{2}/\d{4}$"
+HORA_PT = r"^\d{2}:\d{2}(?::\d{2})?$"
+DATA_HORA_PT = r"^\d{2}/\d{2}/\d{4}(?:\s+\d{2}:\d{2}(?::\d{2})?)?$"
 
 
 def _parse_numero_pt(value: Any) -> float:
@@ -23,6 +26,12 @@ def _parse_numero_pt(value: Any) -> float:
     number = float(match.group(1).replace(",", "."))
     exponent = match.group(2)
     return number * (10 ** int(exponent)) if exponent is not None else number
+
+
+def _parse_decimal_pt(value: Any) -> float:
+    if isinstance(value, (int, float)) and not pd.isna(value):
+        return float(value)
+    return float(str(value).strip().replace(",", "."))
 
 
 def _empty_to_none(value: Any) -> Any:
@@ -54,7 +63,7 @@ class ResultsExtractRow(BaseModel):
     acm_qualificador: Literal["<", ">"] | None = None
     acm_unidade: str | None = None
     local: LOCAL
-    data_inicio: str | None = Field(default=None, pattern=r"^\d{2}/\d{2}/\d{4}$")
+    data_inicio: str | None = Field(default=None, pattern=DATA_PT)
 
     conama: str | None = None
     acm_conama_operador: OPERADOR | None = None
@@ -183,6 +192,85 @@ class PackagingPreservativesRow(BaseModel):
         return value
 
 
+class SampleRow(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    nome_do_arquivo: str
+    id_taxonomia: int | str
+    nome_taxonomia: str | None = None
+    id_amostra: int | str
+    identificacao_amostra: str | None = None
+    tipo_amostra: str | None = None
+    criterio_conformidade: str | None = None
+    data_coleta: str | None = Field(default=None, pattern=DATA_PT)
+    dh_coleta: str | None = Field(default=None, pattern=HORA_PT)
+    data_publicacao: str | None = Field(default=None, pattern=DATA_PT)
+    dh_publicacao: str | None = Field(default=None, pattern=HORA_PT)
+    data_recebimento: str | None = Field(default=None, pattern=DATA_PT)
+    dh_recebimento: str | None = Field(default=None, pattern=HORA_PT)
+    observacoes: str | None = None
+    dh_inicio_atividade: str | None = Field(default=None, pattern=DATA_HORA_PT)
+    localizacao: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
+    coordenadas: str | None = None
+    clima_ultimas_24h: str | None = None
+    clima: str | None = None
+    tipo_coleta: str | None = None
+    responsavel_amostra: str | None = None
+    planejamento_amostragem: str | None = None
+    descricao_nao_conformidade: str | None = None
+
+    @field_validator("*", mode="before")
+    @classmethod
+    def normalize_empty(cls, value: Any) -> Any:
+        return _empty_to_none(value)
+
+    @field_validator("nome_do_arquivo", "id_taxonomia", "id_amostra")
+    @classmethod
+    def required_text(cls, value: Any) -> Any:
+        if value is None or str(value).strip() == "":
+            raise ValueError("campo obrigatorio vazio")
+        return value
+
+    @field_validator("latitude", "longitude", mode="before")
+    @classmethod
+    def decimal_value(cls, value: Any) -> Any:
+        if value is None:
+            return value
+        try:
+            return _parse_decimal_pt(value)
+        except (TypeError, ValueError) as exc:
+            raise ValueError("valor deve ser decimal") from exc
+
+
+class ClientRow(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    nome_do_arquivo: str
+    id_taxonomia: int | str
+    nome_taxonomia: str | None = None
+    id_amostra: int | str
+    proposta_comercial: str | None = None
+    cliente: str | None = None
+    cnpj_cpf: str | None = None
+    contato: str | None = None
+    telefone: str | None = None
+    endereco: str | None = None
+
+    @field_validator("*", mode="before")
+    @classmethod
+    def normalize_empty(cls, value: Any) -> Any:
+        return _empty_to_none(value)
+
+    @field_validator("nome_do_arquivo", "id_taxonomia", "id_amostra")
+    @classmethod
+    def required_text(cls, value: Any) -> Any:
+        if value is None or str(value).strip() == "":
+            raise ValueError("campo obrigatorio vazio")
+        return value
+
+
 VALIDATION_ERROR_COLUMNS = [
     "sheet",
     "row_number",
@@ -245,6 +333,9 @@ def _validate_dataframe(
         except ValidationError as exc:
             for error in exc.errors():
                 field = ".".join(str(part) for part in error["loc"]) or "__row__"
+                for suffix in (".int", ".str", ".float"):
+                    if field.endswith(suffix):
+                        field = field[: -len(suffix)]
                 errors.append({
                     "sheet": sheet_name,
                     "row_number": row_index,
@@ -279,6 +370,24 @@ def validate_packaging_preservatives(df: pd.DataFrame) -> pd.DataFrame:
     )
 
 
+def validate_sample(df: pd.DataFrame) -> pd.DataFrame:
+    return _validate_dataframe(
+        df,
+        sheet_name="sample",
+        expected_columns=SAMPLE_COLUMNS,
+        row_model=SampleRow,
+    )
+
+
+def validate_client(df: pd.DataFrame) -> pd.DataFrame:
+    return _validate_dataframe(
+        df,
+        sheet_name="client",
+        expected_columns=CLIENT_COLUMNS,
+        row_model=ClientRow,
+    )
+
+
 def validate_outputs(
     df: pd.DataFrame,
     sample_df: pd.DataFrame | None = None,
@@ -298,6 +407,10 @@ def validate_outputs(
     validations: dict[str, pd.DataFrame] = {}
     if "results_extract" in sheets:
         validations["results_extract"] = validate_results_extract(df)
+    if "sample" in sheets and sample_df is not None:
+        validations["sample"] = validate_sample(sample_df)
+    if "client" in sheets and client_df is not None:
+        validations["client"] = validate_client(client_df)
     if "packaging_preservatives" in sheets and packaging_preservatives_df is not None:
         validations["packaging_preservatives"] = validate_packaging_preservatives(packaging_preservatives_df)
     return validations

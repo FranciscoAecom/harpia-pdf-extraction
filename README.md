@@ -203,7 +203,7 @@ As auditorias sao abas de controle criadas junto com os dados extraidos. Elas na
 
 - `classification_audit`: verifica qual taxonomia/template o PDF acionou antes da extracao. Use essa aba para confirmar se o documento entrou no escopo correto.
 - `table_extraction_audit`: verifica cada tabela encontrada, comparando cabecalhos detectados, campos mapeados e campos esperados pela taxonomia.
-- `validation_errors`: valida a saida final com Pydantic. Use essa aba para encontrar campos obrigatorios vazios, tipos invalidos, colunas ausentes ou colunas inesperadas.
+- `validation_errors`: valida a saida final com Pydantic. Hoje cobre `results_extract`, `sample`, `client` e `packaging_preservatives`. Use essa aba para encontrar campos obrigatorios vazios, tipos invalidos, datas/horarios invalidos, colunas ausentes ou colunas inesperadas.
 
 ### Como interpretar
 
@@ -362,7 +362,7 @@ Auditoria generica das tabelas processadas. Essa aba ajuda a conferir se as colu
 - `observacao`: Detalhe textual sobre ausencias, colunas novas ou uso de fallback.
 
 ### `validation_errors`
-Erros encontrados pela validacao final com Pydantic nas abas de saida validadas, como `results_extract` e `packaging_preservatives`. Quando a extracao esta consistente, a aba e criada apenas com cabecalhos e sem linhas.
+Erros encontrados pela validacao final com Pydantic nas abas de saida validadas: `results_extract`, `sample`, `client` e `packaging_preservatives`. Quando a extracao esta consistente, a aba e criada apenas com cabecalhos e sem linhas.
 
 - `sheet`: Aba validada onde o erro ocorreu.
 - `row_number`: Numero da linha na aba validada.
