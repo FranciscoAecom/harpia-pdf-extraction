@@ -126,7 +126,7 @@ class OutputWriterTest(unittest.TestCase):
             self.assertIn("packaging_preservatives", workbook.sheetnames)
             worksheet = workbook["packaging_preservatives"]
             self.assertEqual(worksheet.cell(row=2, column=1).value, "a.pdf")
-            self.assertEqual(worksheet.cell(row=2, column=6).value, "Polietileno")
+            self.assertEqual(worksheet.cell(row=2, column=7).value, "Polietileno")
             self.assertEqual(worksheet.freeze_panes, "A2")
 
     def test_packaging_preservatives_validation_errors_are_written(self):

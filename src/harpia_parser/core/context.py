@@ -20,6 +20,7 @@ class ClassificationResult:
     tipo_laudo: str | None
     id_taxonomia: int | str | None
     nome_taxonomia: str | None
+    versao: str | None
     scores: list[TemplateScore]
 
     def to_dataframe(self, nome_do_arquivo: str) -> pd.DataFrame:
@@ -29,6 +30,7 @@ class ClassificationResult:
                 "nome_do_arquivo": nome_do_arquivo,
                 "id_taxonomia": self.id_taxonomia,
                 "nome_taxonomia": self.nome_taxonomia,
+                "versao": self.versao,
                 "template_avaliado": score.template_id,
                 "score": score.score,
                 "score_minimo": score.score_minimo,
@@ -40,6 +42,7 @@ class ClassificationResult:
             "nome_do_arquivo",
             "id_taxonomia",
             "nome_taxonomia",
+            "versao",
             "template_avaliado",
             "score",
             "score_minimo",
@@ -57,4 +60,5 @@ class DocumentContext:
     tipo_laudo: str | None
     id_taxonomia: int | str | None
     nome_taxonomia: str | None
+    versao: str | None
     classification: ClassificationResult

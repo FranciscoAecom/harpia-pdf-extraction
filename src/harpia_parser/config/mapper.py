@@ -147,6 +147,7 @@ def _map_templates(workbook: TaxonomyWorkbook, identities: dict[Any, dict[str, A
             **identities[row.get("id")],
             "id_taxonomia": id_taxonomia,
             "nome_taxonomia": taxonomy_name,
+            "versao": _optional_text(row, "versao"),
             "regex": row.get("regex"),
             "descricao": taxonomy_name,
             "prioridade": int_value(_optional_number(row, "prioridade", row.get("id") or 999), default=999),

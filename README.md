@@ -242,6 +242,7 @@ Resultados analiticos e QA/QC extraidos do PDF.
 - `nome_do_arquivo`: Nome do PDF de origem da extracao.
 - `id_taxonomia`: Identificador da taxonomia reconhecida, conforme `item_taxonomia.id_taxonomia`.
 - `nome_taxonomia`: Nome da taxonomia reconhecida, conforme `item_taxonomia.nome`.
+- `versao`: Versao do template/taxonomia usada na extracao, conforme `template.versao`.
 - `id_amostra`: Identificador da amostra na aba `results_extract`.
 - `tipo`: Natureza do registro/tabela extraida: Amostra, Branco, Duplicata ou Recuperacao.
 - `categoria`: Bloco principal do PDF, como `Resultados Analíticos`, `Controle de Qualidade` ou `Provedores Externos`.
@@ -288,6 +289,7 @@ Dados cadastrais, coleta e cabecalho da amostra.
 - `nome_do_arquivo`: Nome do PDF de origem da extracao.
 - `id_taxonomia`: Identificador da taxonomia reconhecida, conforme `item_taxonomia.id_taxonomia`.
 - `nome_taxonomia`: Nome da taxonomia reconhecida, conforme `item_taxonomia.nome`.
+- `versao`: Versao do template/taxonomia usada na extracao, conforme `template.versao`.
 - `id_amostra`: Identificador da amostra.
 - `identificacao_amostra`: Identificacao textual da linha `Informacoes da Amostra - No:`, como `68659-1/2024.0 - ECR 01R - P50`.
 - `tipo_amostra`: Tipo de amostra informado no cabecalho.
@@ -317,6 +319,7 @@ Dados da tabela de identificacao do cliente.
 - `nome_do_arquivo`: Nome do PDF de origem da extracao.
 - `id_taxonomia`: Identificador da taxonomia reconhecida, conforme `item_taxonomia.id_taxonomia`.
 - `nome_taxonomia`: Nome da taxonomia reconhecida, conforme `item_taxonomia.nome`.
+- `versao`: Versao do template/taxonomia usada na extracao, conforme `template.versao`.
 - `id_amostra`: Identificador da amostra.
 - `proposta_comercial`: Codigo da proposta comercial.
 - `cliente`: Nome do cliente.
@@ -331,6 +334,7 @@ Dados do quadro de embalagens e preservantes.
 - `nome_do_arquivo`: Nome do PDF de origem da extracao.
 - `id_taxonomia`: Identificador da taxonomia reconhecida.
 - `nome_taxonomia`: Nome da taxonomia reconhecida.
+- `versao`: Versao do template/taxonomia usada na extracao.
 - `id_amostra`: Identificador da amostra associada ao quadro.
 - `identificacao_amostra`: Texto da identificacao da amostra no quadro.
 - `embalagem`: Tipo de embalagem.
@@ -344,6 +348,7 @@ Textos extraidos da secao `Notas` do PDF.
 - `nome_do_arquivo`: Nome do PDF de origem da extracao.
 - `id_taxonomia`: Identificador da taxonomia reconhecida.
 - `nome_taxonomia`: Nome da taxonomia reconhecida.
+- `versao`: Versao do template/taxonomia usada na extracao.
 - `id_amostra`: Identificador da amostra.
 - `pagina`: Pagina onde o texto foi encontrado.
 - `texto`: Conteudo textual da secao.
@@ -354,6 +359,7 @@ Textos extraidos da secao `Consideracoes Gerais` do PDF.
 - `nome_do_arquivo`: Nome do PDF de origem da extracao.
 - `id_taxonomia`: Identificador da taxonomia reconhecida.
 - `nome_taxonomia`: Nome da taxonomia reconhecida.
+- `versao`: Versao do template/taxonomia usada na extracao.
 - `id_amostra`: Identificador da amostra.
 - `pagina`: Pagina onde o texto foi encontrado.
 - `texto`: Conteudo textual da secao.
@@ -364,6 +370,7 @@ Textos extraidos da secao `Declaracao de Conformidade` do PDF.
 - `nome_do_arquivo`: Nome do PDF de origem da extracao.
 - `id_taxonomia`: Identificador da taxonomia reconhecida.
 - `nome_taxonomia`: Nome da taxonomia reconhecida.
+- `versao`: Versao do template/taxonomia usada na extracao.
 - `id_amostra`: Identificador da amostra.
 - `pagina`: Pagina onde o texto foi encontrado.
 - `texto`: Conteudo textual da declaracao.
@@ -374,6 +381,7 @@ Chave de validacao do laudo, quando informada no PDF.
 - `nome_do_arquivo`: Nome do PDF de origem da extracao.
 - `id_taxonomia`: Identificador da taxonomia reconhecida.
 - `nome_taxonomia`: Nome da taxonomia reconhecida.
+- `versao`: Versao do template/taxonomia usada na extracao.
 - `id_amostra`: Identificador da amostra.
 - `pagina`: Primeira pagina onde a chave foi encontrada.
 - `chave_validacao`: Chave de validacao extraida.
@@ -384,6 +392,7 @@ Auditoria da etapa de identificacao do template. Essa aba ajuda a validar se o P
 - `nome_do_arquivo`: Nome do PDF avaliado.
 - `id_taxonomia`: Identificador da taxonomia reconhecida pelo template vencedor.
 - `nome_taxonomia`: Nome da taxonomia reconhecida pelo template vencedor.
+- `versao`: Versao do template/taxonomia avaliada.
 - `template_avaliado`: Template candidato avaliado.
 - `score`: Pontuacao obtida pelo template candidato.
 - `score_minimo`: Pontuacao minima exigida para aceitar o template.
@@ -397,6 +406,7 @@ Auditoria generica das tabelas processadas. Essa aba ajuda a conferir se as colu
 - `nome_do_arquivo`: Nome do PDF avaliado.
 - `id_taxonomia`: Identificador da taxonomia reconhecida.
 - `nome_taxonomia`: Nome da taxonomia reconhecida.
+- `versao`: Versao do template/taxonomia usada na extracao.
 - `pagina`: Pagina onde a tabela foi encontrada.
 - `tabela_indice`: Ordem da tabela dentro da pagina.
 - `categoria`: Bloco principal atribuido a tabela.

@@ -107,6 +107,7 @@ def extract_packaging_preservatives(
                     "nome_do_arquivo": context.nome_do_arquivo,
                     "id_taxonomia": context.id_taxonomia,
                     "nome_taxonomia": context.nome_taxonomia,
+                    "versao": context.versao,
                     "id_amostra": id_amostra,
                     "identificacao_amostra": identificacao_amostra,
                     "embalagem": _clean_text(embalagem),

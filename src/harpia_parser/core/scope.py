@@ -65,7 +65,7 @@ def classify_document(texto: str, config, pdf_path: str | Path | None = None) ->
         candidates.append((score, -prioridade, template_id))
 
     if not candidates:
-        return ClassificationResult(None, None, None, None, scores)
+        return ClassificationResult(None, None, None, None, None, scores)
 
     template_id = max(candidates)[2]
     scores = [
@@ -76,7 +76,8 @@ def classify_document(texto: str, config, pdf_path: str | Path | None = None) ->
     template = config.templates.get(template_id, {})
     id_taxonomia = template.get("id_taxonomia")
     nome_taxonomia = template.get("nome_taxonomia") or template.get("descricao")
-    return ClassificationResult(template_id, tipo_laudo, id_taxonomia, nome_taxonomia, scores)
+    versao = template.get("versao")
+    return ClassificationResult(template_id, tipo_laudo, id_taxonomia, nome_taxonomia, versao, scores)
 
 
 def detect_document_template(texto: str, config, pdf_path: str | Path | None = None) -> str | None:

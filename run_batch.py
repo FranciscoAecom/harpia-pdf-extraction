@@ -72,6 +72,7 @@ def classify_batch(input_dir: Path, output_path: Path, max_pages: int | None = 3
                 "caminho": str(pdf),
                 "id_taxonomia": result.id_taxonomia,
                 "nome_taxonomia": result.nome_taxonomia,
+                "versao": result.versao,
                 "status": "identificado" if result.template_id else "fora_escopo",
                 "scores": "; ".join(
                     f"{score.template_id}:{score.status}:{score.score}/{score.score_minimo}"
@@ -84,6 +85,7 @@ def classify_batch(input_dir: Path, output_path: Path, max_pages: int | None = 3
                 "caminho": str(pdf),
                 "id_taxonomia": None,
                 "nome_taxonomia": None,
+                "versao": None,
                 "status": "erro",
                 "scores": f"{type(exc).__name__}: {exc}",
             })
@@ -128,6 +130,7 @@ def extract_batch(input_dir: Path, output_dir: Path) -> None:
             tipo_laudo = str(template.get("theme_id") or "") if template else None
             id_taxonomia = _first_value([df, sample_df, client_df, packaging_preservatives_df], "id_taxonomia")
             nome_taxonomia = _first_value([df, sample_df, client_df, packaging_preservatives_df], "nome_taxonomia")
+            versao = _first_value([df, sample_df, client_df, packaging_preservatives_df], "versao")
 
             if not template_id or not tipo_laudo:
                 summary.append({
@@ -136,6 +139,7 @@ def extract_batch(input_dir: Path, output_dir: Path) -> None:
                     "status": "fora_escopo",
                     "id_taxonomia": None,
                     "nome_taxonomia": None,
+                    "versao": None,
                     "results_rows": 0,
                     "sample_rows": 0,
                     "client_rows": 0,
@@ -158,6 +162,7 @@ def extract_batch(input_dir: Path, output_dir: Path) -> None:
                 "status": "extraido",
                 "id_taxonomia": id_taxonomia,
                 "nome_taxonomia": nome_taxonomia,
+                "versao": versao,
                 "results_rows": len(df),
                 "sample_rows": len(sample_df),
                 "client_rows": len(client_df),
@@ -174,6 +179,7 @@ def extract_batch(input_dir: Path, output_dir: Path) -> None:
                 "status": "erro",
                 "id_taxonomia": None,
                 "nome_taxonomia": None,
+                "versao": None,
                 "results_rows": 0,
                 "sample_rows": 0,
                 "client_rows": 0,

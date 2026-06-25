@@ -119,6 +119,7 @@ def _build_context(pdf_path: Path, texto: str, config) -> DocumentContext | None
         tipo_laudo=classification.tipo_laudo,
         id_taxonomia=classification.id_taxonomia,
         nome_taxonomia=classification.nome_taxonomia,
+        versao=classification.versao,
         classification=classification,
     )
 
@@ -130,9 +131,11 @@ def _extract_header_tables(texto: str, context: DocumentContext, extraction_conf
     client_df["nome_do_arquivo"] = context.nome_do_arquivo
     client_df["id_taxonomia"] = context.id_taxonomia
     client_df["nome_taxonomia"] = context.nome_taxonomia
+    client_df["versao"] = context.versao
     sample_df["nome_do_arquivo"] = context.nome_do_arquivo
     sample_df["id_taxonomia"] = context.id_taxonomia
     sample_df["nome_taxonomia"] = context.nome_taxonomia
+    sample_df["versao"] = context.versao
     return metadata, sample_df, client_df
 
 
@@ -189,6 +192,7 @@ def _extract_result_rows(paginas, metadata: dict, sample_df: pd.DataFrame, conte
                     "nome_do_arquivo": context.nome_do_arquivo,
                     "id_taxonomia": context.id_taxonomia,
                     "nome_taxonomia": context.nome_taxonomia,
+                    "versao": context.versao,
                     "id_amostra": metadata.get("id_amostra"),
                     **dado,
                 })
