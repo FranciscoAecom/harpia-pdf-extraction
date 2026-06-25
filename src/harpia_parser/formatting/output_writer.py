@@ -1,5 +1,7 @@
 from pathlib import Path
+import json
 import re
+from typing import Any
 
 import pandas as pd
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
@@ -147,6 +149,167 @@ def _format_output_sheet(writer: pd.ExcelWriter, sheet_name: str) -> None:
         worksheet.column_dimensions[column_letter].width = min(max(max_length + 2, 12), 55)
 
 
+def _json_scalar(value: Any) -> Any:
+    if value is None or pd.isna(value):
+        return None
+    if hasattr(value, "item"):
+        return value.item()
+    if hasattr(value, "isoformat"):
+        return value.isoformat()
+    return value
+
+
+def _records(df: pd.DataFrame | None) -> list[dict[str, Any]]:
+    if df is None or df.empty:
+        return []
+    cleaned = df.astype(object).where(pd.notna(df), None)
+    return [
+        {str(key): _json_scalar(value) for key, value in row.items()}
+        for row in cleaned.to_dict(orient="records")
+    ]
+
+
+def _records_for_file(df: pd.DataFrame | None, file_name: str) -> list[dict[str, Any]]:
+    if df is None or df.empty:
+        return []
+    if "nome_do_arquivo" not in df.columns:
+        return _records(df)
+    filtered = df[df["nome_do_arquivo"].astype(str) == file_name]
+    return _records(filtered)
+
+
+def _document_identity(records: list[dict[str, Any]], file_name: str) -> dict[str, Any]:
+    identity = {
+        "nome_do_arquivo": file_name,
+        "id_taxonomia": None,
+        "nome_taxonomia": None,
+        "versao": None,
+    }
+    for record in records:
+        for field in ["id_taxonomia", "nome_taxonomia", "versao"]:
+            if identity[field] is None and record.get(field) is not None:
+                identity[field] = record.get(field)
+    return identity
+
+
+def _build_json_payload(
+    df: pd.DataFrame,
+    sample_df: pd.DataFrame | None,
+    client_df: pd.DataFrame | None,
+    classification_audit_df: pd.DataFrame | None,
+    table_extraction_audit_df: pd.DataFrame | None,
+    packaging_preservatives_df: pd.DataFrame | None,
+    notes_df: pd.DataFrame | None,
+    general_considerations_df: pd.DataFrame | None,
+    conformity_statement_df: pd.DataFrame | None,
+    validation_key_df: pd.DataFrame | None,
+    validation_errors: pd.DataFrame,
+    sheets_to_write: list[str],
+) -> dict[str, Any]:
+    source_frames = [
+        df,
+        sample_df,
+        client_df,
+        packaging_preservatives_df,
+        notes_df,
+        general_considerations_df,
+        conformity_statement_df,
+        validation_key_df,
+        classification_audit_df,
+        table_extraction_audit_df,
+        validation_errors,
+    ]
+    file_names: set[str] = set()
+    for frame in source_frames:
+        if frame is not None and not frame.empty and "nome_do_arquivo" in frame.columns:
+            file_names.update(frame["nome_do_arquivo"].dropna().astype(str))
+
+    if not file_names:
+        file_names = {""}
+
+    table_sources: dict[str, pd.DataFrame | None] = {
+        "results_extract": df,
+        "sample": sample_df,
+        "client": client_df,
+        "packaging_preservatives": packaging_preservatives_df,
+        "notes": notes_df,
+        "general_considerations": general_considerations_df,
+        "conformity_statement": conformity_statement_df,
+        "validation_key": validation_key_df,
+    }
+    audit_sources: dict[str, pd.DataFrame | None] = {
+        "classification_audit": classification_audit_df,
+        "table_extraction_audit": table_extraction_audit_df,
+        "validation_errors": validation_errors,
+    }
+
+    documents = []
+    for file_name in sorted(file_names):
+        all_records_for_identity: list[dict[str, Any]] = []
+        tables: dict[str, Any] = {}
+        for table_name, frame in table_sources.items():
+            if table_name not in sheets_to_write:
+                continue
+            records = _records_for_file(frame, file_name)
+            tables[table_name] = records
+            all_records_for_identity.extend(records)
+
+        audits: dict[str, Any] = {}
+        for table_name, frame in audit_sources.items():
+            if table_name not in sheets_to_write:
+                continue
+            records = _records_for_file(frame, file_name)
+            audits[table_name] = records
+            all_records_for_identity.extend(records)
+
+        documents.append({
+            "arquivo": _document_identity(all_records_for_identity, file_name),
+            "tabelas": tables,
+            "auditoria": audits,
+        })
+
+    return {
+        "formato": "harpia_extracao_documento",
+        "versao_formato": 1,
+        "documentos": documents,
+    }
+
+
+def _write_json_output(
+    output_path: Path,
+    df: pd.DataFrame,
+    sample_df: pd.DataFrame | None,
+    client_df: pd.DataFrame | None,
+    classification_audit_df: pd.DataFrame | None,
+    table_extraction_audit_df: pd.DataFrame | None,
+    packaging_preservatives_df: pd.DataFrame | None,
+    notes_df: pd.DataFrame | None,
+    general_considerations_df: pd.DataFrame | None,
+    conformity_statement_df: pd.DataFrame | None,
+    validation_key_df: pd.DataFrame | None,
+    validation_errors: pd.DataFrame,
+    sheets_to_write: list[str],
+) -> None:
+    payload = _build_json_payload(
+        df,
+        sample_df,
+        client_df,
+        classification_audit_df,
+        table_extraction_audit_df,
+        packaging_preservatives_df,
+        notes_df,
+        general_considerations_df,
+        conformity_statement_df,
+        validation_key_df,
+        validation_errors,
+        sheets_to_write,
+    )
+    output_path.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+
 def salvar(
     df: pd.DataFrame,
     output_path: Path,
@@ -189,6 +352,7 @@ def salvar(
         if validation_frames
         else pd.DataFrame(columns=VALIDATION_ERROR_COLUMNS)
     )
+    json_output_path = output_path.with_suffix(".json")
 
     if ext == ".csv":
         df.to_csv(output_path, index=False, encoding="utf-8-sig")
@@ -248,3 +412,19 @@ def salvar(
 
             for sheet_name in written_sheets:
                 _format_output_sheet(writer, sheet_name)
+
+        _write_json_output(
+            json_output_path,
+            df,
+            sample_df,
+            client_df,
+            classification_audit_df,
+            table_extraction_audit_df,
+            packaging_preservatives_df,
+            notes_df,
+            general_considerations_df,
+            conformity_statement_df,
+            validation_key_df,
+            validation_errors,
+            sheets_to_write,
+        )

@@ -211,6 +211,17 @@ Campos de cada aba/tabela de saida.
 
 O arquivo de extracao padrao e separado por tema em `output/<tipo_laudo>/extracted_data.xlsx`. As abas criadas sao definidas em `schema` e seus campos em `item_schema`. No estado atual, o template de agua gera `results_extract`, `sample`, `client`, `packaging_preservatives`, `notes`, `general_considerations`, `conformity_statement`, `validation_key`, `table_extraction_audit`, `classification_audit` e `validation_errors`.
 
+Junto com o Excel, o processo tambem gera `output/<tipo_laudo>/extracted_data.json`. Esse arquivo tem o mesmo conteudo agrupado por PDF, pensado para carga em banco com coluna `jsonb`.
+
+Estrutura principal do JSON:
+
+- `formato`: Identificador do formato de exportacao.
+- `versao_formato`: Versao da estrutura JSON.
+- `documentos`: Lista de documentos processados.
+- `documentos[].arquivo`: Metadados do PDF, como `nome_do_arquivo`, `id_taxonomia`, `nome_taxonomia` e `versao`.
+- `documentos[].tabelas`: Dados extraidos, como `results_extract`, `sample`, `client`, `packaging_preservatives`, `notes`, `general_considerations`, `conformity_statement` e `validation_key`.
+- `documentos[].auditoria`: Dados de controle, como `classification_audit`, `table_extraction_audit` e `validation_errors`.
+
 ## Auditorias
 
 As auditorias sao abas de controle criadas junto com os dados extraidos. Elas nao corrigem nem alteram valores do PDF; servem para indicar se o documento foi classificado corretamente, se as tabelas foram lidas com o layout esperado e se a saida final respeita o contrato definido.

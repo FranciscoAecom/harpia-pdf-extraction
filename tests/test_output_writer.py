@@ -1,5 +1,6 @@
 import tempfile
 import unittest
+import json
 from pathlib import Path
 
 import pandas as pd
@@ -272,6 +273,54 @@ class OutputWriterTest(unittest.TestCase):
             for sheet_name in ["notes", "general_considerations", "conformity_statement", "validation_key"]:
                 self.assertIn(sheet_name, workbook.sheetnames)
             self.assertEqual(workbook["validation_key"].cell(row=2, column=6).value, "ABC-123")
+
+    def test_json_output_is_written_grouped_by_document(self):
+        row = _valid_row()
+        row["nome_do_arquivo"] = "a.pdf"
+        row["id_taxonomia"] = 1
+        row["nome_taxonomia"] = "Agua Superficial"
+        row["versao"] = "1"
+        row["id_amostra"] = "687944"
+        df = pd.DataFrame([row], columns=RESULTS_EXTRACT_COLUMNS)
+        sample_df = pd.DataFrame([{
+            "nome_do_arquivo": "a.pdf",
+            "id_taxonomia": 1,
+            "nome_taxonomia": "Agua Superficial",
+            "versao": "1",
+            "id_amostra": "687944",
+            "identificacao_amostra": "687944 - ECR 01R - P50",
+            "tipo_amostra": "Agua superficial",
+        }])
+        table_audit_df = pd.DataFrame([{
+            "nome_do_arquivo": "a.pdf",
+            "id_taxonomia": 1,
+            "nome_taxonomia": "Agua Superficial",
+            "versao": "1",
+            "status": "ok",
+        }])
+
+        with tempfile.TemporaryDirectory() as tmp:
+            output_path = Path(tmp) / "extracted_data.xlsx"
+            salvar(
+                df,
+                output_path,
+                sample_df=sample_df,
+                output_tabs=["results_extract", "sample", "table_extraction_audit", "validation_errors"],
+                table_extraction_audit_df=table_audit_df,
+            )
+
+            json_path = output_path.with_suffix(".json")
+            self.assertTrue(json_path.exists())
+            payload = json.loads(json_path.read_text(encoding="utf-8"))
+            document = payload["documentos"][0]
+
+            self.assertEqual(payload["formato"], "harpia_extracao_documento")
+            self.assertEqual(document["arquivo"]["nome_do_arquivo"], "a.pdf")
+            self.assertEqual(document["arquivo"]["id_taxonomia"], 1)
+            self.assertEqual(document["tabelas"]["results_extract"][0]["id_amostra"], "687944")
+            self.assertEqual(document["tabelas"]["sample"][0]["identificacao_amostra"], "687944 - ECR 01R - P50")
+            self.assertEqual(document["auditoria"]["table_extraction_audit"][0]["status"], "ok")
+            self.assertIn("validation_errors", document["auditoria"])
 
 
 if __name__ == "__main__":
