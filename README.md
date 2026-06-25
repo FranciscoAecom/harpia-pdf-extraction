@@ -122,7 +122,7 @@ py .\run_pipeline.py ".\data\input\arquivo.pdf" --out ".\output\resultado.xlsx"
 Para informar outra pasta de PDFs:
 
 ```powershell
-py .\run_batch.py extract --input "L:\Secure_DCS\BRBLH1PINFW001\COE_Digital\others\harpia_rd"
+py .\run_batch.py extract --input "L:\Secure_DCS\BRBLH1PINFW001\COE_Digital\others\lumen"
 ```
 
 As saidas em lote sao salvas em `output/`, separadas por tema, e o resumo geral fica em `output/batch_extraction_summary.xlsx`.

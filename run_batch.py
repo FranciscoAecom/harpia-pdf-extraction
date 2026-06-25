@@ -18,7 +18,7 @@ from harpia_parser.core.scope import classify_document  # noqa: E402
 from harpia_parser.formatting.output_writer import salvar  # noqa: E402
 
 
-DEFAULT_INPUT_DIR = Path(r"L:\Secure_DCS\BRBLH1PINFW001\COE_Digital\others\harpia_rd")
+DEFAULT_INPUT_DIR = Path(r"L:\Secure_DCS\BRBLH1PINFW001\COE_Digital\others\lumen")
 log = logging.getLogger(__name__)
 
 
