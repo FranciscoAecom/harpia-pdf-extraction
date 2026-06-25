@@ -342,7 +342,6 @@ Dados cadastrais, coleta e cabecalho da amostra.
 - `localizacao`: Local da coleta.
 - `latitude`: Latitude decimal da coleta.
 - `longitude`: Longitude decimal da coleta.
-- `coordenadas`: Latitude e longitude concatenadas.
 - `clima_ultimas_24h`: Condicoes climaticas nas ultimas 24 horas.
 - `clima`: Condicoes climaticas no momento da coleta.
 - `tipo_coleta`: Tipo de coleta.

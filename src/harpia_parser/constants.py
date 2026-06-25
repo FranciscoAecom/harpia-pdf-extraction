@@ -70,7 +70,6 @@ SAMPLE_COLUMNS = [
     "localizacao",
     "latitude",
     "longitude",
-    "coordenadas",
     "clima_ultimas_24h",
     "clima",
     "tipo_coleta",

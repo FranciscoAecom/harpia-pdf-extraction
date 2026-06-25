@@ -218,7 +218,6 @@ class SampleRow(BaseModel):
     localizacao: str | None = None
     latitude: float | None = None
     longitude: float | None = None
-    coordenadas: str | None = None
     clima_ultimas_24h: str | None = None
     clima: str | None = None
     tipo_coleta: str | None = None

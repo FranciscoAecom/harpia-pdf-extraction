@@ -41,7 +41,6 @@ def extract_sample(texto: str, metadata: dict, config) -> pd.DataFrame:
 
     latitude = parse_decimal_pt(metadata.get("latitude"))
     longitude = parse_decimal_pt(metadata.get("longitude"))
-    coordenadas = f"{latitude},{longitude}" if latitude is not None and longitude is not None else None
 
     sample = {
         "id_amostra": metadata.get("id_amostra"),
@@ -59,7 +58,6 @@ def extract_sample(texto: str, metadata: dict, config) -> pd.DataFrame:
         "localizacao": extracted.get("localizacao"),
         "latitude": latitude,
         "longitude": longitude,
-        "coordenadas": coordenadas,
         "clima_ultimas_24h": extracted.get("clima_ultimas_24h"),
         "clima": extracted.get("clima"),
         "tipo_coleta": extracted.get("tipo_coleta"),

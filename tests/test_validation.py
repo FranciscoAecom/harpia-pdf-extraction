@@ -119,7 +119,6 @@ class ValidationTest(unittest.TestCase):
             "localizacao": None,
             "latitude": "-19,123",
             "longitude": "-43.123",
-            "coordenadas": None,
             "clima_ultimas_24h": None,
             "clima": None,
             "tipo_coleta": None,
