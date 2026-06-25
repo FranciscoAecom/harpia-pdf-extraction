@@ -7,6 +7,7 @@ import pandas as pd
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 
+from ..constants import DUPLICATE_AUDIT_COLUMNS
 from ..validation.schemas import VALIDATION_ERROR_COLUMNS, validate_outputs
 
 
@@ -198,6 +199,7 @@ def _build_json_payload(
     client_df: pd.DataFrame | None,
     classification_audit_df: pd.DataFrame | None,
     table_extraction_audit_df: pd.DataFrame | None,
+    duplicate_audit_df: pd.DataFrame | None,
     packaging_preservatives_df: pd.DataFrame | None,
     notes_df: pd.DataFrame | None,
     general_considerations_df: pd.DataFrame | None,
@@ -217,6 +219,7 @@ def _build_json_payload(
         validation_key_df,
         classification_audit_df,
         table_extraction_audit_df,
+        duplicate_audit_df,
         validation_errors,
     ]
     file_names: set[str] = set()
@@ -240,6 +243,7 @@ def _build_json_payload(
     audit_sources: dict[str, pd.DataFrame | None] = {
         "classification_audit": classification_audit_df,
         "table_extraction_audit": table_extraction_audit_df,
+        "duplicate_audit": duplicate_audit_df,
         "validation_errors": validation_errors,
     }
 
@@ -282,6 +286,7 @@ def _write_json_output(
     client_df: pd.DataFrame | None,
     classification_audit_df: pd.DataFrame | None,
     table_extraction_audit_df: pd.DataFrame | None,
+    duplicate_audit_df: pd.DataFrame | None,
     packaging_preservatives_df: pd.DataFrame | None,
     notes_df: pd.DataFrame | None,
     general_considerations_df: pd.DataFrame | None,
@@ -296,6 +301,7 @@ def _write_json_output(
         client_df,
         classification_audit_df,
         table_extraction_audit_df,
+        duplicate_audit_df,
         packaging_preservatives_df,
         notes_df,
         general_considerations_df,
@@ -318,6 +324,7 @@ def salvar(
     output_tabs: list[str] | None = None,
     classification_audit_df: pd.DataFrame | None = None,
     table_extraction_audit_df: pd.DataFrame | None = None,
+    duplicate_audit_df: pd.DataFrame | None = None,
     packaging_preservatives_df: pd.DataFrame | None = None,
     notes_df: pd.DataFrame | None = None,
     general_considerations_df: pd.DataFrame | None = None,
@@ -337,6 +344,7 @@ def salvar(
         "validation_key",
         "table_extraction_audit",
         "classification_audit",
+        "duplicate_audit",
         "validation_errors",
     ]
     validations = validate_outputs(
@@ -406,6 +414,14 @@ def salvar(
                 elif sheet_name == "table_extraction_audit" and table_extraction_audit_df is not None:
                     table_extraction_audit_df.to_excel(writer, sheet_name="table_extraction_audit", index=False)
                     written_sheets.append("table_extraction_audit")
+                elif sheet_name == "duplicate_audit":
+                    duplicate_frame = (
+                        duplicate_audit_df
+                        if duplicate_audit_df is not None
+                        else pd.DataFrame(columns=DUPLICATE_AUDIT_COLUMNS)
+                    )
+                    duplicate_frame.to_excel(writer, sheet_name="duplicate_audit", index=False)
+                    written_sheets.append("duplicate_audit")
                 elif sheet_name == "validation_errors":
                     validation_errors.to_excel(writer, sheet_name="validation_errors", index=False)
                     written_sheets.append("validation_errors")
@@ -420,6 +436,7 @@ def salvar(
             client_df,
             classification_audit_df,
             table_extraction_audit_df,
+            duplicate_audit_df,
             packaging_preservatives_df,
             notes_df,
             general_considerations_df,

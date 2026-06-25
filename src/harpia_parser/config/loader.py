@@ -40,6 +40,7 @@ class PipelineConfig:
     df_general_considerations_model: pd.DataFrame
     df_conformity_statement_model: pd.DataFrame
     df_validation_key_model: pd.DataFrame
+    df_duplicate_audit_model: pd.DataFrame
     df_template_rules: pd.DataFrame
     df_output_tabs: pd.DataFrame
     df_table_extraction_rules: pd.DataFrame
@@ -282,6 +283,7 @@ def output_tabs_for_template(config: PipelineConfig, template_id: str) -> list[s
         "validation_key",
         "table_extraction_audit",
         "classification_audit",
+        "duplicate_audit",
         "validation_errors",
     ]
 
@@ -377,6 +379,7 @@ def load_config(base_dir: Path, taxonomy_file: str = "config/taxonomy.xlsx") -> 
         df_general_considerations_model=frames["general_considerations_model"],
         df_conformity_statement_model=frames["conformity_statement_model"],
         df_validation_key_model=frames["validation_key_model"],
+        df_duplicate_audit_model=frames["duplicate_audit_model"],
         df_template_rules=frames["template_rules"],
         df_output_tabs=frames["output_tabs"],
         df_table_extraction_rules=frames["table_layouts"],

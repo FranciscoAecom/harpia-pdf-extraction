@@ -8,6 +8,7 @@ from harpia_parser.config.reader import read_taxonomy_workbook
 from harpia_parser.constants import (
     CLIENT_COLUMNS,
     CONFORMITY_STATEMENT_COLUMNS,
+    DUPLICATE_AUDIT_COLUMNS,
     GENERAL_CONSIDERATIONS_COLUMNS,
     NOTES_COLUMNS,
     PACKAGING_PRESERVATIVES_COLUMNS,
@@ -32,6 +33,7 @@ class ConfigLoaderTest(unittest.TestCase):
         self.assertEqual(config.df_general_considerations_model["campo"].tolist(), GENERAL_CONSIDERATIONS_COLUMNS)
         self.assertEqual(config.df_conformity_statement_model["campo"].tolist(), CONFORMITY_STATEMENT_COLUMNS)
         self.assertEqual(config.df_validation_key_model["campo"].tolist(), VALIDATION_KEY_COLUMNS)
+        self.assertEqual(config.df_duplicate_audit_model["campo"].tolist(), DUPLICATE_AUDIT_COLUMNS)
 
     def test_template_filter_keeps_only_explicit_template_rules(self):
         config = load_config(Path.cwd())
@@ -126,6 +128,7 @@ class ConfigLoaderTest(unittest.TestCase):
             "general_considerations_model": config.df_general_considerations_model,
             "conformity_statement_model": config.df_conformity_statement_model,
             "validation_key_model": config.df_validation_key_model,
+            "duplicate_audit_model": config.df_duplicate_audit_model,
         }.items():
             for column in boolean_columns & set(df.columns):
                 with self.subTest(sheet_name=sheet_name, column=column):
@@ -191,6 +194,7 @@ class ConfigLoaderTest(unittest.TestCase):
                 "validation_key",
                 "table_extraction_audit",
                 "classification_audit",
+                "duplicate_audit",
                 "validation_errors",
             ],
         )

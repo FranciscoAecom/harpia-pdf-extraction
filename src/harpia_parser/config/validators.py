@@ -6,6 +6,7 @@ import pandas as pd
 from ..constants import (
     CLIENT_COLUMNS,
     CONFORMITY_STATEMENT_COLUMNS,
+    DUPLICATE_AUDIT_COLUMNS,
     GENERAL_CONSIDERATIONS_COLUMNS,
     LAYOUT_FIELD_KEYS,
     NOTES_COLUMNS,
@@ -161,6 +162,7 @@ def validate_contract_frames(frames: dict[str, pd.DataFrame], template_ids: set[
         CONFORMITY_STATEMENT_COLUMNS,
     )
     validate_output_model("validation_key", frames["validation_key_model"], VALIDATION_KEY_COLUMNS)
+    validate_output_model("duplicate_audit", frames["duplicate_audit_model"], DUPLICATE_AUDIT_COLUMNS)
     validate_detection_sources("template_rules", frames["template_rules"])
 
     for sheet_name, df in {
@@ -189,6 +191,7 @@ def validate_contract_frames(frames: dict[str, pd.DataFrame], template_ids: set[
         "general_considerations_model": frames["general_considerations_model"],
         "conformity_statement_model": frames["conformity_statement_model"],
         "validation_key_model": frames["validation_key_model"],
+        "duplicate_audit_model": frames["duplicate_audit_model"],
     }.items():
         validate_boolean_columns(sheet_name, df)
         validate_template_ids(sheet_name, df, template_ids)

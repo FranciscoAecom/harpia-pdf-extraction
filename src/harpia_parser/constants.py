@@ -167,6 +167,25 @@ TABLE_EXTRACTION_AUDIT_COLUMNS = [
     "observacao",
 ]
 
+DUPLICATE_AUDIT_COLUMNS = [
+    "nome_do_arquivo",
+    "caminho_arquivo",
+    "id_taxonomia",
+    "nome_taxonomia",
+    "versao",
+    "id_amostra",
+    "identificacao_amostra",
+    "data_publicacao",
+    "data_coleta",
+    "hash_arquivo",
+    "hash_texto",
+    "grupo_duplicidade",
+    "tipo_duplicidade",
+    "arquivo_referencia",
+    "motivo",
+    "status",
+]
+
 LAYOUT_FIELD_KEYS = [
     "resultado_col",
     "unidade_col",

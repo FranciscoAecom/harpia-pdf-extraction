@@ -9,6 +9,7 @@ O projeto gera um Excel de saída com as abas definidas por template na taxonomi
 - `client`: identificação do cliente.
 - `table_extraction_audit`: auditoria das colunas detectadas em cada tabela extraída.
 - `classification_audit`: auditoria da identificação do template antes da extração.
+- `duplicate_audit`: auditoria de duplicidade entre PDFs processados no mesmo lote.
 - `validation_errors`: erros de validação da saída, vazia quando não houver inconsistências.
 
 ## Estrutura
@@ -194,7 +195,7 @@ Cadastro das abas/tabelas de saida.
 
 - `id`: Identificador interno do schema.
 - `id_item_taxonomia`: Vinculo com `item_taxonomia.id`.
-- `nome`: Nome da aba/tabela, como `results_extract`, `sample`, `client`, `table_extraction_audit`, `classification_audit` ou `validation_errors`.
+- `nome`: Nome da aba/tabela, como `results_extract`, `sample`, `client`, `table_extraction_audit`, `classification_audit`, `duplicate_audit` ou `validation_errors`.
 - `is_serial`: Indica se a aba possui varias linhas por documento.
 
 #### `item_schema`
@@ -209,7 +210,7 @@ Campos de cada aba/tabela de saida.
 
 ## Saidas
 
-O arquivo de extracao padrao e separado por tema em `output/<tipo_laudo>/extracted_data.xlsx`. As abas criadas sao definidas em `schema` e seus campos em `item_schema`. No estado atual, o template de agua gera `results_extract`, `sample`, `client`, `packaging_preservatives`, `notes`, `general_considerations`, `conformity_statement`, `validation_key`, `table_extraction_audit`, `classification_audit` e `validation_errors`.
+O arquivo de extracao padrao e separado por tema em `output/<tipo_laudo>/extracted_data.xlsx`. As abas criadas sao definidas em `schema` e seus campos em `item_schema`. No estado atual, o template de agua gera `results_extract`, `sample`, `client`, `packaging_preservatives`, `notes`, `general_considerations`, `conformity_statement`, `validation_key`, `table_extraction_audit`, `classification_audit`, `duplicate_audit` e `validation_errors`.
 
 Junto com o Excel, o processo tambem gera `output/<tipo_laudo>/extracted_data.json`. Esse arquivo tem o mesmo conteudo agrupado por PDF, pensado para carga em banco com coluna `jsonb`.
 
@@ -220,7 +221,7 @@ Estrutura principal do JSON:
 - `documentos`: Lista de documentos processados.
 - `documentos[].arquivo`: Metadados do PDF, como `nome_do_arquivo`, `id_taxonomia`, `nome_taxonomia` e `versao`.
 - `documentos[].tabelas`: Dados extraidos, como `results_extract`, `sample`, `client`, `packaging_preservatives`, `notes`, `general_considerations`, `conformity_statement` e `validation_key`.
-- `documentos[].auditoria`: Dados de controle, como `classification_audit`, `table_extraction_audit` e `validation_errors`.
+- `documentos[].auditoria`: Dados de controle, como `classification_audit`, `table_extraction_audit`, `duplicate_audit` e `validation_errors`.
 
 ## Auditorias
 
@@ -230,6 +231,7 @@ As auditorias sao abas de controle criadas junto com os dados extraidos. Elas na
 
 - `classification_audit`: verifica qual taxonomia/template o PDF acionou antes da extracao. Use essa aba para confirmar se o documento entrou no escopo correto.
 - `table_extraction_audit`: verifica cada tabela encontrada, comparando cabecalhos detectados, campos mapeados e campos esperados pela taxonomia.
+- `duplicate_audit`: verifica duplicidade entre PDFs do mesmo lote por hash do arquivo, hash do texto, chave logica do laudo/amostra e sinais de versionamento.
 - `validation_errors`: valida a saida final com Pydantic. Hoje cobre `results_extract`, `sample`, `client` e `packaging_preservatives`. Use essa aba para encontrar campos obrigatorios vazios, tipos invalidos, datas/horarios invalidos, colunas ausentes ou colunas inesperadas.
 
 ### Como interpretar
@@ -247,6 +249,12 @@ As auditorias sao abas de controle criadas junto com os dados extraidos. Elas na
 - `table_extraction_audit.status = fallback_cabecalho_texto_layout_incompleto`: o cabecalho apareceu no texto da pagina, mas o layout nao ficou totalmente consistente. Revisar a taxonomia antes de confiar cegamente.
 - `table_extraction_audit.status = fallback_layout_confiavel`: o cabecalho nao foi detectado, mas a estrutura da tabela bateu com o layout cadastrado.
 - `table_extraction_audit.status = fallback`: a tabela foi processada usando apenas o layout cadastrado, sem cabecalho detectado e sem evidencia forte de confianca. Esse e o principal status para revisao manual.
+- `duplicate_audit.status = unico`: nenhum outro PDF parecido foi encontrado no lote.
+- `duplicate_audit.status = duplicado_exato_arquivo`: outro PDF possui o mesmo hash binario SHA256, ou seja, o arquivo e identico byte a byte.
+- `duplicate_audit.status = duplicado_textual`: outro PDF possui o mesmo texto normalizado, mesmo que o arquivo binario seja diferente.
+- `duplicate_audit.status = possivel_duplicado_laudo`: outro PDF possui a mesma chave logica de laudo/amostra.
+- `duplicate_audit.status = possivel_versao_substituta`: ha indicio textual de relatorio revisado/substituto, como `cancela e substitui`.
+- `duplicate_audit.status = conflito_mesma_amostra`: a mesma amostra aparece em PDFs com assinatura de resultados diferente.
 - `validation_errors` sem linhas: a saida validada esta consistente com o contrato atual.
 - `validation_errors` com linhas: ha erro de contrato na aba indicada em `sheet`; o valor original deve ser preservado, e o erro deve ser usado para corrigir taxonomia, extracao ou regra de validacao.
 
@@ -451,6 +459,26 @@ Auditoria generica das tabelas processadas. Essa aba ajuda a conferir se as colu
 - `status`: Resultado da auditoria da tabela. Pode indicar leitura direta por cabecalho (`ok`, `ok_com_opcional_ausente`), descoberta de coluna nova (`alerta_descoberta`, `alerta_descoberta_com_opcional_ausente`) ou uso de fallback (`fallback_cabecalho_texto_layout_confiavel`, `fallback_cabecalho_texto_layout_incompleto`, `fallback_layout_confiavel`, `fallback`).
 - `observacao`: Detalhe textual sobre ausencias, colunas novas ou uso de fallback.
 
+### `duplicate_audit`
+Auditoria de duplicidade entre PDFs processados no mesmo lote. Essa aba ajuda a separar copia exata, conteudo textual repetido, possivel versionamento e conflito de amostra.
+
+- `nome_do_arquivo`: Nome do PDF avaliado.
+- `caminho_arquivo`: Caminho completo do PDF avaliado.
+- `id_taxonomia`: Identificador da taxonomia reconhecida.
+- `nome_taxonomia`: Nome da taxonomia reconhecida.
+- `versao`: Versao do template/taxonomia usada na extracao.
+- `id_amostra`: Identificador da amostra usado na comparacao logica.
+- `identificacao_amostra`: Identificacao completa do laudo/amostra, quando extraida.
+- `data_publicacao`: Data de publicacao do laudo, quando extraida.
+- `data_coleta`: Data de coleta, quando extraida.
+- `hash_arquivo`: SHA256 do arquivo PDF binario.
+- `hash_texto`: SHA256 do texto extraido e normalizado.
+- `grupo_duplicidade`: Chave usada para agrupar o possivel duplicado.
+- `tipo_duplicidade`: Tipo de duplicidade encontrado.
+- `arquivo_referencia`: Outro arquivo do mesmo grupo de duplicidade.
+- `motivo`: Explicacao curta da classificacao.
+- `status`: Resultado final, como `unico`, `duplicado_exato_arquivo`, `duplicado_textual`, `possivel_duplicado_laudo`, `possivel_versao_substituta` ou `conflito_mesma_amostra`.
+
 ### `validation_errors`
 Erros encontrados pela validacao final com Pydantic nas abas de saida validadas: `results_extract`, `sample`, `client` e `packaging_preservatives`. Quando a extracao esta consistente, a aba e criada apenas com cabecalhos e sem linhas.
 
@@ -468,6 +496,7 @@ Erros encontrados pela validacao final com Pydantic nas abas de saida validadas:
 - `core/pipeline.py`: orquestra o fluxo completo em etapas: contexto, cabecalho, resultados, normalizacao, validacao e gravacao.
 - `core/context.py`: guarda o contexto do documento processado e monta a auditoria de classificacao do template.
 - `core/scope.py`: identifica se o PDF pertence a algum template cadastrado.
+- `audit/duplicate_audit.py`: calcula hashes, chaves logicas e status de duplicidade entre PDFs do lote.
 - `config/loader.py`: orquestra leitura, validacao, mapeamento e montagem da configuracao em memoria.
 - `config/reader.py`: le as 5 abas oficiais do Excel `taxonomy.xlsx`.
 - `config/mapper.py`: transforma o modelo relacional da taxonomia nos DataFrames usados pelo motor de extracao.

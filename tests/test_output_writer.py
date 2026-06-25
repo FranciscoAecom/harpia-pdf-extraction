@@ -6,7 +6,13 @@ from pathlib import Path
 import pandas as pd
 from openpyxl import load_workbook
 
-from harpia_parser.constants import CLIENT_COLUMNS, PACKAGING_PRESERVATIVES_COLUMNS, RESULTS_EXTRACT_COLUMNS, SAMPLE_COLUMNS
+from harpia_parser.constants import (
+    CLIENT_COLUMNS,
+    DUPLICATE_AUDIT_COLUMNS,
+    PACKAGING_PRESERVATIVES_COLUMNS,
+    RESULTS_EXTRACT_COLUMNS,
+    SAMPLE_COLUMNS,
+)
 from harpia_parser.formatting.output_writer import salvar
 from test_validation import _valid_row
 
@@ -98,6 +104,32 @@ class OutputWriterTest(unittest.TestCase):
             self.assertEqual(worksheet.freeze_panes, "A2")
             self.assertEqual(worksheet.cell(row=1, column=1).fill.fgColor.rgb, "001F4E78")
             self.assertEqual(worksheet.cell(row=1, column=1).font.color.rgb, "00FFFFFF")
+
+    def test_duplicate_audit_sheet_is_written_when_requested(self):
+        row = _valid_row()
+        df = pd.DataFrame([row], columns=RESULTS_EXTRACT_COLUMNS)
+        duplicate_audit_df = pd.DataFrame([{
+            "nome_do_arquivo": "a.pdf",
+            "caminho_arquivo": "C:/tmp/a.pdf",
+            "id_taxonomia": 1,
+            "nome_taxonomia": "Agua Superficial",
+            "status": "unico",
+        }]).reindex(columns=DUPLICATE_AUDIT_COLUMNS)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            output_path = Path(tmp) / "out.xlsx"
+            salvar(
+                df,
+                output_path,
+                output_tabs=["results_extract", "duplicate_audit", "validation_errors"],
+                duplicate_audit_df=duplicate_audit_df,
+            )
+
+            workbook = load_workbook(output_path, data_only=False)
+            self.assertIn("duplicate_audit", workbook.sheetnames)
+            worksheet = workbook["duplicate_audit"]
+            self.assertEqual(worksheet.cell(row=2, column=1).value, "a.pdf")
+            self.assertEqual(worksheet.cell(row=2, column=16).value, "unico")
 
     def test_packaging_preservatives_sheet_is_written_when_requested(self):
         row = _valid_row()
@@ -305,8 +337,18 @@ class OutputWriterTest(unittest.TestCase):
                 df,
                 output_path,
                 sample_df=sample_df,
-                output_tabs=["results_extract", "sample", "table_extraction_audit", "validation_errors"],
+                output_tabs=[
+                    "results_extract",
+                    "sample",
+                    "table_extraction_audit",
+                    "duplicate_audit",
+                    "validation_errors",
+                ],
                 table_extraction_audit_df=table_audit_df,
+                duplicate_audit_df=pd.DataFrame([{
+                    "nome_do_arquivo": "a.pdf",
+                    "status": "unico",
+                }]).reindex(columns=DUPLICATE_AUDIT_COLUMNS),
             )
 
             json_path = output_path.with_suffix(".json")
@@ -320,6 +362,7 @@ class OutputWriterTest(unittest.TestCase):
             self.assertEqual(document["tabelas"]["results_extract"][0]["id_amostra"], "687944")
             self.assertEqual(document["tabelas"]["sample"][0]["identificacao_amostra"], "687944 - ECR 01R - P50")
             self.assertEqual(document["auditoria"]["table_extraction_audit"][0]["status"], "ok")
+            self.assertEqual(document["auditoria"]["duplicate_audit"][0]["status"], "unico")
             self.assertIn("validation_errors", document["auditoria"])
 
 
