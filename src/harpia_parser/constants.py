@@ -7,6 +7,8 @@ RESULTS_EXTRACT_COLUMNS = [
     "tipo",
     "categoria",
     "subcategoria",
+    "codigo_laudo",
+    "codigo_laudo_substituido",
     "parameter",
     "resultado",
     "acm_resultado_tratado",
@@ -75,6 +77,7 @@ SAMPLE_COLUMNS = [
     "responsavel_amostra",
     "planejamento_amostragem",
     "descricao_nao_conformidade",
+    "codigo_laudo_substituido",
 ]
 
 CLIENT_COLUMNS = [

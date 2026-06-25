@@ -1,3 +1,5 @@
+import re
+
 import pandas as pd
 
 from ..parsing.measure_parser import parse_medida, parse_resultado, texto_vazio
@@ -50,6 +52,13 @@ def _normalize_normative_field(df: pd.DataFrame, field: str) -> pd.DataFrame:
         return df
 
     for index, value in df[field].items():
+        if _complex_normative_note(value):
+            df.at[index, field] = _pdf_text_or_none(value)
+            df.at[index, f"acm_{field}_operador"] = None
+            df.at[index, f"acm_{field}_minimo"] = None
+            df.at[index, f"acm_{field}_maximo"] = None
+            df.at[index, f"acm_{field}_unidade"] = None
+            continue
         parsed = parse_medida(value, field)
         df.at[index, field] = _pdf_text_or_none(value)
         df.at[index, f"acm_{field}_operador"] = parsed[f"{field}_operador"]
@@ -57,6 +66,14 @@ def _normalize_normative_field(df: pd.DataFrame, field: str) -> pd.DataFrame:
         df.at[index, f"acm_{field}_maximo"] = parsed[f"{field}_maximo"]
         df.at[index, f"acm_{field}_unidade"] = parsed[f"{field}_unidade"]
     return df
+
+
+def _complex_normative_note(value) -> bool:
+    if value is None or pd.isna(value):
+        return False
+    text = str(value)
+    normalized = normalizar(text)
+    return "para ph" in normalized and len(re.findall(r"\d+(?:[,.]\d+)?\s*mg/l", normalized)) > 1
 
 
 def _normalize_resultado(df: pd.DataFrame) -> pd.DataFrame:

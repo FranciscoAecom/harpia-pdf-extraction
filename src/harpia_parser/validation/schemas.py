@@ -51,13 +51,15 @@ class ResultsExtractRow(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     nome_do_arquivo: str
-    id_taxonomia: int | str
+    id_taxonomia: int
     nome_taxonomia: str | None = None
-    versao: str | None = None
-    id_amostra: int | str
+    versao: int | None = None
+    id_amostra: int
     tipo: TIPO_REGISTRO
     categoria: str
     subcategoria: str | None = None
+    codigo_laudo: str | None = None
+    codigo_laudo_substituido: str | None = None
     parameter: str
     resultado: str | None = None
     acm_resultado_tratado: float | None = None
@@ -162,10 +164,10 @@ class PackagingPreservativesRow(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     nome_do_arquivo: str
-    id_taxonomia: int | str
+    id_taxonomia: int
     nome_taxonomia: str | None = None
-    versao: str | None = None
-    id_amostra: int | str
+    versao: int | None = None
+    id_amostra: int
     identificacao_amostra: str
     embalagem: str
     volume: str
@@ -198,10 +200,10 @@ class SampleRow(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     nome_do_arquivo: str
-    id_taxonomia: int | str
+    id_taxonomia: int
     nome_taxonomia: str | None = None
-    versao: str | None = None
-    id_amostra: int | str
+    versao: int | None = None
+    id_amostra: int
     identificacao_amostra: str | None = None
     tipo_amostra: str | None = None
     criterio_conformidade: str | None = None
@@ -223,6 +225,7 @@ class SampleRow(BaseModel):
     responsavel_amostra: str | None = None
     planejamento_amostragem: str | None = None
     descricao_nao_conformidade: str | None = None
+    codigo_laudo_substituido: str | None = None
 
     @field_validator("*", mode="before")
     @classmethod
@@ -251,10 +254,10 @@ class ClientRow(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     nome_do_arquivo: str
-    id_taxonomia: int | str
+    id_taxonomia: int
     nome_taxonomia: str | None = None
-    versao: str | None = None
-    id_amostra: int | str
+    versao: int | None = None
+    id_amostra: int
     proposta_comercial: str | None = None
     cliente: str | None = None
     cnpj_cpf: str | None = None

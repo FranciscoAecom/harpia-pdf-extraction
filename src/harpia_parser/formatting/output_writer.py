@@ -1,4 +1,5 @@
 from pathlib import Path
+from datetime import datetime
 import json
 import re
 from typing import Any
@@ -13,6 +14,12 @@ from ..validation.schemas import VALIDATION_ERROR_COLUMNS, validate_outputs
 
 NUMERIC_TEXT = re.compile(r"^([+-]?\d+(?:[,.]\d+)?)(?:\s*x\s*10\s*([+-]?\d+))?$", re.IGNORECASE)
 NUMBER_IN_TEXT = re.compile(r"[<>]?\s*([+-]?\d+(?:[,.]\d+)?)")
+INTEGER_TEXT = re.compile(r"^\d+$")
+DATE_TEXT = re.compile(r"^\d{2}/\d{2}/\d{4}$")
+INTEGER_OUTPUT_COLUMNS = {"id_amostra", "id_taxonomia", "versao"}
+DATE_OUTPUT_COLUMNS = {
+    "sample": {"data_coleta", "data_publicacao", "data_recebimento"},
+}
 HEADER_FILL = PatternFill(fill_type="solid", fgColor="1F4E78")
 HEADER_FONT = Font(color="FFFFFF", bold=True)
 HEADER_ALIGNMENT = Alignment(horizontal="center", vertical="center", wrap_text=True)
@@ -139,6 +146,9 @@ def _format_output_sheet(writer: pd.ExcelWriter, sheet_name: str) -> None:
         cell.alignment = HEADER_ALIGNMENT
         cell.border = HEADER_BORDER
 
+    _apply_integer_format_to_columns(worksheet)
+    _apply_date_format_to_columns(worksheet, sheet_name)
+
     for column_cells in worksheet.columns:
         column_letter = get_column_letter(column_cells[0].column)
         max_length = 0
@@ -150,9 +160,44 @@ def _format_output_sheet(writer: pd.ExcelWriter, sheet_name: str) -> None:
         worksheet.column_dimensions[column_letter].width = min(max(max_length + 2, 12), 55)
 
 
-def _json_scalar(value: Any) -> Any:
+def _apply_integer_format_to_columns(worksheet) -> None:
+    headers = {str(cell.value): cell.column for cell in worksheet[1] if cell.value is not None}
+    for column_name in INTEGER_OUTPUT_COLUMNS & set(headers):
+        column_index = headers[column_name]
+        for row_index in range(2, worksheet.max_row + 1):
+            cell = worksheet.cell(row=row_index, column=column_index)
+            if cell.value is None:
+                continue
+            text = str(cell.value).strip()
+            if INTEGER_TEXT.match(text):
+                cell.value = int(text)
+                cell.number_format = "0"
+
+
+def _apply_date_format_to_columns(worksheet, sheet_name: str) -> None:
+    date_columns = DATE_OUTPUT_COLUMNS.get(sheet_name, set())
+    if not date_columns:
+        return
+    headers = {str(cell.value): cell.column for cell in worksheet[1] if cell.value is not None}
+    for column_name in date_columns & set(headers):
+        column_index = headers[column_name]
+        for row_index in range(2, worksheet.max_row + 1):
+            cell = worksheet.cell(row=row_index, column=column_index)
+            if cell.value is None:
+                continue
+            text = str(cell.value).strip()
+            if DATE_TEXT.match(text):
+                cell.value = datetime.strptime(text, "%d/%m/%Y")
+                cell.number_format = "dd/mm/yyyy"
+
+
+def _json_scalar(key: str, value: Any) -> Any:
     if value is None or pd.isna(value):
         return None
+    if key in INTEGER_OUTPUT_COLUMNS:
+        text = str(value).strip()
+        if INTEGER_TEXT.match(text):
+            return int(text)
     if hasattr(value, "item"):
         return value.item()
     if hasattr(value, "isoformat"):
@@ -165,7 +210,7 @@ def _records(df: pd.DataFrame | None) -> list[dict[str, Any]]:
         return []
     cleaned = df.astype(object).where(pd.notna(df), None)
     return [
-        {str(key): _json_scalar(value) for key, value in row.items()}
+        {str(key): _json_scalar(str(key), value) for key, value in row.items()}
         for row in cleaned.to_dict(orient="records")
     ]
 

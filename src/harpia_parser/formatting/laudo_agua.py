@@ -16,6 +16,8 @@ def format_results_extract(df: pd.DataFrame, config, context=None) -> pd.DataFra
         "tipo": df["tipo_registro"].map(TIPO_LABELS).fillna(df["tipo_registro"]),
         "categoria": df["categoria"],
         "subcategoria": df["subcategoria"],
+        "codigo_laudo": df.get("codigo_laudo"),
+        "codigo_laudo_substituido": df.get("codigo_laudo_substituido"),
         "parameter": df["parametro"],
         "resultado": df["resultado"],
         "acm_resultado_tratado": df["resultado_tratado"],

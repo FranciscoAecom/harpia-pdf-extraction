@@ -51,6 +51,8 @@ def extract_document_section(
                     cleaned = _clean_text(value)
                     if not cleaned:
                         continue
+                    if field == "chave_validacao" and _invalid_validation_key(cleaned):
+                        continue
                     identity = (field, cleaned)
                     if identity in seen:
                         continue
@@ -66,3 +68,7 @@ def extract_document_section(
                     })
 
     return pd.DataFrame(rows, columns=columns)
+
+
+def _invalid_validation_key(value: str) -> bool:
+    return bool(re.fullmatch(r"FO-ANL-\d+", value.strip(), flags=re.IGNORECASE))

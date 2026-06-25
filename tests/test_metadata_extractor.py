@@ -22,6 +22,7 @@ class MetadataExtractorTest(unittest.TestCase):
 
         self.assertEqual(sample.loc[0, "id_amostra"], "687944")
         self.assertEqual(sample.loc[0, "identificacao_amostra"], "68659-1/2024.0 - ECR 01R - P50")
+        self.assertEqual(metadata["codigo_laudo"], "Relatório Analítico 68659/2024.0.A")
 
     def test_extracts_full_non_conformity_description_across_planning_line(self):
         config = filter_config_for_template(load_config(Path.cwd()), "template_laudo_agua_v1")
@@ -48,6 +49,39 @@ class MetadataExtractorTest(unittest.TestCase):
         self.assertIn("Entretanto", descricao)
         self.assertIn("conformidade", descricao)
         self.assertNotIn("Planejamento de Amostragem", descricao)
+
+    def test_sample_planning_keeps_only_planning_code(self):
+        config = filter_config_for_template(load_config(Path.cwd()), "template_laudo_agua_v1")
+        texto = (
+            "ID Amostra: 123456\n"
+            "Data Coleta: 01/01/2025\n"
+            "Planejamento de Amostragem: CA5056/2025 Salinidade: 2,26 ‰\n"
+            "Descrição da não-conformidade: -\n"
+            "Resultados Analíticos\n"
+        )
+
+        metadata = extract_metadata(texto, config)
+        sample = extract_sample(texto, metadata, config)
+
+        self.assertEqual(sample.loc[0, "planejamento_amostragem"], "CA5056/2025")
+        self.assertEqual(sample.loc[0, "descricao_nao_conformidade"], "-")
+
+    def test_extracts_replaced_report_notice(self):
+        config = filter_config_for_template(load_config(Path.cwd()), "template_laudo_agua_v1")
+        texto = (
+            "ID Amostra: 123456\n"
+            "Data Coleta: 01/01/2025\n"
+            "Este relatório analítico cancela e substitui o relatório 72768/2024.0\n"
+            "Resultados Analíticos\n"
+        )
+
+        metadata = extract_metadata(texto, config)
+        sample = extract_sample(texto, metadata, config)
+
+        self.assertEqual(
+            sample.loc[0, "codigo_laudo_substituido"],
+            "Este relatório analítico cancela e substitui o relatório 72768/2024.0",
+        )
 
 
 if __name__ == "__main__":

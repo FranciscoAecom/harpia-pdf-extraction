@@ -1,6 +1,7 @@
 import tempfile
 import unittest
 import json
+from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
@@ -75,6 +76,38 @@ class OutputWriterTest(unittest.TestCase):
 
             self.assertEqual(cell.value, 790)
             self.assertEqual(cell.number_format, "0.0")
+
+    def test_common_ids_are_written_as_integers_and_sample_dates_as_dates(self):
+        row = _valid_row()
+        row["id_taxonomia"] = "1"
+        row["versao"] = "2"
+        row["id_amostra"] = "717727"
+        df = pd.DataFrame([row], columns=RESULTS_EXTRACT_COLUMNS)
+        sample_df = pd.DataFrame([{
+            "nome_do_arquivo": "a.pdf",
+            "id_taxonomia": "1",
+            "nome_taxonomia": "Agua Superficial",
+            "versao": "2",
+            "id_amostra": "717727",
+            "data_coleta": "01/02/2025",
+            "data_publicacao": "03/02/2025",
+            "data_recebimento": "02/02/2025",
+        }], columns=SAMPLE_COLUMNS)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            output_path = Path(tmp) / "out.xlsx"
+            salvar(df, output_path, sample_df=sample_df, output_tabs=["results_extract", "sample", "validation_errors"])
+
+            workbook = load_workbook(output_path, data_only=False)
+            results = workbook["results_extract"]
+            sample = workbook["sample"]
+
+            self.assertEqual(results.cell(row=2, column=RESULTS_EXTRACT_COLUMNS.index("id_taxonomia") + 1).value, 1)
+            self.assertEqual(results.cell(row=2, column=RESULTS_EXTRACT_COLUMNS.index("versao") + 1).value, 2)
+            self.assertEqual(results.cell(row=2, column=RESULTS_EXTRACT_COLUMNS.index("id_amostra") + 1).value, 717727)
+            date_cell = sample.cell(row=2, column=SAMPLE_COLUMNS.index("data_coleta") + 1)
+            self.assertEqual(date_cell.value, datetime(2025, 2, 1))
+            self.assertEqual(date_cell.number_format, "dd/mm/yyyy")
 
     def test_table_extraction_audit_sheet_is_written_when_requested(self):
         row = _valid_row()
@@ -359,7 +392,7 @@ class OutputWriterTest(unittest.TestCase):
             self.assertEqual(payload["formato"], "harpia_extracao_documento")
             self.assertEqual(document["arquivo"]["nome_do_arquivo"], "a.pdf")
             self.assertEqual(document["arquivo"]["id_taxonomia"], 1)
-            self.assertEqual(document["tabelas"]["results_extract"][0]["id_amostra"], "687944")
+            self.assertEqual(document["tabelas"]["results_extract"][0]["id_amostra"], 687944)
             self.assertEqual(document["tabelas"]["sample"][0]["identificacao_amostra"], "687944 - ECR 01R - P50")
             self.assertEqual(document["auditoria"]["table_extraction_audit"][0]["status"], "ok")
             self.assertEqual(document["auditoria"]["duplicate_audit"][0]["status"], "unico")

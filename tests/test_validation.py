@@ -20,6 +20,8 @@ def _valid_row() -> dict:
         "tipo": "Duplicata",
         "categoria": "QA/QC",
         "subcategoria": None,
+        "codigo_laudo": None,
+        "codigo_laudo_substituido": None,
         "parameter": "pH",
         "resultado": "7,100",
         "acm_resultado_tratado": 7.1,

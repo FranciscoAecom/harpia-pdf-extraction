@@ -282,6 +282,8 @@ Resultados analiticos e QA/QC extraidos do PDF.
 - `tipo`: Natureza do registro/tabela extraida: Amostra, Branco, Duplicata ou Recuperacao.
 - `categoria`: Bloco principal do PDF, como `Resultados Analíticos`, `Controle de Qualidade` ou `Provedores Externos`.
 - `subcategoria`: Secao interna do bloco principal, preservando o nome cadastrado/original do PDF, como `Metais` ou `Recuperação - Especiação`.
+- `codigo_laudo`: Codigo da secao do laudo, como `Relatório Analítico 72768/2024.1.A`.
+- `codigo_laudo_substituido`: Frase do PDF indicando que o relatorio atual cancela e substitui outro relatorio, quando houver.
 - `parameter`: Parametro/analise da linha de resultado.
 - `resultado`: Resultado textual preservado como aparece no PDF.
 - `acm_resultado_tratado`: Resultado convertido para numero no Excel, com casas decimais preservadas e notacao cientifica exibida como decimal normal.
@@ -336,7 +338,7 @@ Dados cadastrais, coleta e cabecalho da amostra.
 - `data_recebimento`: Data de recebimento da amostra.
 - `dh_recebimento`: Horario de recebimento da amostra.
 - `observacoes`: Observacoes do cabecalho da amostra.
-- `dh_inicio_atividade`: Data/hora de inicio de atividade inferida ou extraida.
+- `dh_inicio_atividade`: Data/hora de inicio de atividade extraida apenas quando cadastrada nas regras de `sample`.
 - `localizacao`: Local da coleta.
 - `latitude`: Latitude decimal da coleta.
 - `longitude`: Longitude decimal da coleta.
@@ -345,8 +347,9 @@ Dados cadastrais, coleta e cabecalho da amostra.
 - `clima`: Condicoes climaticas no momento da coleta.
 - `tipo_coleta`: Tipo de coleta.
 - `responsavel_amostra`: Responsavel pela amostragem.
-- `planejamento_amostragem`: Codigo/plano de amostragem.
+- `planejamento_amostragem`: Codigo/plano de amostragem, como `CA1682/2025`.
 - `descricao_nao_conformidade`: Descricao de nao conformidade, quando houver.
+- `codigo_laudo_substituido`: Frase do PDF indicando que o relatorio atual cancela e substitui outro relatorio, quando houver.
 
 ### `client`
 Dados da tabela de identificacao do cliente.

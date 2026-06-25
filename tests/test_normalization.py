@@ -106,6 +106,35 @@ class NormalizationTest(unittest.TestCase):
         self.assertIsNone(out.loc[0, "acm_conama_minimo"])
         self.assertIsNone(out.loc[0, "acm_conama_maximo"])
 
+    def test_complex_normative_notes_are_not_structured(self):
+        context = SimpleNamespace(tipo_laudo="laudo_agua")
+        note = "Nota 3 = 3,7mg/L N, para pH <= 7,5. 2,0 mg/L N, para 7,5 < pH <= 8,0."
+        df = pd.DataFrame([{
+            "parameter": "Nitrogenio",
+            "resultado": "1,0",
+            "acm_resultado_tratado": None,
+            "acm_qualificador": None,
+            "acm_unidade": None,
+            "conama": note,
+            "acm_conama_operador": None,
+            "acm_conama_minimo": None,
+            "acm_conama_maximo": None,
+            "acm_conama_unidade": None,
+            "copam_cerh": "3,7 mg/L, para pH <= 7,5 * 2,0 mg/L, para 7,5 < pH <= 8,0",
+            "acm_copam_cerh_operador": None,
+            "acm_copam_cerh_minimo": None,
+            "acm_copam_cerh_maximo": None,
+            "acm_copam_cerh_unidade": None,
+        }])
+
+        out, _, _ = normalize_outputs(df, pd.DataFrame(), pd.DataFrame(), context)
+
+        self.assertEqual(out.loc[0, "conama"], note)
+        self.assertIsNone(out.loc[0, "acm_conama_minimo"])
+        self.assertIsNone(out.loc[0, "acm_conama_maximo"])
+        self.assertIsNone(out.loc[0, "acm_copam_cerh_minimo"])
+        self.assertIsNone(out.loc[0, "acm_copam_cerh_maximo"])
+
     def test_laudo_agua_normalization_sets_ph_unit(self):
         context = SimpleNamespace(tipo_laudo="laudo_agua")
         df = pd.DataFrame([{

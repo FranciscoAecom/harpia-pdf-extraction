@@ -20,7 +20,7 @@ from ..constants import (
 )
 from .context import DocumentContext
 from ..formatting.common import format_results_extract
-from ..extraction.metadata_extractor import extract_client, extract_metadata, extract_sample
+from ..extraction.metadata_extractor import codigo_laudo_from_text, extract_client, extract_metadata, extract_sample
 from ..extraction.document_sections import extract_document_section
 from ..extraction.packaging_preservatives import extract_packaging_preservatives
 from ..normalization import normalize_outputs
@@ -145,8 +145,10 @@ def _extract_result_rows(paginas, metadata: dict, sample_df: pd.DataFrame, conte
     estado = novo_estado()
     dh_inicio_atividade = sample_df.loc[0, "dh_inicio_atividade"]
     pending_estado = None
+    codigo_laudo_atual = metadata.get("codigo_laudo")
 
     for page_number, (page_text, tabelas) in enumerate(paginas, start=1):
+        codigo_laudo_atual = codigo_laudo_from_text(page_text or "") or codigo_laudo_atual
         if pending_estado:
             estado.update(pending_estado)
 
@@ -194,6 +196,8 @@ def _extract_result_rows(paginas, metadata: dict, sample_df: pd.DataFrame, conte
                     "nome_taxonomia": context.nome_taxonomia,
                     "versao": context.versao,
                     "id_amostra": metadata.get("id_amostra"),
+                    "codigo_laudo": codigo_laudo_atual,
+                    "codigo_laudo_substituido": sample_df.loc[0, "codigo_laudo_substituido"],
                     **dado,
                 })
 
@@ -265,8 +269,6 @@ def run_pipeline_document(pdf_path, config=None) -> tuple[
     )
 
     df = format_results_extract(raw_results_df, extraction_config, context)
-    if pd.notna(dh_inicio_atividade):
-        sample_df.loc[0, "dh_inicio_atividade"] = dh_inicio_atividade
     sample_df = sample_df.reindex(columns=SAMPLE_COLUMNS)
     client_df = client_df.reindex(columns=CLIENT_COLUMNS)
     packaging_preservatives_df = packaging_preservatives_df.reindex(columns=PACKAGING_PRESERVATIVES_COLUMNS)
