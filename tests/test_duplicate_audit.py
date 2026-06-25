@@ -15,7 +15,7 @@ def _sample(id_amostra: str, identificacao: str = "LAUDO-1") -> pd.DataFrame:
         "nome_do_arquivo": "a.pdf",
         "id_taxonomia": 1,
         "nome_taxonomia": "Agua Superficial",
-        "versao": "1",
+        "versao_template": "1",
         "id_amostra": id_amostra,
         "identificacao_amostra": identificacao,
         "data_publicacao": "01/01/2025",

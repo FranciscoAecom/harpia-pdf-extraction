@@ -23,7 +23,7 @@ class DuplicateCandidate:
     caminho_arquivo: str
     id_taxonomia: Any
     nome_taxonomia: Any
-    versao: Any
+    versao_template: Any
     id_amostra: Any
     identificacao_amostra: Any
     data_publicacao: Any
@@ -72,7 +72,7 @@ def build_duplicate_candidate(
         caminho_arquivo=str(pdf_path),
         id_taxonomia=_value(identity, "id_taxonomia"),
         nome_taxonomia=_value(identity, "nome_taxonomia"),
-        versao=_value(identity, "versao"),
+        versao_template=_value(identity, "versao_template"),
         id_amostra=id_amostra,
         identificacao_amostra=identificacao_amostra,
         data_publicacao=data_publicacao,
@@ -108,7 +108,7 @@ def build_duplicate_audit(candidates: list[DuplicateCandidate]) -> pd.DataFrame:
             "caminho_arquivo": candidate.caminho_arquivo,
             "id_taxonomia": candidate.id_taxonomia,
             "nome_taxonomia": candidate.nome_taxonomia,
-            "versao": candidate.versao,
+            "versao_template": candidate.versao_template,
             "id_amostra": candidate.id_amostra,
             "identificacao_amostra": candidate.identificacao_amostra,
             "data_publicacao": candidate.data_publicacao,

@@ -11,7 +11,7 @@ def format_results_extract(df: pd.DataFrame, config, context=None) -> pd.DataFra
         "nome_do_arquivo": df["nome_do_arquivo"],
         "id_taxonomia": df["id_taxonomia"],
         "nome_taxonomia": df["nome_taxonomia"],
-        "versao": df["versao"],
+        "versao_template": df["versao_template"],
         "id_amostra": df["id_amostra"],
         "tipo": df["tipo_registro"].map(TIPO_LABELS).fillna(df["tipo_registro"]),
         "categoria": df["categoria"],

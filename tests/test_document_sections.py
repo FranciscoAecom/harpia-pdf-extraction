@@ -13,7 +13,7 @@ class DocumentSectionsTest(unittest.TestCase):
             nome_do_arquivo="a.pdf",
             id_taxonomia=1,
             nome_taxonomia="Agua Superficial",
-            versao=1,
+            versao_template=1,
         )
         rules = pd.DataFrame([{
             "campo": "chave_validacao",

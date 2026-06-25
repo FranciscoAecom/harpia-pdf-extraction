@@ -76,8 +76,8 @@ def classify_document(texto: str, config, pdf_path: str | Path | None = None) ->
     template = config.templates.get(template_id, {})
     id_taxonomia = template.get("id_taxonomia")
     nome_taxonomia = template.get("nome_taxonomia") or template.get("descricao")
-    versao = template.get("versao")
-    return ClassificationResult(template_id, tipo_laudo, id_taxonomia, nome_taxonomia, versao, scores)
+    versao_template = template.get("versao_template")
+    return ClassificationResult(template_id, tipo_laudo, id_taxonomia, nome_taxonomia, versao_template, scores)
 
 
 def detect_document_template(texto: str, config, pdf_path: str | Path | None = None) -> str | None:

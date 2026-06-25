@@ -16,7 +16,7 @@ NUMERIC_TEXT = re.compile(r"^([+-]?\d+(?:[,.]\d+)?)(?:\s*x\s*10\s*([+-]?\d+))?$"
 NUMBER_IN_TEXT = re.compile(r"[<>]?\s*([+-]?\d+(?:[,.]\d+)?)")
 INTEGER_TEXT = re.compile(r"^\d+$")
 DATE_TEXT = re.compile(r"^\d{2}/\d{2}/\d{4}$")
-INTEGER_OUTPUT_COLUMNS = {"id_amostra", "id_taxonomia", "versao"}
+INTEGER_OUTPUT_COLUMNS = {"id_amostra", "id_taxonomia", "versao_template"}
 DATE_OUTPUT_COLUMNS = {
     "sample": {"data_coleta", "data_publicacao", "data_recebimento"},
 }
@@ -229,10 +229,10 @@ def _document_identity(records: list[dict[str, Any]], file_name: str) -> dict[st
         "nome_do_arquivo": file_name,
         "id_taxonomia": None,
         "nome_taxonomia": None,
-        "versao": None,
+        "versao_template": None,
     }
     for record in records:
-        for field in ["id_taxonomia", "nome_taxonomia", "versao"]:
+        for field in ["id_taxonomia", "nome_taxonomia", "versao_template"]:
             if identity[field] is None and record.get(field) is not None:
                 identity[field] = record.get(field)
     return identity

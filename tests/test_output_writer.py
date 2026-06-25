@@ -80,14 +80,14 @@ class OutputWriterTest(unittest.TestCase):
     def test_common_ids_are_written_as_integers_and_sample_dates_as_dates(self):
         row = _valid_row()
         row["id_taxonomia"] = "1"
-        row["versao"] = "2"
+        row["versao_template"] = "2"
         row["id_amostra"] = "717727"
         df = pd.DataFrame([row], columns=RESULTS_EXTRACT_COLUMNS)
         sample_df = pd.DataFrame([{
             "nome_do_arquivo": "a.pdf",
             "id_taxonomia": "1",
             "nome_taxonomia": "Agua Superficial",
-            "versao": "2",
+            "versao_template": "2",
             "id_amostra": "717727",
             "data_coleta": "01/02/2025",
             "data_publicacao": "03/02/2025",
@@ -103,7 +103,7 @@ class OutputWriterTest(unittest.TestCase):
             sample = workbook["sample"]
 
             self.assertEqual(results.cell(row=2, column=RESULTS_EXTRACT_COLUMNS.index("id_taxonomia") + 1).value, 1)
-            self.assertEqual(results.cell(row=2, column=RESULTS_EXTRACT_COLUMNS.index("versao") + 1).value, 2)
+            self.assertEqual(results.cell(row=2, column=RESULTS_EXTRACT_COLUMNS.index("versao_template") + 1).value, 2)
             self.assertEqual(results.cell(row=2, column=RESULTS_EXTRACT_COLUMNS.index("id_amostra") + 1).value, 717727)
             date_cell = sample.cell(row=2, column=SAMPLE_COLUMNS.index("data_coleta") + 1)
             self.assertEqual(date_cell.value, datetime(2025, 2, 1))
@@ -344,14 +344,14 @@ class OutputWriterTest(unittest.TestCase):
         row["nome_do_arquivo"] = "a.pdf"
         row["id_taxonomia"] = 1
         row["nome_taxonomia"] = "Agua Superficial"
-        row["versao"] = "1"
+        row["versao_template"] = "1"
         row["id_amostra"] = "687944"
         df = pd.DataFrame([row], columns=RESULTS_EXTRACT_COLUMNS)
         sample_df = pd.DataFrame([{
             "nome_do_arquivo": "a.pdf",
             "id_taxonomia": 1,
             "nome_taxonomia": "Agua Superficial",
-            "versao": "1",
+            "versao_template": "1",
             "id_amostra": "687944",
             "identificacao_amostra": "687944 - ECR 01R - P50",
             "tipo_amostra": "Agua superficial",
@@ -360,7 +360,7 @@ class OutputWriterTest(unittest.TestCase):
             "nome_do_arquivo": "a.pdf",
             "id_taxonomia": 1,
             "nome_taxonomia": "Agua Superficial",
-            "versao": "1",
+            "versao_template": "1",
             "status": "ok",
         }])
 

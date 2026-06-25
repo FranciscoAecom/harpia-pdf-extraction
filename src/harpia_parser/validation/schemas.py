@@ -53,7 +53,7 @@ class ResultsExtractRow(BaseModel):
     nome_do_arquivo: str
     id_taxonomia: int
     nome_taxonomia: str | None = None
-    versao: int | None = None
+    versao_template: int | None = None
     id_amostra: int
     tipo: TIPO_REGISTRO
     categoria: str
@@ -166,7 +166,7 @@ class PackagingPreservativesRow(BaseModel):
     nome_do_arquivo: str
     id_taxonomia: int
     nome_taxonomia: str | None = None
-    versao: int | None = None
+    versao_template: int | None = None
     id_amostra: int
     identificacao_amostra: str
     embalagem: str
@@ -202,7 +202,7 @@ class SampleRow(BaseModel):
     nome_do_arquivo: str
     id_taxonomia: int
     nome_taxonomia: str | None = None
-    versao: int | None = None
+    versao_template: int | None = None
     id_amostra: int
     identificacao_amostra: str | None = None
     tipo_amostra: str | None = None
@@ -256,7 +256,7 @@ class ClientRow(BaseModel):
     nome_do_arquivo: str
     id_taxonomia: int
     nome_taxonomia: str | None = None
-    versao: int | None = None
+    versao_template: int | None = None
     id_amostra: int
     proposta_comercial: str | None = None
     cliente: str | None = None

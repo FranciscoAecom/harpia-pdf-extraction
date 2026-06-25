@@ -61,7 +61,7 @@ def extract_document_section(
                         "nome_do_arquivo": context.nome_do_arquivo,
                         "id_taxonomia": context.id_taxonomia,
                         "nome_taxonomia": context.nome_taxonomia,
-                        "versao": context.versao,
+                        "versao_template": context.versao_template,
                         "id_amostra": metadata.get("id_amostra"),
                         "pagina": page_number,
                         field: cleaned,
