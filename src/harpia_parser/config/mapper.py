@@ -30,6 +30,17 @@ OUTPUT_ORDER = {
     "validation_errors": 11,
 }
 
+CONFIG_ONLY_SCHEMAS = {
+    "metadata",
+    "template_detection",
+    "category_alias",
+    "category_type",
+    "continuation",
+    "header_alias",
+    "layout",
+    "subcategory_alias",
+}
+
 
 def map_taxonomy_to_runtime_frames(workbook: TaxonomyWorkbook) -> dict[str, pd.DataFrame]:
     template_identities = _template_identities(workbook)
@@ -207,6 +218,21 @@ def _template_detection_rules(
             "descricao": "",
         })
 
+    for _, row in _by_schema(base_items, "template_detection").iterrows():
+        attrs = parse_attrs(row.get("coluna_origem"))
+        rule_type = normalize_token(attrs.get("rule_type"))
+        if rule_type not in {"required", "positive", "negative"}:
+            continue
+        rows.append({
+            "template_id": row["template_id"],
+            "rule_type": rule_type,
+            "source": "text",
+            "padrao_regex": row["regex"],
+            "peso": parse_weight(row.get("coluna_origem")),
+            "ativo": True,
+            "descricao": "",
+        })
+
     templates_with_detail_rules = {row["template_id"] for row in rows}
     for _, row in workbook.template.iterrows():
         identity = identities.get(row.get("id")) or {}
@@ -309,7 +335,8 @@ def _fields_from_item_schema(df_item_schema: pd.DataFrame, sheet_name: str) -> p
 
 def _output_tabs(df_schema: pd.DataFrame, df_templates: pd.DataFrame) -> pd.DataFrame:
     rows: list[dict[str, Any]] = []
-    output_schemas = df_schema[df_schema["nome"].astype(str) != "metadata"].copy()
+    schema_names = df_schema["nome"].astype(str)
+    output_schemas = df_schema[~schema_names.isin(CONFIG_ONLY_SCHEMAS)].copy()
     output_schemas["ordem_saida"] = output_schemas["nome"].map(OUTPUT_ORDER).fillna(999)
     output_schemas = output_schemas.sort_values(["ordem_saida", "id"], na_position="last")
 

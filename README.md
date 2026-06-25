@@ -138,7 +138,7 @@ Campos booleanos da taxonomy, como `ativo`, podem usar os valores padronizados d
 ### Abas da Taxonomy
 
 - `item_taxonomia`: Cadastro do tema ou item de taxonomia, como agua superficial.
-- `template`: Cadastro dos templates associados ao item de taxonomia, incluindo regex geral e status ativo.
+- `template`: Cadastro dos templates associados ao item de taxonomia, incluindo regex geral, status ativo e versao.
 - `item_template`: Regras do template. Contem regexes textuais, regras de identificacao, layouts de tabela, aliases de cabecalho, secoes e continuacoes.
 - `schema`: Cadastro das abas/tabelas de saida esperadas.
 - `item_schema`: Campos de cada aba de saida, com tipo esperado e regra de nulidade.
@@ -161,17 +161,33 @@ Registro dos templates/modelos de documento reconhecidos pela taxonomia.
 - `id_item_taxonomia`: Vinculo com `item_taxonomia.id`.
 - `regex`: Regex geral do template.
 - `ativo`: Indica se o template esta ativo.
+- `versao`: Versao do template/taxonomia usada para rastrear a extracao.
 
 #### `item_template`
 Regras associadas a cada template. Essa aba concentra as regras que antes ficavam espalhadas por abas especificas.
 
 - `id`: Identificador interno da regra.
 - `id_template`: Vinculo com `template.id`.
-- `schema`: Grupo da regra, como `template_required`, `metadata`, `sample`, `client`, `layout`, `header_alias`, `category_type`, `category_alias`, `subcategory_alias` ou `continuation`.
+- `schema`: Grupo da regra, como `template_detection`, `metadata`, `sample`, `client`, `layout`, `header_alias`, `category_type`, `category_alias`, `subcategory_alias` ou `continuation`.
 - `campo`: Campo de destino ou valor semantico da regra.
 - `regex`: Regex usada pela regra. Em regras de layout sem regex, fica como `Nao se aplica`.
 - `coluna_origem`: Posicao da coluna no layout ou atributos complementares no formato `chave=valor; chave=valor`.
 - `tipo_registro`: Tipo de registro/tabela, como `Amostra`, `Branco`, `Duplicata` ou `Recuperacao`.
+
+Para regras de identificacao do documento, use `schema = template_detection`. O tipo da regra fica em `coluna_origem`:
+
+- `rule_type=required`: regra obrigatoria; se nao casar, o template e rejeitado.
+- `rule_type=positive`: regra positiva; se casar, soma o `peso` ao score do template.
+- `rule_type=negative`: regra negativa; se casar, bloqueia o template.
+
+Exemplo:
+
+```text
+schema              campo       regex                    coluna_origem
+template_detection  documento   Relat.rio Anal.tico      rule_type=required; peso=0
+template_detection  documento   Tipo de Amostra:\s*.gua  rule_type=positive; peso=40
+template_detection  documento   Fitopl.ncton             rule_type=negative; peso=0
+```
 
 #### `schema`
 Cadastro das abas/tabelas de saida.

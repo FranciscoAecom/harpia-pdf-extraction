@@ -27,10 +27,10 @@ def _minimal_workbook() -> TaxonomyWorkbook:
             {
                 "id": 1,
                 "id_template": 1,
-                "schema": "template_required",
+                "schema": "template_detection",
                 "campo": "documento",
                 "regex": r"Relat.rio Anal.tico",
-                "coluna_origem": "peso=0",
+                "coluna_origem": "rule_type=required; peso=0",
                 "tipo_registro": "Nao se aplica",
             },
             {

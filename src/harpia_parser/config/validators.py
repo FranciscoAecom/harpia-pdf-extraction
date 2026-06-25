@@ -30,6 +30,7 @@ KNOWN_ITEM_TEMPLATE_SCHEMAS = {
     "template_required",
     "template_positive",
     "template_negative",
+    "template_detection",
     "metadata",
     "sample",
     "client",
@@ -72,6 +73,7 @@ def validate_raw_taxonomy(workbook: TaxonomyWorkbook) -> None:
     _validate_unique_ids("item_schema", workbook.item_schema)
     _validate_foreign_keys(workbook)
     _validate_known_schemas(workbook.item_template)
+    _validate_template_detection_rules(workbook.item_template)
     _validate_layout_fields(workbook)
     _validate_boolean_like_values(workbook)
     _validate_regexes(workbook)
@@ -226,6 +228,21 @@ def _validate_known_schemas(df_item_template: pd.DataFrame) -> None:
     unknown = sorted(values - KNOWN_ITEM_TEMPLATE_SCHEMAS)
     if unknown:
         raise ValueError(f"Aba item_template contem schemas desconhecidos: {unknown}")
+
+
+def _validate_template_detection_rules(df_item_template: pd.DataFrame) -> None:
+    rows = df_item_template[df_item_template["schema"].astype(str) == "template_detection"]
+    invalid = []
+    for _, row in rows.iterrows():
+        attrs = parse_attrs(row.get("coluna_origem"))
+        rule_type = normalize_token(attrs.get("rule_type"))
+        if rule_type not in {"required", "positive", "negative"}:
+            invalid.append(row.get("id"))
+    if invalid:
+        raise ValueError(
+            "Aba item_template/template_detection contem rule_type invalido em coluna_origem "
+            f"nos ids: {invalid[:10]}. Use required, positive ou negative."
+        )
 
 
 def _validate_layout_fields(workbook: TaxonomyWorkbook) -> None:

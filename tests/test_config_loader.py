@@ -4,6 +4,7 @@ from pathlib import Path
 import pandas as pd
 
 from harpia_parser.config.loader import filter_config_for_template, load_config
+from harpia_parser.config.reader import read_taxonomy_workbook
 from harpia_parser.constants import (
     CLIENT_COLUMNS,
     CONFORMITY_STATEMENT_COLUMNS,
@@ -63,6 +64,33 @@ class ConfigLoaderTest(unittest.TestCase):
             sources = df["source"].fillna("text").astype(str).str.strip().str.lower()
             with self.subTest(sheet_name=sheet_name):
                 self.assertEqual(set(sources), {"text"})
+
+    def test_template_detection_rules_use_unified_schema(self):
+        config = load_config(Path.cwd())
+        raw_schemas = set(config.df_template_rules["rule_type"].dropna().astype(str))
+
+        self.assertEqual(raw_schemas, {"required", "positive", "negative"})
+        self.assertGreater(len(config.df_template_rules), 0)
+
+    def test_raw_template_detection_uses_single_item_template_schema(self):
+        workbook = read_taxonomy_workbook(Path.cwd() / "config" / "taxonomy.xlsx")
+        schemas = set(workbook.item_template["schema"].dropna().astype(str))
+
+        self.assertIn("template_detection", schemas)
+        self.assertFalse({"template_required", "template_positive", "template_negative"} & schemas)
+
+    def test_template_detection_is_registered_as_config_schema(self):
+        workbook = read_taxonomy_workbook(Path.cwd() / "config" / "taxonomy.xlsx")
+        schemas = set(workbook.schema["nome"].dropna().astype(str))
+
+        self.assertIn("template_detection", schemas)
+
+    def test_all_item_template_schemas_are_registered(self):
+        workbook = read_taxonomy_workbook(Path.cwd() / "config" / "taxonomy.xlsx")
+        item_template_schemas = set(workbook.item_template["schema"].dropna().astype(str))
+        registered_schemas = set(workbook.schema["nome"].dropna().astype(str))
+
+        self.assertFalse(item_template_schemas - registered_schemas)
 
     def test_templates_define_theme_id(self):
         config = load_config(Path.cwd())
@@ -166,6 +194,13 @@ class ConfigLoaderTest(unittest.TestCase):
                 "validation_errors",
             ],
         )
+        self.assertNotIn("template_detection", config.output_tabs["template_laudo_agua_v1"])
+        self.assertNotIn("layout", config.output_tabs["template_laudo_agua_v1"])
+        self.assertNotIn("header_alias", config.output_tabs["template_laudo_agua_v1"])
+        self.assertNotIn("category_type", config.output_tabs["template_laudo_agua_v1"])
+        self.assertNotIn("category_alias", config.output_tabs["template_laudo_agua_v1"])
+        self.assertNotIn("subcategory_alias", config.output_tabs["template_laudo_agua_v1"])
+        self.assertNotIn("continuation", config.output_tabs["template_laudo_agua_v1"])
 
     def test_subcategory_alias_rules_are_loaded_by_template(self):
         config = load_config(Path.cwd())
