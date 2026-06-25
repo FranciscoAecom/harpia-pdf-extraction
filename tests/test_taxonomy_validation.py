@@ -74,6 +74,20 @@ class TaxonomyValidationTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "regex invalida"):
             validate_raw_taxonomy(workbook)
 
+    def test_rejects_unprefixed_structured_normalized_fields(self):
+        workbook = _minimal_workbook()
+        workbook.item_schema.loc[len(workbook.item_schema)] = {
+            "id": 2,
+            "id_schema": 2,
+            "schema": "results_extract",
+            "campo": "lq_minimo",
+            "tipo": "decimal",
+            "nulo": "sim",
+        }
+
+        with self.assertRaisesRegex(ValueError, "sem prefixo acm_"):
+            validate_raw_taxonomy(workbook)
+
     def test_mapper_uses_explicit_template_identity_when_available(self):
         workbook = _minimal_workbook()
         workbook.template["template_id"] = "template_custom_v1"

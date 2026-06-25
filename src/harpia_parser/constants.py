@@ -214,3 +214,33 @@ TIPO_LABELS = {
     "RECUPERACAO": "Recupera\u00e7\u00e3o",
 }
 
+ACM_DERIVED_COLUMNS = {
+    "acm_resultado_tratado",
+    "acm_qualificador",
+    "acm_unidade",
+    "acm_conama_operador",
+    "acm_conama_minimo",
+    "acm_conama_maximo",
+    "acm_conama_unidade",
+    "acm_copam_cerh_operador",
+    "acm_copam_cerh_minimo",
+    "acm_copam_cerh_maximo",
+    "acm_copam_cerh_unidade",
+    "acm_ld_minimo",
+    "acm_ld_maximo",
+    "acm_ld_unidade",
+    "acm_lq_minimo",
+    "acm_lq_maximo",
+    "acm_lq_unidade",
+    "acm_incerteza_valor",
+    "acm_incerteza_unidade",
+    "acm_faixa_aceitacao_operador",
+    "acm_faixa_aceitacao_minimo",
+    "acm_faixa_aceitacao_maximo",
+    "acm_faixa_aceitacao_unidade",
+}
+
+ACM_FORBIDDEN_UNPREFIXED_DERIVED_COLUMNS = {
+    column.removeprefix("acm_") for column in ACM_DERIVED_COLUMNS
+}
+

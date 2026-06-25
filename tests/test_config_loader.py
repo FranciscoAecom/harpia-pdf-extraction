@@ -6,6 +6,8 @@ import pandas as pd
 from harpia_parser.config.loader import filter_config_for_template, load_config
 from harpia_parser.config.reader import read_taxonomy_workbook
 from harpia_parser.constants import (
+    ACM_DERIVED_COLUMNS,
+    ACM_FORBIDDEN_UNPREFIXED_DERIVED_COLUMNS,
     CLIENT_COLUMNS,
     CONFORMITY_STATEMENT_COLUMNS,
     DUPLICATE_AUDIT_COLUMNS,
@@ -34,6 +36,24 @@ class ConfigLoaderTest(unittest.TestCase):
         self.assertEqual(config.df_conformity_statement_model["campo"].tolist(), CONFORMITY_STATEMENT_COLUMNS)
         self.assertEqual(config.df_validation_key_model["campo"].tolist(), VALIDATION_KEY_COLUMNS)
         self.assertEqual(config.df_duplicate_audit_model["campo"].tolist(), DUPLICATE_AUDIT_COLUMNS)
+
+    def test_structured_normalized_fields_use_acm_prefix(self):
+        config = load_config(Path.cwd())
+        result_fields = set(config.df_results_extract_model["campo"].dropna().astype(str))
+
+        self.assertTrue(ACM_DERIVED_COLUMNS <= result_fields)
+        self.assertFalse(ACM_FORBIDDEN_UNPREFIXED_DERIVED_COLUMNS & result_fields)
+
+    def test_simple_numeric_pdf_fields_keep_original_names(self):
+        config = load_config(Path.cwd())
+        result_fields = set(config.df_results_extract_model["campo"].dropna().astype(str))
+
+        self.assertTrue({"variacao_percentual", "quantidade_adicionada", "recuperacao_percentual"} <= result_fields)
+        self.assertFalse({
+            "acm_variacao_percentual",
+            "acm_quantidade_adicionada",
+            "acm_recuperacao_percentual",
+        } & result_fields)
 
     def test_template_filter_keeps_only_explicit_template_rules(self):
         config = load_config(Path.cwd())

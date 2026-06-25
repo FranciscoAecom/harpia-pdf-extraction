@@ -4,6 +4,8 @@ from typing import Iterable
 import pandas as pd
 
 from ..constants import (
+    ACM_DERIVED_COLUMNS,
+    ACM_FORBIDDEN_UNPREFIXED_DERIVED_COLUMNS,
     CLIENT_COLUMNS,
     CONFORMITY_STATEMENT_COLUMNS,
     DUPLICATE_AUDIT_COLUMNS,
@@ -76,6 +78,7 @@ def validate_raw_taxonomy(workbook: TaxonomyWorkbook) -> None:
     _validate_known_schemas(workbook.item_template)
     _validate_template_detection_rules(workbook.item_template)
     _validate_layout_fields(workbook)
+    _validate_acm_output_contract(workbook)
     _validate_boolean_like_values(workbook)
     _validate_regexes(workbook)
 
@@ -278,6 +281,22 @@ def _validate_layout_fields(workbook: TaxonomyWorkbook) -> None:
     unknown_header_fields = sorted(header_fields - allowed_header_fields)
     if unknown_header_fields:
         raise ValueError(f"Aba item_template/header_alias contem campos sem saida correspondente: {unknown_header_fields}")
+
+
+def _validate_acm_output_contract(workbook: TaxonomyWorkbook) -> None:
+    result_fields = set(
+        workbook.item_schema[workbook.item_schema["schema"].astype(str) == "results_extract"]["campo"]
+        .dropna()
+        .astype(str)
+    )
+
+    forbidden_unprefixed_fields = sorted(ACM_FORBIDDEN_UNPREFIXED_DERIVED_COLUMNS & result_fields)
+
+    if forbidden_unprefixed_fields:
+        raise ValueError(
+            "Aba item_schema/results_extract contem campos derivados sem prefixo acm_: "
+            f"{forbidden_unprefixed_fields}"
+        )
 
 
 def _validate_boolean_like_values(workbook: TaxonomyWorkbook) -> None:
