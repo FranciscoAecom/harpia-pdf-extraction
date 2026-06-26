@@ -21,7 +21,10 @@ from harpia_parser.core.scope import classify_document  # noqa: E402
 from harpia_parser.formatting.output_writer import salvar  # noqa: E402
 
 
-DEFAULT_INPUT_DIR = Path(r"L:\Secure_DCS\BRBLH1PINFW001\COE_Digital\others\lumen")
+DEFAULT_INPUT_DIRS = [
+    Path(r"L:\Secure_DCS\BRBLH1PINFW001\COE_Digital\others\harpia_rd"),
+    Path(r"L:\Secure_DCS\BRBLH1PINFW001\COE_Digital\others\lumen"),
+]
 log = logging.getLogger(__name__)
 
 
@@ -49,10 +52,14 @@ def _winner_template_id(audit_df: pd.DataFrame) -> str | None:
     return str(values.iloc[0]) if not values.empty else None
 
 
-def _list_pdfs(input_dir: Path) -> list[Path]:
-    if not input_dir.exists():
-        raise FileNotFoundError(f"Pasta de entrada nao encontrada: {input_dir}")
-    return sorted(input_dir.rglob("*.pdf"))
+def _list_pdfs(input_dirs: list[Path]) -> list[Path]:
+    pdfs: dict[str, Path] = {}
+    for input_dir in input_dirs:
+        if not input_dir.exists():
+            raise FileNotFoundError(f"Pasta de entrada nao encontrada: {input_dir}")
+        for pdf in input_dir.rglob("*.pdf"):
+            pdfs[str(pdf)] = pdf
+    return sorted(pdfs.values(), key=lambda path: str(path).lower())
 
 
 def _read_pdf_text(pdf_path: Path, max_pages: int | None = None) -> str:
@@ -64,10 +71,10 @@ def _read_pdf_text(pdf_path: Path, max_pages: int | None = None) -> str:
     return "\n".join(texts)
 
 
-def classify_batch(input_dir: Path, output_path: Path, max_pages: int | None = 3) -> None:
+def classify_batch(input_dirs: list[Path], output_path: Path, max_pages: int | None = 3) -> None:
     config = load_config(ROOT)
     rows = []
-    pdfs = _list_pdfs(input_dir)
+    pdfs = _list_pdfs(input_dirs)
     extraction_timestamp = _timestamp_text()
 
     for index, pdf in enumerate(pdfs, start=1):
@@ -105,7 +112,7 @@ def classify_batch(input_dir: Path, output_path: Path, max_pages: int | None = 3
     log.info("Auditoria de classificacao salva em: %s", output_path)
 
 
-def extract_batch(input_dir: Path, output_dir: Path) -> None:
+def extract_batch(input_dirs: list[Path], output_dir: Path) -> None:
     config = load_config(ROOT)
     all_results: dict[str, list[pd.DataFrame]] = {}
     all_samples: dict[str, list[pd.DataFrame]] = {}
@@ -119,7 +126,7 @@ def extract_batch(input_dir: Path, output_dir: Path) -> None:
     all_table_audits: dict[str, list[pd.DataFrame]] = {}
     all_duplicate_candidates = {}
     summary = []
-    pdfs = _list_pdfs(input_dir)
+    pdfs = _list_pdfs(input_dirs)
     extraction_timestamp = _timestamp_text()
 
     for index, pdf in enumerate(pdfs, start=1):
@@ -279,9 +286,10 @@ def main(argv=None) -> int:
     )
     parser.add_argument(
         "--input",
+        nargs="+",
         type=Path,
-        default=DEFAULT_INPUT_DIR,
-        help="Pasta raiz contendo PDFs.",
+        default=DEFAULT_INPUT_DIRS,
+        help="Uma ou mais pastas raiz contendo PDFs.",
     )
     parser.add_argument(
         "--output",
