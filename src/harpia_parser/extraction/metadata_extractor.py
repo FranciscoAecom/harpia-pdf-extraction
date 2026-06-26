@@ -12,6 +12,8 @@ def extract_metadata(texto: str, config) -> dict:
         match = rule["regex"].search(texto)
         if match:
             val = match.group(1) if match.lastindex and match.group(1) else None
+            if rule["campo"] == "codigo_laudo" and val:
+                val = re.sub(r"\s+", " ", val).strip()
             data[rule["campo"]] = val if val else "BASE"
         else:
             data[rule["campo"]] = None
@@ -48,11 +50,8 @@ def extract_sample(texto: str, metadata: dict, config) -> pd.DataFrame:
         "tipo_amostra": extracted.get("tipo_amostra"),
         "criterio_conformidade": extracted.get("criterio_conformidade"),
         "data_coleta": metadata.get("data_coleta"),
-        "dh_coleta": extracted.get("dh_coleta"),
         "data_publicacao": extracted.get("data_publicacao"),
-        "dh_publicacao": extracted.get("dh_publicacao"),
         "data_recebimento": extracted.get("data_recebimento"),
-        "dh_recebimento": extracted.get("dh_recebimento"),
         "observacoes": extracted.get("observacoes"),
         "dh_inicio_atividade": extracted.get("dh_inicio_atividade"),
         "localizacao": extracted.get("localizacao"),
@@ -108,7 +107,7 @@ def extract_client(texto: str, metadata: dict, config) -> pd.DataFrame:
 
 def relatorio_from_text(texto: str) -> str | None:
     match = re.search(
-        r"Relat.rio Anal.tico\s*(\d+/\d+\.\d+)(?:\.([A-Z]{1,2}))?",
+        r"Relat.rio\s+Anal.tico(?:\s+Parcial)?\s*(\d+/\d+\.\d+)(?:\.([A-Z]{1,2}))?",
         texto,
         re.IGNORECASE,
     )
@@ -122,7 +121,7 @@ def relatorio_from_text(texto: str) -> str | None:
 
 def codigo_laudo_from_text(texto: str) -> str | None:
     match = re.search(
-        r"(Relat.rio Anal.tico\s*\d+/\d+\.\d+(?:\.[A-Z]{1,2})?)",
+        r"(Relat.rio\s+Anal.tico(?:\s+Parcial)?\s*\d+/\d+\.\d+(?:\.[A-Z]{1,2})?)",
         texto,
         re.IGNORECASE,
     )

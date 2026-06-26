@@ -24,6 +24,22 @@ class MetadataExtractorTest(unittest.TestCase):
         self.assertEqual(sample.loc[0, "identificacao_amostra"], "68659-1/2024.0 - ECR 01R - P50")
         self.assertEqual(metadata["codigo_laudo"], "Relatório Analítico 68659/2024.0.A")
 
+    def test_extracts_partial_report_code_when_number_is_on_next_line(self):
+        config = filter_config_for_template(load_config(Path.cwd()), "template_laudo_agua_v1")
+        texto = (
+            "Relat\u00f3rio Anal\u00edtico Parcial\n"
+            "73406/2025.1.A\n"
+            "InformaÃ§Ãµes da Amostra - NÂº: 73406-1/2025.1 - ZCN 05 - P50\n"
+            "Tipo de Amostra: Ãgua Salina Classe 1 ID Amostra: 871654\n"
+            "Data Coleta: 17/10/2025 07:50\n"
+            "Latitude: -18,72408\n"
+            "Longitude: -39,74225\n"
+        )
+
+        metadata = extract_metadata(texto, config)
+
+        self.assertEqual(metadata["codigo_laudo"], "Relat\u00f3rio Anal\u00edtico Parcial 73406/2025.1.A")
+
     def test_extracts_full_non_conformity_description_across_planning_line(self):
         config = filter_config_for_template(load_config(Path.cwd()), "template_laudo_agua_v1")
         texto = (

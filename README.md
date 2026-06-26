@@ -214,6 +214,10 @@ O arquivo de extracao padrao e separado por tema em `output/<tipo_laudo>/extract
 
 Junto com o Excel, o processo tambem gera `output/<tipo_laudo>/extracted_data.json`. Esse arquivo tem o mesmo conteudo agrupado por PDF, pensado para carga em banco com coluna `jsonb`.
 
+Campo comum das abas de saida:
+
+- `acm_data_hora_extracao`: Data e horario em que o arquivo de extracao foi gerado. O mesmo valor e aplicado aos registros de todas as abas daquele arquivo.
+
 Estrutura principal do JSON:
 
 - `formato`: Identificador do formato de exportacao.
@@ -331,12 +335,9 @@ Dados cadastrais, coleta e cabecalho da amostra.
 - `identificacao_amostra`: Identificacao textual da linha `Informacoes da Amostra - No:`, como `68659-1/2024.0 - ECR 01R - P50`.
 - `tipo_amostra`: Tipo de amostra informado no cabecalho.
 - `criterio_conformidade`: Criterio de conformidade textual do cabecalho da amostra.
-- `data_coleta`: Data de coleta da amostra.
-- `dh_coleta`: Horario de coleta da amostra.
-- `data_publicacao`: Data de publicacao do laudo.
-- `dh_publicacao`: Horario de publicacao do laudo.
-- `data_recebimento`: Data de recebimento da amostra.
-- `dh_recebimento`: Horario de recebimento da amostra.
+- `data_coleta`: Data e hora de coleta da amostra, quando a hora existir no PDF.
+- `data_publicacao`: Data e hora de publicacao do laudo, quando a hora existir no PDF.
+- `data_recebimento`: Data e hora de recebimento da amostra, quando a hora existir no PDF.
 - `observacoes`: Observacoes do cabecalho da amostra.
 - `dh_inicio_atividade`: Data/hora de inicio de atividade extraida apenas quando cadastrada nas regras de `sample`.
 - `localizacao`: Local da coleta.

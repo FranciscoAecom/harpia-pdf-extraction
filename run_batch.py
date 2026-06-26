@@ -1,6 +1,7 @@
 import argparse
 import logging
 import sys
+from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
@@ -14,6 +15,7 @@ if str(SRC) not in sys.path:
 
 from harpia_parser.config.loader import load_config, output_tabs_for_template  # noqa: E402
 from harpia_parser.audit.duplicate_audit import build_duplicate_audit, build_duplicate_candidate  # noqa: E402
+from harpia_parser.constants import ACM_EXTRACTION_TIMESTAMP_COLUMN  # noqa: E402
 from harpia_parser.core.pipeline import run_pipeline_document  # noqa: E402
 from harpia_parser.core.scope import classify_document  # noqa: E402
 from harpia_parser.formatting.output_writer import salvar  # noqa: E402
@@ -21,6 +23,10 @@ from harpia_parser.formatting.output_writer import salvar  # noqa: E402
 
 DEFAULT_INPUT_DIR = Path(r"L:\Secure_DCS\BRBLH1PINFW001\COE_Digital\others\lumen")
 log = logging.getLogger(__name__)
+
+
+def _timestamp_text() -> str:
+    return datetime.now().replace(microsecond=0).strftime("%d/%m/%Y %H:%M:%S")
 
 
 def _first_value(dataframes: list[pd.DataFrame], column: str) -> str | None:
@@ -62,6 +68,7 @@ def classify_batch(input_dir: Path, output_path: Path, max_pages: int | None = 3
     config = load_config(ROOT)
     rows = []
     pdfs = _list_pdfs(input_dir)
+    extraction_timestamp = _timestamp_text()
 
     for index, pdf in enumerate(pdfs, start=1):
         log.info("[%d/%d] Classificando %s", index, len(pdfs), pdf.name)
@@ -74,6 +81,7 @@ def classify_batch(input_dir: Path, output_path: Path, max_pages: int | None = 3
                 "id_taxonomia": result.id_taxonomia,
                 "nome_taxonomia": result.nome_taxonomia,
                 "versao_template": result.versao_template,
+                ACM_EXTRACTION_TIMESTAMP_COLUMN: extraction_timestamp,
                 "status": "identificado" if result.template_id else "fora_escopo",
                 "scores": "; ".join(
                     f"{score.template_id}:{score.status}:{score.score}/{score.score_minimo}"
@@ -87,6 +95,7 @@ def classify_batch(input_dir: Path, output_path: Path, max_pages: int | None = 3
                 "id_taxonomia": None,
                 "nome_taxonomia": None,
                 "versao_template": None,
+                ACM_EXTRACTION_TIMESTAMP_COLUMN: extraction_timestamp,
                 "status": "erro",
                 "scores": f"{type(exc).__name__}: {exc}",
             })
@@ -111,6 +120,7 @@ def extract_batch(input_dir: Path, output_dir: Path) -> None:
     all_duplicate_candidates = {}
     summary = []
     pdfs = _list_pdfs(input_dir)
+    extraction_timestamp = _timestamp_text()
 
     for index, pdf in enumerate(pdfs, start=1):
         log.info("[%d/%d] Extraindo %s", index, len(pdfs), pdf.name)
@@ -142,6 +152,7 @@ def extract_batch(input_dir: Path, output_dir: Path) -> None:
                     "id_taxonomia": None,
                     "nome_taxonomia": None,
                     "versao_template": None,
+                    ACM_EXTRACTION_TIMESTAMP_COLUMN: extraction_timestamp,
                     "results_rows": 0,
                     "sample_rows": 0,
                     "client_rows": 0,
@@ -169,6 +180,7 @@ def extract_batch(input_dir: Path, output_dir: Path) -> None:
                 "id_taxonomia": id_taxonomia,
                 "nome_taxonomia": nome_taxonomia,
                 "versao_template": versao_template,
+                ACM_EXTRACTION_TIMESTAMP_COLUMN: extraction_timestamp,
                 "results_rows": len(df),
                 "sample_rows": len(sample_df),
                 "client_rows": len(client_df),
@@ -186,6 +198,7 @@ def extract_batch(input_dir: Path, output_dir: Path) -> None:
                 "id_taxonomia": None,
                 "nome_taxonomia": None,
                 "versao_template": None,
+                ACM_EXTRACTION_TIMESTAMP_COLUMN: extraction_timestamp,
                 "results_rows": 0,
                 "sample_rows": 0,
                 "client_rows": 0,

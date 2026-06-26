@@ -89,7 +89,7 @@ class OutputWriterTest(unittest.TestCase):
             "nome_taxonomia": "Agua Superficial",
             "versao_template": "2",
             "id_amostra": "717727",
-            "data_coleta": "01/02/2025",
+            "data_coleta": "01/02/2025 08:30",
             "data_publicacao": "03/02/2025",
             "data_recebimento": "02/02/2025",
         }], columns=SAMPLE_COLUMNS)
@@ -105,9 +105,13 @@ class OutputWriterTest(unittest.TestCase):
             self.assertEqual(results.cell(row=2, column=RESULTS_EXTRACT_COLUMNS.index("id_taxonomia") + 1).value, 1)
             self.assertEqual(results.cell(row=2, column=RESULTS_EXTRACT_COLUMNS.index("versao_template") + 1).value, 2)
             self.assertEqual(results.cell(row=2, column=RESULTS_EXTRACT_COLUMNS.index("id_amostra") + 1).value, 717727)
+            result_timestamp = results.cell(row=2, column=RESULTS_EXTRACT_COLUMNS.index("acm_data_hora_extracao") + 1)
+            sample_timestamp = sample.cell(row=2, column=SAMPLE_COLUMNS.index("acm_data_hora_extracao") + 1)
+            self.assertIsInstance(result_timestamp.value, datetime)
+            self.assertEqual(sample_timestamp.value, result_timestamp.value)
             date_cell = sample.cell(row=2, column=SAMPLE_COLUMNS.index("data_coleta") + 1)
-            self.assertEqual(date_cell.value, datetime(2025, 2, 1))
-            self.assertEqual(date_cell.number_format, "dd/mm/yyyy")
+            self.assertEqual(date_cell.value, datetime(2025, 2, 1, 8, 30))
+            self.assertEqual(date_cell.number_format, "dd/mm/yyyy hh:mm")
 
     def test_table_extraction_audit_sheet_is_written_when_requested(self):
         row = _valid_row()
@@ -161,8 +165,11 @@ class OutputWriterTest(unittest.TestCase):
             workbook = load_workbook(output_path, data_only=False)
             self.assertIn("duplicate_audit", workbook.sheetnames)
             worksheet = workbook["duplicate_audit"]
+            headers = [worksheet.cell(row=1, column=column).value for column in range(1, worksheet.max_column + 1)]
+            payload = dict(zip(headers, [worksheet.cell(row=2, column=column).value for column in range(1, worksheet.max_column + 1)], strict=False))
             self.assertEqual(worksheet.cell(row=2, column=1).value, "a.pdf")
-            self.assertEqual(worksheet.cell(row=2, column=16).value, "unico")
+            self.assertEqual(payload["status"], "unico")
+            self.assertIsInstance(payload["acm_data_hora_extracao"], datetime)
 
     def test_packaging_preservatives_sheet_is_written_when_requested(self):
         row = _valid_row()
@@ -191,8 +198,11 @@ class OutputWriterTest(unittest.TestCase):
             workbook = load_workbook(output_path, data_only=False)
             self.assertIn("packaging_preservatives", workbook.sheetnames)
             worksheet = workbook["packaging_preservatives"]
+            headers = [worksheet.cell(row=1, column=column).value for column in range(1, worksheet.max_column + 1)]
+            payload = dict(zip(headers, [worksheet.cell(row=2, column=column).value for column in range(1, worksheet.max_column + 1)], strict=False))
             self.assertEqual(worksheet.cell(row=2, column=1).value, "a.pdf")
-            self.assertEqual(worksheet.cell(row=2, column=7).value, "Polietileno")
+            self.assertEqual(payload["embalagem"], "Polietileno")
+            self.assertIsInstance(payload["acm_data_hora_extracao"], datetime)
             self.assertEqual(worksheet.freeze_panes, "A2")
 
     def test_packaging_preservatives_validation_errors_are_written(self):
@@ -227,6 +237,7 @@ class OutputWriterTest(unittest.TestCase):
 
             self.assertEqual(payload["sheet"], "packaging_preservatives")
             self.assertEqual(payload["field"], "metodos")
+            self.assertIsInstance(payload["acm_data_hora_extracao"], datetime)
 
     def test_sample_and_client_validation_errors_are_written(self):
         row = _valid_row()
@@ -240,11 +251,8 @@ class OutputWriterTest(unittest.TestCase):
             "tipo_amostra": "Agua superficial",
             "criterio_conformidade": None,
             "data_coleta": "2025-01-22",
-            "dh_coleta": "08:30",
             "data_publicacao": "22/01/2025",
-            "dh_publicacao": "10:15",
             "data_recebimento": "22/01/2025",
-            "dh_recebimento": "11:00",
             "observacoes": None,
             "dh_inicio_atividade": "22/01/2025 12:00",
             "localizacao": None,
@@ -391,10 +399,12 @@ class OutputWriterTest(unittest.TestCase):
             self.assertEqual(payload["formato"], "harpia_extracao_documento")
             self.assertEqual(document["arquivo"]["nome_do_arquivo"], "a.pdf")
             self.assertEqual(document["arquivo"]["id_taxonomia"], 1)
+            self.assertIn("acm_data_hora_extracao", document["tabelas"]["results_extract"][0])
             self.assertEqual(document["tabelas"]["results_extract"][0]["id_amostra"], 687944)
             self.assertEqual(document["tabelas"]["sample"][0]["identificacao_amostra"], "687944 - ECR 01R - P50")
             self.assertEqual(document["auditoria"]["table_extraction_audit"][0]["status"], "ok")
             self.assertEqual(document["auditoria"]["duplicate_audit"][0]["status"], "unico")
+            self.assertIn("acm_data_hora_extracao", document["auditoria"]["validation_errors"][0])
             self.assertIn("validation_errors", document["auditoria"])
 
 

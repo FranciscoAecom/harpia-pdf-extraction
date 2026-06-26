@@ -4,7 +4,13 @@ from typing import Any, Literal
 import pandas as pd
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
 
-from ..constants import CLIENT_COLUMNS, PACKAGING_PRESERVATIVES_COLUMNS, RESULTS_EXTRACT_COLUMNS, SAMPLE_COLUMNS
+from ..constants import (
+    ACM_EXTRACTION_TIMESTAMP_COLUMN,
+    CLIENT_COLUMNS,
+    PACKAGING_PRESERVATIVES_COLUMNS,
+    RESULTS_EXTRACT_COLUMNS,
+    SAMPLE_COLUMNS,
+)
 
 
 TIPO_REGISTRO = Literal["Amostra", "Branco", "Duplicata", "Recupera\u00e7\u00e3o"]
@@ -54,6 +60,7 @@ class ResultsExtractRow(BaseModel):
     id_taxonomia: int
     nome_taxonomia: str | None = None
     versao_template: int | None = None
+    acm_data_hora_extracao: str | None = Field(default=None, pattern=DATA_HORA_PT)
     id_amostra: int
     tipo: TIPO_REGISTRO
     categoria: str
@@ -167,6 +174,7 @@ class PackagingPreservativesRow(BaseModel):
     id_taxonomia: int
     nome_taxonomia: str | None = None
     versao_template: int | None = None
+    acm_data_hora_extracao: str | None = Field(default=None, pattern=DATA_HORA_PT)
     id_amostra: int
     identificacao_amostra: str
     embalagem: str
@@ -203,16 +211,14 @@ class SampleRow(BaseModel):
     id_taxonomia: int
     nome_taxonomia: str | None = None
     versao_template: int | None = None
+    acm_data_hora_extracao: str | None = Field(default=None, pattern=DATA_HORA_PT)
     id_amostra: int
     identificacao_amostra: str | None = None
     tipo_amostra: str | None = None
     criterio_conformidade: str | None = None
-    data_coleta: str | None = Field(default=None, pattern=DATA_PT)
-    dh_coleta: str | None = Field(default=None, pattern=HORA_PT)
-    data_publicacao: str | None = Field(default=None, pattern=DATA_PT)
-    dh_publicacao: str | None = Field(default=None, pattern=HORA_PT)
-    data_recebimento: str | None = Field(default=None, pattern=DATA_PT)
-    dh_recebimento: str | None = Field(default=None, pattern=HORA_PT)
+    data_coleta: str | None = Field(default=None, pattern=DATA_HORA_PT)
+    data_publicacao: str | None = Field(default=None, pattern=DATA_HORA_PT)
+    data_recebimento: str | None = Field(default=None, pattern=DATA_HORA_PT)
     observacoes: str | None = None
     dh_inicio_atividade: str | None = Field(default=None, pattern=DATA_HORA_PT)
     localizacao: str | None = None
@@ -256,6 +262,7 @@ class ClientRow(BaseModel):
     id_taxonomia: int
     nome_taxonomia: str | None = None
     versao_template: int | None = None
+    acm_data_hora_extracao: str | None = Field(default=None, pattern=DATA_HORA_PT)
     id_amostra: int
     proposta_comercial: str | None = None
     cliente: str | None = None
@@ -278,6 +285,7 @@ class ClientRow(BaseModel):
 
 
 VALIDATION_ERROR_COLUMNS = [
+    ACM_EXTRACTION_TIMESTAMP_COLUMN,
     "sheet",
     "row_number",
     "id_amostra",

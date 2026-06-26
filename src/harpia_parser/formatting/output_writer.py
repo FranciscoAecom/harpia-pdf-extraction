@@ -8,7 +8,7 @@ import pandas as pd
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 
-from ..constants import DUPLICATE_AUDIT_COLUMNS
+from ..constants import ACM_EXTRACTION_TIMESTAMP_COLUMN, DUPLICATE_AUDIT_COLUMNS
 from ..validation.schemas import VALIDATION_ERROR_COLUMNS, validate_outputs
 
 
@@ -16,6 +16,7 @@ NUMERIC_TEXT = re.compile(r"^([+-]?\d+(?:[,.]\d+)?)(?:\s*x\s*10\s*([+-]?\d+))?$"
 NUMBER_IN_TEXT = re.compile(r"[<>]?\s*([+-]?\d+(?:[,.]\d+)?)")
 INTEGER_TEXT = re.compile(r"^\d+$")
 DATE_TEXT = re.compile(r"^\d{2}/\d{2}/\d{4}$")
+DATE_TIME_TEXT = re.compile(r"^\d{2}/\d{2}/\d{4}\s+\d{2}:\d{2}(?::\d{2})?$")
 INTEGER_OUTPUT_COLUMNS = {"id_amostra", "id_taxonomia", "versao_template"}
 DATE_OUTPUT_COLUMNS = {
     "sample": {"data_coleta", "data_publicacao", "data_recebimento"},
@@ -175,7 +176,8 @@ def _apply_integer_format_to_columns(worksheet) -> None:
 
 
 def _apply_date_format_to_columns(worksheet, sheet_name: str) -> None:
-    date_columns = DATE_OUTPUT_COLUMNS.get(sheet_name, set())
+    date_columns = set(DATE_OUTPUT_COLUMNS.get(sheet_name, set()))
+    date_columns.add(ACM_EXTRACTION_TIMESTAMP_COLUMN)
     if not date_columns:
         return
     headers = {str(cell.value): cell.column for cell in worksheet[1] if cell.value is not None}
@@ -186,7 +188,11 @@ def _apply_date_format_to_columns(worksheet, sheet_name: str) -> None:
             if cell.value is None:
                 continue
             text = str(cell.value).strip()
-            if DATE_TEXT.match(text):
+            if DATE_TIME_TEXT.match(text):
+                date_format = "%d/%m/%Y %H:%M:%S" if text.count(":") == 2 else "%d/%m/%Y %H:%M"
+                cell.value = datetime.strptime(text, date_format)
+                cell.number_format = "dd/mm/yyyy hh:mm"
+            elif DATE_TEXT.match(text):
                 cell.value = datetime.strptime(text, "%d/%m/%Y")
                 cell.number_format = "dd/mm/yyyy"
 
@@ -222,6 +228,18 @@ def _records_for_file(df: pd.DataFrame | None, file_name: str) -> list[dict[str,
         return _records(df)
     filtered = df[df["nome_do_arquivo"].astype(str) == file_name]
     return _records(filtered)
+
+
+def _timestamp_text(timestamp: datetime) -> str:
+    return timestamp.strftime("%d/%m/%Y %H:%M:%S")
+
+
+def _with_extraction_timestamp(df: pd.DataFrame | None, timestamp: datetime) -> pd.DataFrame | None:
+    if df is None:
+        return None
+    result = df.copy()
+    result[ACM_EXTRACTION_TIMESTAMP_COLUMN] = _timestamp_text(timestamp)
+    return result
 
 
 def _document_identity(records: list[dict[str, Any]], file_name: str) -> dict[str, Any]:
@@ -378,6 +396,7 @@ def salvar(
 ) -> None:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     ext = output_path.suffix.lower()
+    extraction_timestamp = datetime.now().replace(microsecond=0)
     sheets_to_write = output_tabs or [
         "results_extract",
         "sample",
@@ -392,6 +411,18 @@ def salvar(
         "duplicate_audit",
         "validation_errors",
     ]
+    df = _with_extraction_timestamp(df, extraction_timestamp)
+    sample_df = _with_extraction_timestamp(sample_df, extraction_timestamp)
+    client_df = _with_extraction_timestamp(client_df, extraction_timestamp)
+    classification_audit_df = _with_extraction_timestamp(classification_audit_df, extraction_timestamp)
+    table_extraction_audit_df = _with_extraction_timestamp(table_extraction_audit_df, extraction_timestamp)
+    duplicate_audit_df = _with_extraction_timestamp(duplicate_audit_df, extraction_timestamp)
+    packaging_preservatives_df = _with_extraction_timestamp(packaging_preservatives_df, extraction_timestamp)
+    notes_df = _with_extraction_timestamp(notes_df, extraction_timestamp)
+    general_considerations_df = _with_extraction_timestamp(general_considerations_df, extraction_timestamp)
+    conformity_statement_df = _with_extraction_timestamp(conformity_statement_df, extraction_timestamp)
+    validation_key_df = _with_extraction_timestamp(validation_key_df, extraction_timestamp)
+
     validations = validate_outputs(
         df,
         sample_df,
@@ -405,6 +436,7 @@ def salvar(
         if validation_frames
         else pd.DataFrame(columns=VALIDATION_ERROR_COLUMNS)
     )
+    validation_errors = _with_extraction_timestamp(validation_errors, extraction_timestamp)
     json_output_path = output_path.with_suffix(".json")
 
     if ext == ".csv":
