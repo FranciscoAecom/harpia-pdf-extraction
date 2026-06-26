@@ -1,19 +1,32 @@
 import unittest
-from types import SimpleNamespace
+from pathlib import Path
 
 import pandas as pd
 
 from harpia_parser.constants import VALIDATION_KEY_COLUMNS
+from harpia_parser.core.context import ClassificationResult, DocumentContext
 from harpia_parser.extraction.document_sections import extract_document_section
 
 
 class DocumentSectionsTest(unittest.TestCase):
     def test_validation_key_ignores_nonexistent_form_code(self):
-        context = SimpleNamespace(
-            nome_do_arquivo="a.pdf",
+        classification = ClassificationResult(
+            template_id="template_laudo_agua_v1",
+            tipo_laudo="laudo_agua",
             id_taxonomia=1,
             nome_taxonomia="Agua Superficial",
-            versao_template=1,
+            versao_template="1",
+            scores=[],
+        )
+        context = DocumentContext(
+            pdf_path=Path("a.pdf"),
+            nome_do_arquivo="a.pdf",
+            template_id="template_laudo_agua_v1",
+            tipo_laudo="laudo_agua",
+            id_taxonomia=1,
+            nome_taxonomia="Agua Superficial",
+            versao_template="1",
+            classification=classification,
         )
         rules = pd.DataFrame([{
             "campo": "chave_validacao",
