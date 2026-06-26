@@ -237,6 +237,10 @@ def _timestamp_text(timestamp: datetime) -> str:
 def _with_extraction_timestamp(df: pd.DataFrame | None, timestamp: datetime) -> pd.DataFrame | None:
     if df is None:
         return None
+    return _with_required_extraction_timestamp(df, timestamp)
+
+
+def _with_required_extraction_timestamp(df: pd.DataFrame, timestamp: datetime) -> pd.DataFrame:
     result = df.copy()
     result[ACM_EXTRACTION_TIMESTAMP_COLUMN] = _timestamp_text(timestamp)
     return result
@@ -411,7 +415,7 @@ def salvar(
         "duplicate_audit",
         "validation_errors",
     ]
-    df = _with_extraction_timestamp(df, extraction_timestamp)
+    df = _with_required_extraction_timestamp(df, extraction_timestamp)
     sample_df = _with_extraction_timestamp(sample_df, extraction_timestamp)
     client_df = _with_extraction_timestamp(client_df, extraction_timestamp)
     classification_audit_df = _with_extraction_timestamp(classification_audit_df, extraction_timestamp)
@@ -436,7 +440,7 @@ def salvar(
         if validation_frames
         else pd.DataFrame(columns=VALIDATION_ERROR_COLUMNS)
     )
-    validation_errors = _with_extraction_timestamp(validation_errors, extraction_timestamp)
+    validation_errors = _with_required_extraction_timestamp(validation_errors, extraction_timestamp)
     json_output_path = output_path.with_suffix(".json")
 
     if ext == ".csv":

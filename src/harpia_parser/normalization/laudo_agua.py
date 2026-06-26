@@ -21,6 +21,26 @@ def _optional_text(value) -> str | None:
     return None if texto_vazio(value) else str(value)
 
 
+def _parameter_at(df: pd.DataFrame, index) -> str | None:
+    if "parameter" not in df.columns:
+        return None
+    value = df.at[index, "parameter"]
+    return None if texto_vazio(value) else str(value)
+
+
+def _is_ph_parameter(value) -> bool:
+    if texto_vazio(value):
+        return False
+    text = normalizar(str(value)).strip()
+    return text == "ph" or text.startswith("ph ")
+
+
+def _unit_with_parameter_fallback(unit: str | None, parameter: str | None) -> str | None:
+    if unit is None and _is_ph_parameter(parameter):
+        return "pH"
+    return unit
+
+
 def _ensure_object_columns(df: pd.DataFrame, columns: list[str]) -> None:
     for column in columns:
         if column in df.columns:
@@ -34,10 +54,11 @@ def _normalize_lq(df: pd.DataFrame) -> pd.DataFrame:
     _ensure_object_columns(df, ["acm_lq_unidade"])
     for index, value in df["lq"].items():
         parsed = parse_medida(value, "lq")
+        unidade = _unit_with_parameter_fallback(parsed["lq_unidade"], _parameter_at(df, index))
         df.at[index, "lq"] = _original_or_none(value)
         df.at[index, "acm_lq_minimo"] = parsed["lq_minimo"]
         df.at[index, "acm_lq_maximo"] = parsed["lq_maximo"]
-        df.at[index, "acm_lq_unidade"] = parsed["lq_unidade"]
+        df.at[index, "acm_lq_unidade"] = unidade
     return df
 
 
@@ -48,10 +69,11 @@ def _normalize_ld(df: pd.DataFrame) -> pd.DataFrame:
     _ensure_object_columns(df, ["acm_ld_unidade"])
     for index, value in df["ld"].items():
         parsed = parse_medida(value, "ld")
+        unidade = _unit_with_parameter_fallback(parsed["ld_unidade"], _parameter_at(df, index))
         df.at[index, "ld"] = _original_or_none(value)
         df.at[index, "acm_ld_minimo"] = parsed["ld_minimo"]
         df.at[index, "acm_ld_maximo"] = parsed["ld_maximo"]
-        df.at[index, "acm_ld_unidade"] = parsed["ld_unidade"]
+        df.at[index, "acm_ld_unidade"] = unidade
     return df
 
 
@@ -96,9 +118,7 @@ def _normalize_resultado(df: pd.DataFrame) -> pd.DataFrame:
     for index, value in df["resultado"].items():
         unidade_fallback = _optional_text(df.at[index, "acm_unidade"]) if "acm_unidade" in df.columns else None
         valor, qualificador, unidade = parse_resultado(value, unidade_fallback)
-        parametro = df.at[index, "parameter"] if "parameter" in df.columns else None
-        if unidade is None and normalizar(str(parametro or "")) == "ph":
-            unidade = "pH"
+        unidade = _unit_with_parameter_fallback(unidade, _parameter_at(df, index))
 
         df.at[index, "acm_resultado_tratado"] = valor
         df.at[index, "acm_qualificador"] = qualificador
@@ -113,9 +133,10 @@ def _normalize_incerteza(df: pd.DataFrame) -> pd.DataFrame:
     _ensure_object_columns(df, ["acm_incerteza_unidade"])
     for index, value in df["incerteza"].items():
         parsed = parse_medida(value, "incerteza")
+        unidade = _unit_with_parameter_fallback(parsed["incerteza_unidade"], _parameter_at(df, index))
         df.at[index, "incerteza"] = _original_or_none(value)
         df.at[index, "acm_incerteza_valor"] = parsed["incerteza_minimo"]
-        df.at[index, "acm_incerteza_unidade"] = parsed["incerteza_unidade"]
+        df.at[index, "acm_incerteza_unidade"] = unidade
     return df
 
 
