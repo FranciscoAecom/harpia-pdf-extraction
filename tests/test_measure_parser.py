@@ -63,6 +63,13 @@ class MeasureParserTest(unittest.TestCase):
         self.assertEqual(qualificador, "<")
         self.assertEqual(unidade, "mL/L")
 
+    def test_result_value_extracts_meter_unit(self):
+        valor, qualificador, unidade = parse_resultado("0,50 m")
+
+        self.assertEqual(valor, 0.5)
+        self.assertIsNone(qualificador)
+        self.assertEqual(unidade, "m")
+
     def test_normative_value_extracts_mgpt_per_l_unit(self):
         parsed = parse_medida("Máx. 75 mgPt/L", "conama")
 

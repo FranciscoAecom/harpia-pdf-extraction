@@ -222,6 +222,21 @@ class NormalizationTest(unittest.TestCase):
         self.assertEqual(out.loc[1, "acm_unidade"], "mL/L")
         self.assertEqual(out.loc[1, "acm_lq_unidade"], "mL/L")
 
+    def test_laudo_agua_normalization_extracts_meter_unit(self):
+        context = SimpleNamespace(tipo_laudo="laudo_agua")
+        df = pd.DataFrame([{
+            "parameter": "Profundidade de coleta",
+            "resultado": "0,50 m",
+            "acm_resultado_tratado": None,
+            "acm_qualificador": None,
+            "acm_unidade": None,
+        }])
+
+        out, _, _ = normalize_outputs(df, pd.DataFrame(), pd.DataFrame(), context)
+
+        self.assertEqual(out.loc[0, "acm_resultado_tratado"], 0.5)
+        self.assertEqual(out.loc[0, "acm_unidade"], "m")
+
 
 if __name__ == "__main__":
     unittest.main()

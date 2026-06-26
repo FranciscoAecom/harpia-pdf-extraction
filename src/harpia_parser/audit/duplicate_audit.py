@@ -125,6 +125,23 @@ def build_duplicate_audit(candidates: list[DuplicateCandidate]) -> pd.DataFrame:
     return pd.DataFrame(rows, columns=DUPLICATE_AUDIT_COLUMNS)
 
 
+def duplicate_paths_to_skip(candidates: list[DuplicateCandidate]) -> set[str]:
+    if not candidates:
+        return set()
+
+    skipped: set[str] = set()
+    empty_text_hash = text_sha256("")
+    for attr in ["hash_arquivo", "hash_texto"]:
+        for group in _group_by(candidates, attr).values():
+            if len(group) <= 1:
+                continue
+            if attr == "hash_texto" and group[0].hash_texto == empty_text_hash:
+                continue
+            canonical = _canonical_candidate(group)
+            skipped.update(item.caminho_arquivo for item in group if item != canonical)
+    return skipped
+
+
 def _classify_candidate(
     candidate: DuplicateCandidate,
     by_file_hash: dict[str, list[DuplicateCandidate]],
@@ -165,6 +182,10 @@ def _status(
 ) -> tuple[str, str, str | None, str]:
     reference = next((item.nome_do_arquivo for item in group if item.nome_do_arquivo != candidate.nome_do_arquivo), None)
     return status, f"{group_field}:{group_value}", reference, _reason(status)
+
+
+def _canonical_candidate(group: list[DuplicateCandidate]) -> DuplicateCandidate:
+    return sorted(group, key=lambda item: item.caminho_arquivo.lower())[0]
 
 
 def _reason(status: str) -> str:

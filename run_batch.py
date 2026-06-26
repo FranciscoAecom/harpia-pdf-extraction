@@ -14,7 +14,11 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from harpia_parser.config.loader import load_config, output_tabs_for_template  # noqa: E402
-from harpia_parser.audit.duplicate_audit import build_duplicate_audit, build_duplicate_candidate  # noqa: E402
+from harpia_parser.audit.duplicate_audit import (  # noqa: E402
+    build_duplicate_audit,
+    build_duplicate_candidate,
+    duplicate_paths_to_skip,
+)
 from harpia_parser.constants import ACM_EXTRACTION_TIMESTAMP_COLUMN  # noqa: E402
 from harpia_parser.core.pipeline import run_pipeline_document  # noqa: E402
 from harpia_parser.core.scope import classify_document  # noqa: E402
@@ -125,6 +129,7 @@ def extract_batch(input_dirs: list[Path], output_dir: Path) -> None:
     all_audits: dict[str, list[pd.DataFrame]] = {}
     all_table_audits: dict[str, list[pd.DataFrame]] = {}
     all_duplicate_candidates = {}
+    extracted_documents: dict[str, list[dict]] = {}
     summary = []
     pdfs = _list_pdfs(input_dirs)
     extraction_timestamp = _timestamp_text()
@@ -169,18 +174,8 @@ def extract_batch(input_dirs: list[Path], output_dir: Path) -> None:
             text_for_duplicate = _read_pdf_text(pdf)
             duplicate_candidate = build_duplicate_candidate(pdf, text_for_duplicate, df, sample_df)
 
-            all_results.setdefault(tipo_laudo, []).append(df)
-            all_samples.setdefault(tipo_laudo, []).append(sample_df)
-            all_clients.setdefault(tipo_laudo, []).append(client_df)
-            all_packaging_preservatives.setdefault(tipo_laudo, []).append(packaging_preservatives_df)
-            all_notes.setdefault(tipo_laudo, []).append(notes_df)
-            all_general_considerations.setdefault(tipo_laudo, []).append(general_considerations_df)
-            all_conformity_statement.setdefault(tipo_laudo, []).append(conformity_statement_df)
-            all_validation_key.setdefault(tipo_laudo, []).append(validation_key_df)
-            all_audits.setdefault(tipo_laudo, []).append(audit_df)
-            all_table_audits.setdefault(tipo_laudo, []).append(table_audit_df)
             all_duplicate_candidates.setdefault(tipo_laudo, []).append(duplicate_candidate)
-            summary.append({
+            summary_row = {
                 "arquivo": pdf.name,
                 "caminho": str(pdf),
                 "status": "extraido",
@@ -196,6 +191,21 @@ def extract_batch(input_dirs: list[Path], output_dir: Path) -> None:
                 "general_considerations_rows": len(general_considerations_df),
                 "conformity_statement_rows": len(conformity_statement_df),
                 "validation_key_rows": len(validation_key_df),
+            }
+            summary.append(summary_row)
+            extracted_documents.setdefault(tipo_laudo, []).append({
+                "caminho": str(pdf),
+                "results": df,
+                "sample": sample_df,
+                "client": client_df,
+                "packaging_preservatives": packaging_preservatives_df,
+                "notes": notes_df,
+                "general_considerations": general_considerations_df,
+                "conformity_statement": conformity_statement_df,
+                "validation_key": validation_key_df,
+                "classification_audit": audit_df,
+                "table_extraction_audit": table_audit_df,
+                "summary": summary_row,
             })
         except Exception as exc:
             summary.append({
@@ -213,15 +223,44 @@ def extract_batch(input_dirs: list[Path], output_dir: Path) -> None:
             })
 
     output_dir.mkdir(parents=True, exist_ok=True)
+    duplicate_audits_by_theme: dict[str, pd.DataFrame] = {}
+    for tipo_laudo, documents in extracted_documents.items():
+        candidates = all_duplicate_candidates.get(tipo_laudo, [])
+        duplicate_audit_df = build_duplicate_audit(candidates)
+        duplicate_audits_by_theme[tipo_laudo] = duplicate_audit_df
+        skipped_paths = duplicate_paths_to_skip(candidates)
+
+        for document in documents:
+            summary_row = document["summary"]
+            if document["caminho"] in skipped_paths:
+                summary_row["status"] = "duplicado_nao_persistido"
+                summary_row["motivo"] = "PDF duplicado; registros mantidos apenas no arquivo canonico do grupo."
+                for column in [
+                    "results_rows",
+                    "sample_rows",
+                    "client_rows",
+                    "packaging_preservatives_rows",
+                    "notes_rows",
+                    "general_considerations_rows",
+                    "conformity_statement_rows",
+                    "validation_key_rows",
+                ]:
+                    summary_row[column] = 0
+                continue
+
+            all_results.setdefault(tipo_laudo, []).append(document["results"])
+            all_samples.setdefault(tipo_laudo, []).append(document["sample"])
+            all_clients.setdefault(tipo_laudo, []).append(document["client"])
+            all_packaging_preservatives.setdefault(tipo_laudo, []).append(document["packaging_preservatives"])
+            all_notes.setdefault(tipo_laudo, []).append(document["notes"])
+            all_general_considerations.setdefault(tipo_laudo, []).append(document["general_considerations"])
+            all_conformity_statement.setdefault(tipo_laudo, []).append(document["conformity_statement"])
+            all_validation_key.setdefault(tipo_laudo, []).append(document["validation_key"])
+            all_audits.setdefault(tipo_laudo, []).append(document["classification_audit"])
+            all_table_audits.setdefault(tipo_laudo, []).append(document["table_extraction_audit"])
+
     for tipo_laudo in sorted(
-        set(all_results)
-        | set(all_samples)
-        | set(all_clients)
-        | set(all_packaging_preservatives)
-        | set(all_notes)
-        | set(all_general_considerations)
-        | set(all_conformity_statement)
-        | set(all_validation_key)
+        set(extracted_documents)
     ):
         results_df = pd.concat(all_results.get(tipo_laudo, []), ignore_index=True) if all_results.get(tipo_laudo) else pd.DataFrame()
         sample_df = pd.concat(all_samples.get(tipo_laudo, []), ignore_index=True) if all_samples.get(tipo_laudo) else pd.DataFrame()
@@ -249,7 +288,7 @@ def extract_batch(input_dirs: list[Path], output_dir: Path) -> None:
         )
         audit_df = pd.concat(all_audits.get(tipo_laudo, []), ignore_index=True) if all_audits.get(tipo_laudo) else pd.DataFrame()
         table_audit_df = pd.concat(all_table_audits.get(tipo_laudo, []), ignore_index=True) if all_table_audits.get(tipo_laudo) else pd.DataFrame()
-        duplicate_audit_df = build_duplicate_audit(all_duplicate_candidates.get(tipo_laudo, []))
+        duplicate_audit_df = duplicate_audits_by_theme.get(tipo_laudo, pd.DataFrame())
 
         template_id = _winner_template_id(audit_df)
         output_tabs = output_tabs_for_template(config, template_id) if template_id else None

@@ -9,7 +9,7 @@ UNIDADES_CONHECIDAS = re.compile(
     r"(Pt/Co\s*\(mgPt/L\)|mg/L\s*\(como\s*[^)]+\)|NMP/100\s*mL|NMP/100mL|"
     r"UFC/100\s*mL|UFC/100mL|\u00b5S/cm|uS/cm|\u00b5g/L|ug/L|mgPt-?Co/L|mgPt/L|"
     r"mL/L|mg/L|UNT|NTU|NMP/mL|UFC/mL|mg/kg|\u00b0C|pH|mV|"
-    r"\u2030|%|Pt/Co)",
+    r"\u2030|%|Pt/Co|(?<![A-Za-zÀ-ÿ/])m(?![A-Za-zÀ-ÿ/]))",
     re.IGNORECASE,
 )
 

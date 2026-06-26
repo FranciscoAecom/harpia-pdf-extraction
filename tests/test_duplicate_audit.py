@@ -7,6 +7,7 @@ import pandas as pd
 from harpia_parser.audit.duplicate_audit import (
     build_duplicate_audit,
     build_duplicate_candidate,
+    duplicate_paths_to_skip,
 )
 
 
@@ -97,6 +98,34 @@ class DuplicateAuditTest(unittest.TestCase):
             ])
 
             self.assertIn("possivel_versao_substituta", set(audit["status"]))
+
+    def test_exact_file_duplicates_skip_only_non_canonical_files(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            first = Path(tmp) / "a.pdf"
+            second = Path(tmp) / "b.pdf"
+            first.write_bytes(b"same-pdf")
+            second.write_bytes(b"same-pdf")
+
+            skipped = duplicate_paths_to_skip([
+                build_duplicate_candidate(first, "texto", _result("1"), _sample("1")),
+                build_duplicate_candidate(second, "texto", _result("1"), _sample("1")),
+            ])
+
+            self.assertEqual(skipped, {str(second)})
+
+    def test_empty_text_hash_does_not_skip_distinct_files(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            first = Path(tmp) / "a.pdf"
+            second = Path(tmp) / "b.pdf"
+            first.write_bytes(b"pdf-a")
+            second.write_bytes(b"pdf-b")
+
+            skipped = duplicate_paths_to_skip([
+                build_duplicate_candidate(first, "", _result("1"), _sample("1")),
+                build_duplicate_candidate(second, "", _result("2"), _sample("2")),
+            ])
+
+            self.assertEqual(skipped, set())
 
 
 if __name__ == "__main__":
