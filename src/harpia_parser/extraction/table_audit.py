@@ -11,7 +11,7 @@ from ..utils import normalizar
 
 FIELD_OUTPUT_NAMES = {
     "resultado_col": "resultado",
-    "unidade_col": "acm_unidade",
+    "unidade_col": "unidade",
     "data_inicio_col": "data_inicio",
     "conama_col": "conama",
     "copam_cerh_col": "copam_cerh",
@@ -31,7 +31,6 @@ PAGE_HEADER_PATTERNS = {
     "parameter": re.compile(r"\b(analise|parametros?)\b", re.IGNORECASE),
     "resultado": re.compile(r"\bresultados?\b", re.IGNORECASE),
     "unidade": re.compile(r"\b(unidade|unid)\b", re.IGNORECASE),
-    "acm_unidade": re.compile(r"\b(unidade|unid)\b", re.IGNORECASE),
     "data_inicio": re.compile(r"data\s+(de\s+)?inicio", re.IGNORECASE),
     "conama": re.compile(r"conama", re.IGNORECASE),
     "copam_cerh": re.compile(r"copam|cerh|deliberacao\s+normativa", re.IGNORECASE),

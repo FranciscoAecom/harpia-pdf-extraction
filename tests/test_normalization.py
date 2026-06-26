@@ -85,6 +85,18 @@ class NormalizationTest(unittest.TestCase):
         self.assertEqual(out.loc[0, "acm_faixa_aceitacao_maximo"], 20.0)
         self.assertEqual(out.loc[0, "acm_faixa_aceitacao_unidade"], "%")
 
+    def test_codigo_laudo_suffix_is_structured(self):
+        context = SimpleNamespace(tipo_laudo="laudo_agua")
+        df = pd.DataFrame([
+            {"codigo_laudo": "Relatório Analítico 49336/2025.0.A"},
+            {"codigo_laudo": "Relatório Analítico 71352/2025.1.A"},
+            {"codigo_laudo": "Relatório Analítico 88729/2025.3"},
+        ])
+
+        out, _, _ = normalize_outputs(df, pd.DataFrame(), pd.DataFrame(), context)
+
+        self.assertEqual(out["acm_codigo_laudo"].tolist(), ["0.A", "1.A", "3"])
+
     def test_laudo_agua_normative_na_is_preserved_as_pdf_text(self):
         context = SimpleNamespace(tipo_laudo="laudo_agua")
         df = pd.DataFrame([{

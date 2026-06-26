@@ -1,3 +1,5 @@
+import re
+
 import pandas as pd
 
 
@@ -8,6 +10,16 @@ PRESERVE_TEXT_COLUMNS = {
     "incerteza",
     "faixa_aceitacao",
 }
+
+
+CODIGO_LAUDO_SUFFIX = re.compile(r"\b\d+/\d{4}\.(\d+(?:\.[A-Za-z0-9]+)*)\b")
+
+
+def _extract_acm_codigo_laudo(value) -> str | None:
+    if value is None or pd.isna(value):
+        return None
+    match = CODIGO_LAUDO_SUFFIX.search(str(value))
+    return match.group(1) if match else None
 
 
 def _strip_text_columns(df: pd.DataFrame) -> pd.DataFrame:
@@ -24,8 +36,20 @@ def _strip_text_columns(df: pd.DataFrame) -> pd.DataFrame:
     return normalized
 
 
+def _normalize_codigo_laudo(df: pd.DataFrame) -> pd.DataFrame:
+    if df.empty or "codigo_laudo" not in df.columns:
+        return df
+    normalized = df.copy()
+    normalized["acm_codigo_laudo"] = normalized["codigo_laudo"].map(_extract_acm_codigo_laudo)
+    return normalized
+
+
 def _normalize_common(df: pd.DataFrame, sample_df: pd.DataFrame, client_df: pd.DataFrame):
-    return _strip_text_columns(df), _strip_text_columns(sample_df), _strip_text_columns(client_df)
+    return (
+        _normalize_codigo_laudo(_strip_text_columns(df)),
+        _strip_text_columns(sample_df),
+        _strip_text_columns(client_df),
+    )
 
 
 def normalize_outputs(

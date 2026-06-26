@@ -11,9 +11,11 @@ RESULTS_EXTRACT_COLUMNS = [
     "categoria",
     "subcategoria",
     "codigo_laudo",
+    "acm_codigo_laudo",
     "codigo_laudo_substituido",
     "parameter",
     "resultado",
+    "unidade",
     "acm_resultado_tratado",
     "acm_qualificador",
     "acm_unidade",
@@ -223,6 +225,7 @@ TIPO_LABELS = {
 }
 
 ACM_DERIVED_COLUMNS = {
+    "acm_codigo_laudo",
     "acm_resultado_tratado",
     "acm_qualificador",
     "acm_unidade",
@@ -250,5 +253,5 @@ ACM_DERIVED_COLUMNS = {
 
 ACM_FORBIDDEN_UNPREFIXED_DERIVED_COLUMNS = {
     column.removeprefix("acm_") for column in ACM_DERIVED_COLUMNS
-}
+} - {"unidade", "codigo_laudo"}
 

@@ -68,9 +68,11 @@ class ResultsExtractRow(BaseModel):
     categoria: str
     subcategoria: str | None = None
     codigo_laudo: str | None = None
+    acm_codigo_laudo: str | None = None
     codigo_laudo_substituido: str | None = None
     parameter: str
     resultado: str | None = None
+    unidade: str | None = None
     acm_resultado_tratado: float | None = None
     acm_qualificador: Literal["<", ">"] | None = None
     acm_unidade: str | None = None

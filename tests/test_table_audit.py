@@ -80,7 +80,7 @@ class TableAuditTest(unittest.TestCase):
         self.assertEqual(row["status"], "ok_com_opcional_ausente")
         campos_opcionais_ausentes = str(row["campos_opcionais_ausentes"])
         self.assertIn("ld", campos_opcionais_ausentes)
-        self.assertIn("acm_unidade", campos_opcionais_ausentes)
+        self.assertIn("unidade", campos_opcionais_ausentes)
 
     def test_header_alias_from_taxonomy_maps_copam_criterion(self):
         config = _config()

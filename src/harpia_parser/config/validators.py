@@ -258,9 +258,6 @@ def _validate_layout_fields(workbook: TaxonomyWorkbook) -> None:
         .astype(str)
     )
     valid_layout_fields = {field.removesuffix("_col") for field in LAYOUT_FIELD_KEYS}
-    layout_output_field = {
-        "unidade": "acm_unidade",
-    }
 
     layout_rows = workbook.item_template[workbook.item_template["schema"].astype(str) == "layout"]
     layout_fields = set(layout_rows["campo"].dropna().astype(str))
@@ -268,7 +265,7 @@ def _validate_layout_fields(workbook: TaxonomyWorkbook) -> None:
     missing_output_fields = sorted({
         field
         for field in layout_fields
-        if layout_output_field.get(field, field) not in result_fields
+        if field not in result_fields
     })
     if unknown_layout_fields:
         raise ValueError(f"Aba item_template/layout contem campos desconhecidos: {unknown_layout_fields}")
