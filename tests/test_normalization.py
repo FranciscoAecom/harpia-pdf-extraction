@@ -97,6 +97,17 @@ class NormalizationTest(unittest.TestCase):
 
         self.assertEqual(out["acm_codigo_laudo"].tolist(), ["0.A", "1.A", "3"])
 
+    def test_data_inicio_is_structured_as_datetime_text(self):
+        context = SimpleNamespace(tipo_laudo="laudo_agua")
+        df = pd.DataFrame([
+            {"data_inicio": "04/12/2024"},
+            {"data_inicio": "05/12/2024 13:45"},
+        ])
+
+        out, _, _ = normalize_outputs(df, pd.DataFrame(), pd.DataFrame(), context)
+
+        self.assertEqual(out["acm_data_inicio"].tolist(), ["04/12/2024 00:00:00", "05/12/2024 13:45:00"])
+
     def test_laudo_agua_normative_na_is_preserved_as_pdf_text(self):
         context = SimpleNamespace(tipo_laudo="laudo_agua")
         df = pd.DataFrame([{

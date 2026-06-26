@@ -28,6 +28,7 @@ def format_results_extract(df: pd.DataFrame, config, context=None) -> pd.DataFra
         "acm_unidade": df["unidade_resultado"],
         "local": df["local"].fillna("laboratorio"),
         "data_inicio": df["data_inicio"],
+        "acm_data_inicio": None,
         "conama": df.get("conama"),
         "acm_conama_operador": None,
         "acm_conama_minimo": None,

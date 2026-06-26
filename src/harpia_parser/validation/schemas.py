@@ -78,6 +78,7 @@ class ResultsExtractRow(BaseModel):
     acm_unidade: str | None = None
     local: LOCAL
     data_inicio: str | None = Field(default=None, pattern=DATA_PT)
+    acm_data_inicio: str | None = Field(default=None, pattern=DATA_HORA_PT)
 
     conama: str | None = None
     acm_conama_operador: OPERADOR | None = None

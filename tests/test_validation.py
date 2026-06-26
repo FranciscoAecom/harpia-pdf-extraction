@@ -31,6 +31,7 @@ def _valid_row() -> dict:
         "acm_unidade": "pH",
         "local": "laboratorio",
         "data_inicio": None,
+        "acm_data_inicio": None,
         "conama": None,
         "acm_conama_operador": None,
         "acm_conama_minimo": None,

@@ -82,6 +82,7 @@ class OutputWriterTest(unittest.TestCase):
         row["id_taxonomia"] = "1"
         row["versao_template"] = "2"
         row["id_amostra"] = "717727"
+        row["acm_data_inicio"] = "04/12/2024 00:00:00"
         df = pd.DataFrame([row], columns=RESULTS_EXTRACT_COLUMNS)
         sample_df = pd.DataFrame([{
             "nome_do_arquivo": "a.pdf",
@@ -109,9 +110,15 @@ class OutputWriterTest(unittest.TestCase):
             sample_timestamp = sample.cell(row=2, column=SAMPLE_COLUMNS.index("acm_data_hora_extracao") + 1)
             self.assertIsInstance(result_timestamp.value, datetime)
             self.assertEqual(sample_timestamp.value, result_timestamp.value)
+            result_start_date = results.cell(row=2, column=RESULTS_EXTRACT_COLUMNS.index("acm_data_inicio") + 1)
+            self.assertEqual(result_start_date.value, datetime(2024, 12, 4, 0, 0))
+            self.assertEqual(result_start_date.number_format, "dd/mm/yyyy hh:mm")
             date_cell = sample.cell(row=2, column=SAMPLE_COLUMNS.index("data_coleta") + 1)
             self.assertEqual(date_cell.value, datetime(2025, 2, 1, 8, 30))
             self.assertEqual(date_cell.number_format, "dd/mm/yyyy hh:mm")
+            publication_cell = sample.cell(row=2, column=SAMPLE_COLUMNS.index("data_publicacao") + 1)
+            self.assertEqual(publication_cell.value, datetime(2025, 2, 3, 0, 0))
+            self.assertEqual(publication_cell.number_format, "dd/mm/yyyy hh:mm")
 
     def test_table_extraction_audit_sheet_is_written_when_requested(self):
         row = _valid_row()
@@ -353,6 +360,7 @@ class OutputWriterTest(unittest.TestCase):
         row["nome_taxonomia"] = "Agua Superficial"
         row["versao_template"] = "1"
         row["id_amostra"] = "687944"
+        row["acm_data_inicio"] = "04/12/2024 00:00:00"
         df = pd.DataFrame([row], columns=RESULTS_EXTRACT_COLUMNS)
         sample_df = pd.DataFrame([{
             "nome_do_arquivo": "a.pdf",
@@ -362,6 +370,8 @@ class OutputWriterTest(unittest.TestCase):
             "id_amostra": "687944",
             "identificacao_amostra": "687944 - ECR 01R - P50",
             "tipo_amostra": "Agua superficial",
+            "data_coleta": "01/02/2025 08:30",
+            "data_publicacao": "03/02/2025",
         }])
         table_audit_df = pd.DataFrame([{
             "nome_do_arquivo": "a.pdf",
@@ -401,7 +411,10 @@ class OutputWriterTest(unittest.TestCase):
             self.assertEqual(document["arquivo"]["id_taxonomia"], 1)
             self.assertIn("acm_data_hora_extracao", document["tabelas"]["results_extract"][0])
             self.assertEqual(document["tabelas"]["results_extract"][0]["id_amostra"], 687944)
+            self.assertEqual(document["tabelas"]["results_extract"][0]["acm_data_inicio"], "04/12/2024 00:00:00")
             self.assertEqual(document["tabelas"]["sample"][0]["identificacao_amostra"], "687944 - ECR 01R - P50")
+            self.assertEqual(document["tabelas"]["sample"][0]["data_coleta"], "01/02/2025 08:30:00")
+            self.assertEqual(document["tabelas"]["sample"][0]["data_publicacao"], "03/02/2025 00:00:00")
             self.assertEqual(document["auditoria"]["table_extraction_audit"][0]["status"], "ok")
             self.assertEqual(document["auditoria"]["duplicate_audit"][0]["status"], "unico")
             self.assertIn("acm_data_hora_extracao", document["auditoria"]["validation_errors"][0])

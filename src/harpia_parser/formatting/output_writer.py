@@ -19,8 +19,13 @@ DATE_TEXT = re.compile(r"^\d{2}/\d{2}/\d{4}$")
 DATE_TIME_TEXT = re.compile(r"^\d{2}/\d{2}/\d{4}\s+\d{2}:\d{2}(?::\d{2})?$")
 INTEGER_OUTPUT_COLUMNS = {"id_amostra", "id_taxonomia", "versao_template"}
 DATE_OUTPUT_COLUMNS = {
+    "results_extract": {"acm_data_inicio"},
     "sample": {"data_coleta", "data_publicacao", "data_recebimento"},
 }
+DATETIME_JSON_COLUMNS = (
+    {ACM_EXTRACTION_TIMESTAMP_COLUMN}
+    | set().union(*DATE_OUTPUT_COLUMNS.values())
+)
 HEADER_FILL = PatternFill(fill_type="solid", fgColor="1F4E78")
 HEADER_FONT = Font(color="FFFFFF", bold=True)
 HEADER_ALIGNMENT = Alignment(horizontal="center", vertical="center", wrap_text=True)
@@ -193,13 +198,30 @@ def _apply_date_format_to_columns(worksheet, sheet_name: str) -> None:
                 cell.value = datetime.strptime(text, date_format)
                 cell.number_format = "dd/mm/yyyy hh:mm"
             elif DATE_TEXT.match(text):
-                cell.value = datetime.strptime(text, "%d/%m/%Y")
-                cell.number_format = "dd/mm/yyyy"
+                cell.value = datetime.strptime(f"{text} 00:00:00", "%d/%m/%Y %H:%M:%S")
+                cell.number_format = "dd/mm/yyyy hh:mm"
+
+
+def _datetime_text_with_seconds(value: Any) -> str | None:
+    if value is None or pd.isna(value):
+        return None
+    if isinstance(value, datetime):
+        return value.strftime("%d/%m/%Y %H:%M:%S")
+
+    text = str(value).strip()
+    if DATE_TIME_TEXT.match(text):
+        date_format = "%d/%m/%Y %H:%M:%S" if text.count(":") == 2 else "%d/%m/%Y %H:%M"
+        return datetime.strptime(text, date_format).strftime("%d/%m/%Y %H:%M:%S")
+    if DATE_TEXT.match(text):
+        return f"{text} 00:00:00"
+    return text
 
 
 def _json_scalar(key: str, value: Any) -> Any:
     if value is None or pd.isna(value):
         return None
+    if key in DATETIME_JSON_COLUMNS:
+        return _datetime_text_with_seconds(value)
     if key in INTEGER_OUTPUT_COLUMNS:
         text = str(value).strip()
         if INTEGER_TEXT.match(text):

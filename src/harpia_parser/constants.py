@@ -21,6 +21,7 @@ RESULTS_EXTRACT_COLUMNS = [
     "acm_unidade",
     "local",
     "data_inicio",
+    "acm_data_inicio",
     "conama",
     "acm_conama_operador",
     "acm_conama_minimo",
@@ -226,6 +227,7 @@ TIPO_LABELS = {
 
 ACM_DERIVED_COLUMNS = {
     "acm_codigo_laudo",
+    "acm_data_inicio",
     "acm_resultado_tratado",
     "acm_qualificador",
     "acm_unidade",
@@ -253,5 +255,5 @@ ACM_DERIVED_COLUMNS = {
 
 ACM_FORBIDDEN_UNPREFIXED_DERIVED_COLUMNS = {
     column.removeprefix("acm_") for column in ACM_DERIVED_COLUMNS
-} - {"unidade", "codigo_laudo"}
+} - {"unidade", "codigo_laudo", "data_inicio"}
 
