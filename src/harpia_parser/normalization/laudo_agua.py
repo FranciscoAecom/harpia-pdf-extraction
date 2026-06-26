@@ -21,10 +21,17 @@ def _optional_text(value) -> str | None:
     return None if texto_vazio(value) else str(value)
 
 
+def _ensure_object_columns(df: pd.DataFrame, columns: list[str]) -> None:
+    for column in columns:
+        if column in df.columns:
+            df[column] = df[column].astype("object")
+
+
 def _normalize_lq(df: pd.DataFrame) -> pd.DataFrame:
     if "lq" not in df.columns:
         return df
 
+    _ensure_object_columns(df, ["acm_lq_unidade"])
     for index, value in df["lq"].items():
         parsed = parse_medida(value, "lq")
         df.at[index, "lq"] = _original_or_none(value)
@@ -38,6 +45,7 @@ def _normalize_ld(df: pd.DataFrame) -> pd.DataFrame:
     if "ld" not in df.columns:
         return df
 
+    _ensure_object_columns(df, ["acm_ld_unidade"])
     for index, value in df["ld"].items():
         parsed = parse_medida(value, "ld")
         df.at[index, "ld"] = _original_or_none(value)
@@ -51,6 +59,10 @@ def _normalize_normative_field(df: pd.DataFrame, field: str) -> pd.DataFrame:
     if field not in df.columns:
         return df
 
+    _ensure_object_columns(df, [
+        f"acm_{field}_operador",
+        f"acm_{field}_unidade",
+    ])
     for index, value in df[field].items():
         if _complex_normative_note(value):
             df.at[index, field] = _pdf_text_or_none(value)
@@ -80,6 +92,7 @@ def _normalize_resultado(df: pd.DataFrame) -> pd.DataFrame:
     if "resultado" not in df.columns:
         return df
 
+    _ensure_object_columns(df, ["acm_qualificador", "acm_unidade"])
     for index, value in df["resultado"].items():
         unidade_fallback = _optional_text(df.at[index, "acm_unidade"]) if "acm_unidade" in df.columns else None
         valor, qualificador, unidade = parse_resultado(value, unidade_fallback)
@@ -97,6 +110,7 @@ def _normalize_incerteza(df: pd.DataFrame) -> pd.DataFrame:
     if "incerteza" not in df.columns:
         return df
 
+    _ensure_object_columns(df, ["acm_incerteza_unidade"])
     for index, value in df["incerteza"].items():
         parsed = parse_medida(value, "incerteza")
         df.at[index, "incerteza"] = _original_or_none(value)
@@ -109,6 +123,7 @@ def _normalize_faixa_aceitacao(df: pd.DataFrame) -> pd.DataFrame:
     if "faixa_aceitacao" not in df.columns:
         return df
 
+    _ensure_object_columns(df, ["acm_faixa_aceitacao_operador", "acm_faixa_aceitacao_unidade"])
     for index, value in df["faixa_aceitacao"].items():
         parsed = parse_medida(value, "faixa_aceitacao", duplicar_valor_simples=True)
         df.at[index, "faixa_aceitacao"] = _original_or_none(value)

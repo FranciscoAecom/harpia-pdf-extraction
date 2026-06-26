@@ -49,6 +49,27 @@ class MeasureParserTest(unittest.TestCase):
         self.assertEqual(qualificador, "<")
         self.assertEqual(unidade, "mg/L")
 
+    def test_result_value_extracts_color_unit(self):
+        valor, qualificador, unidade = parse_resultado("10 Pt/Co (mgPt/L)")
+
+        self.assertEqual(valor, 10.0)
+        self.assertIsNone(qualificador)
+        self.assertEqual(unidade, "Pt/Co (mgPt/L)")
+
+    def test_result_value_extracts_ml_per_l_unit(self):
+        valor, qualificador, unidade = parse_resultado("< 0,100 mL/L")
+
+        self.assertEqual(valor, 0.1)
+        self.assertEqual(qualificador, "<")
+        self.assertEqual(unidade, "mL/L")
+
+    def test_normative_value_extracts_mgpt_per_l_unit(self):
+        parsed = parse_medida("Máx. 75 mgPt/L", "conama")
+
+        self.assertEqual(parsed["conama_operador"], "max")
+        self.assertEqual(parsed["conama_maximo"], 75.0)
+        self.assertEqual(parsed["conama_unidade"], "mgPt/L")
+
     def test_result_scientific_notation(self):
         valor, qualificador, unidade = parse_resultado("1,2 x 10 3 UFC/mL")
 

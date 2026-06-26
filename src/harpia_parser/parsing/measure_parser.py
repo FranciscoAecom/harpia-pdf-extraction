@@ -6,8 +6,11 @@ from ..utils import normalizar
 
 EMPTY_TOKENS = {"", "NA", "ND", "N/A", "NAN"}
 UNIDADES_CONHECIDAS = re.compile(
-    r"(mg/L\s*\(como\s*\w+\)|NMP/100mL|\u00b5S/cm|\u00b5g/L|mg/L|UNT|NTU|"
-    r"NMP/mL|UFC/mL|mg/kg|\u00b0C|pH|mV|\u2030|%|\bm\b)"
+    r"(Pt/Co\s*\(mgPt/L\)|mg/L\s*\(como\s*[^)]+\)|NMP/100\s*mL|NMP/100mL|"
+    r"UFC/100\s*mL|UFC/100mL|\u00b5S/cm|uS/cm|\u00b5g/L|ug/L|mgPt/L|"
+    r"mL/L|mg/L|UNT|NTU|NMP/mL|UFC/mL|mg/kg|\u00b0C|pH|mV|"
+    r"\u2030|%|Pt/Co)",
+    re.IGNORECASE,
 )
 
 

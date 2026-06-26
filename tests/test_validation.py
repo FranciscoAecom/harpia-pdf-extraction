@@ -79,6 +79,18 @@ class ValidationTest(unittest.TestCase):
         fields = set(errors["field"].astype(str).tolist())
         self.assertIn("recuperacao_percentual", fields)
 
+    def test_missing_structured_unit_is_reported_when_original_has_unit(self):
+        row = _valid_row()
+        row["resultado"] = "10 Pt/Co (mgPt/L)"
+        row["acm_resultado_tratado"] = 10
+        row["acm_unidade"] = None
+        df = pd.DataFrame([row], columns=RESULTS_EXTRACT_COLUMNS)
+
+        errors = validate_results_extract(df)
+
+        self.assertFalse(errors.empty)
+        self.assertTrue(errors["message"].astype(str).str.contains("acm_unidade vazio").any())
+
     def test_packaging_preservatives_required_fields_are_validated(self):
         row = {
             "nome_do_arquivo": "relatorio.pdf",

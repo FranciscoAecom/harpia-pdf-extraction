@@ -150,6 +150,43 @@ class NormalizationTest(unittest.TestCase):
         self.assertEqual(out.loc[0, "acm_resultado_tratado"], 7.1)
         self.assertEqual(out.loc[0, "acm_unidade"], "pH")
 
+    def test_laudo_agua_normalization_extracts_extended_units(self):
+        context = SimpleNamespace(tipo_laudo="laudo_agua")
+        df = pd.DataFrame([{
+            "parameter": "Cor Verdadeira",
+            "resultado": "10 Pt/Co (mgPt/L)",
+            "acm_resultado_tratado": None,
+            "acm_qualificador": None,
+            "acm_unidade": None,
+            "conama": "Máx. 75 mgPt/L",
+            "acm_conama_operador": None,
+            "acm_conama_minimo": None,
+            "acm_conama_maximo": None,
+            "acm_conama_unidade": None,
+            "lq": "5 Pt/Co (mgPt/L)",
+            "acm_lq_minimo": None,
+            "acm_lq_maximo": None,
+            "acm_lq_unidade": None,
+        }, {
+            "parameter": "Sólidos Sedimentáveis",
+            "resultado": "< 0,100 mL/L",
+            "acm_resultado_tratado": None,
+            "acm_qualificador": None,
+            "acm_unidade": None,
+            "lq": "0,100 mL/L",
+            "acm_lq_minimo": None,
+            "acm_lq_maximo": None,
+            "acm_lq_unidade": None,
+        }])
+
+        out, _, _ = normalize_outputs(df, pd.DataFrame(), pd.DataFrame(), context)
+
+        self.assertEqual(out.loc[0, "acm_unidade"], "Pt/Co (mgPt/L)")
+        self.assertEqual(out.loc[0, "acm_conama_unidade"], "mgPt/L")
+        self.assertEqual(out.loc[0, "acm_lq_unidade"], "Pt/Co (mgPt/L)")
+        self.assertEqual(out.loc[1, "acm_unidade"], "mL/L")
+        self.assertEqual(out.loc[1, "acm_lq_unidade"], "mL/L")
+
 
 if __name__ == "__main__":
     unittest.main()

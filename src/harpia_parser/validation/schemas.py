@@ -11,6 +11,8 @@ from ..constants import (
     RESULTS_EXTRACT_COLUMNS,
     SAMPLE_COLUMNS,
 )
+from ..parsing.measure_parser import unidade_from_partes
+from ..utils import normalizar
 
 
 TIPO_REGISTRO = Literal["Amostra", "Branco", "Duplicata", "Recupera\u00e7\u00e3o"]
@@ -157,6 +159,7 @@ class ResultsExtractRow(BaseModel):
         self._validate_measure("ld")
         self._validate_measure("lq")
         self._validate_measure("faixa_aceitacao")
+        self._validate_units_from_original_text()
         return self
 
     def _validate_measure(self, prefix: str) -> None:
@@ -165,6 +168,32 @@ class ResultsExtractRow(BaseModel):
 
         if minimo is not None and maximo is not None and minimo > maximo:
             raise ValueError(f"acm_{prefix}_minimo maior que acm_{prefix}_maximo")
+
+    def _validate_units_from_original_text(self) -> None:
+        for source_field, unit_field in [
+            ("resultado", "acm_unidade"),
+            ("conama", "acm_conama_unidade"),
+            ("copam_cerh", "acm_copam_cerh_unidade"),
+            ("ld", "acm_ld_unidade"),
+            ("lq", "acm_lq_unidade"),
+            ("incerteza", "acm_incerteza_unidade"),
+            ("faixa_aceitacao", "acm_faixa_aceitacao_unidade"),
+        ]:
+            source_value = getattr(self, source_field)
+            if source_value is None:
+                continue
+            if source_field in {"conama", "copam_cerh"} and _complex_normative_note(source_value):
+                continue
+            expected_unit = unidade_from_partes([source_value])
+            parsed_unit = getattr(self, unit_field)
+            if expected_unit is not None and parsed_unit is None:
+                raise ValueError(f"{unit_field} vazio para texto com unidade: {source_value}")
+
+
+def _complex_normative_note(value: Any) -> bool:
+    text = str(value or "")
+    normalized = normalizar(text)
+    return "para ph" in normalized and len(re.findall(r"\d+(?:[,.]\d+)?\s*mg/l", normalized)) > 1
 
 
 class PackagingPreservativesRow(BaseModel):
