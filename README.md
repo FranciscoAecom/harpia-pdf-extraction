@@ -229,7 +229,7 @@ Campos de cada aba/tabela de saida.
 
 ## Saidas
 
-O arquivo de extracao padrao e separado por tema em `output/<tipo_laudo>/extracted_data.xlsx`. As abas criadas sao definidas em `schema` e seus campos em `item_schema`. No estado atual, o template de agua gera `results_extract`, `sample`, `client`, `packaging_preservatives`, `notes`, `general_considerations`, `conformity_statement`, `validation_key`, `table_extraction_audit`, `section_extraction_audit`, `classification_audit`, `duplicate_audit` e `validation_errors`.
+O arquivo de extracao padrao e separado por tema em `output/<tipo_laudo>/extracted_data.xlsx`. As abas criadas sao definidas em `schema` e seus campos em `item_schema`. No estado atual, o template de agua gera `results_extract`, `sample`, `client`, `packaging_preservatives`, `notes`, `general_considerations`, `conformity_statement`, `validation_key`, `table_extraction_audit`, `section_extraction_audit`, `field_extraction_audit`, `classification_audit`, `duplicate_audit` e `validation_errors`.
 
 Junto com o Excel, o processo tambem gera `output/<tipo_laudo>/extracted_data.json`. Esse arquivo tem o mesmo conteudo agrupado por PDF, pensado para carga em banco com coluna `jsonb`.
 
@@ -244,7 +244,7 @@ Estrutura principal do JSON:
 - `documentos`: Lista de documentos processados.
 - `documentos[].arquivo`: Metadados do PDF, como `nome_do_arquivo`, `id_taxonomia`, `nome_taxonomia` e `versao_template`.
 - `documentos[].tabelas`: Dados extraidos, como `results_extract`, `sample`, `client`, `packaging_preservatives`, `notes`, `general_considerations`, `conformity_statement` e `validation_key`.
-- `documentos[].auditoria`: Dados de controle, como `classification_audit`, `table_extraction_audit`, `section_extraction_audit`, `duplicate_audit` e `validation_errors`.
+- `documentos[].auditoria`: Dados de controle, como `classification_audit`, `table_extraction_audit`, `section_extraction_audit`, `field_extraction_audit`, `duplicate_audit` e `validation_errors`.
 
 ## Auditorias
 
@@ -255,6 +255,7 @@ As auditorias sao abas de controle criadas junto com os dados extraidos. Elas na
 - `classification_audit`: verifica qual taxonomia/template o PDF acionou antes da extracao. Use essa aba para confirmar se o documento entrou no escopo correto.
 - `table_extraction_audit`: verifica cada tabela encontrada, comparando cabecalhos detectados, campos mapeados e campos esperados pela taxonomia.
 - `section_extraction_audit`: compara quadros e secoes previstos na taxonomia com os registros gerados e procura possiveis titulos ou tabelas ainda nao mapeados.
+- `field_extraction_audit`: compara as regras de `metadata`, `sample` e `client` com os valores extraidos e procura campos vazios, preenchimentos sem correspondencia e contaminacao entre campos.
 - `duplicate_audit`: verifica duplicidade entre PDFs do mesmo lote por hash do arquivo, hash do texto, chave logica do laudo/amostra e sinais de versionamento.
 - `validation_errors`: valida a saida final com Pydantic. Hoje cobre `results_extract`, `sample`, `client` e `packaging_preservatives`. Use essa aba para encontrar campos obrigatorios vazios, tipos invalidos, datas/horarios invalidos, colunas ausentes ou colunas inesperadas.
 
@@ -279,6 +280,11 @@ As auditorias sao abas de controle criadas junto com os dados extraidos. Elas na
 - `section_extraction_audit.status = extraida_sem_titulo`: houve extracao sem localizar a regra de inicio da secao.
 - `section_extraction_audit.status = secao_nao_mapeada`: possivel titulo de secao ainda sem regra na taxonomia.
 - `section_extraction_audit.status = tabela_nao_mapeada`: estrutura tabular encontrada sem correspondencia nas regras conhecidas.
+- `field_extraction_audit.status = ok`: regra encontrada e valor extraido sem sinal de contaminacao.
+- `field_extraction_audit.status = nao_aplicavel`: regra e valor ausentes naquele documento.
+- `field_extraction_audit.status = encontrado_sem_extracao`: regra encontrada no PDF, mas o campo ficou vazio.
+- `field_extraction_audit.status = extraido_sem_correspondencia`: campo preenchido sem correspondencia da regra no texto.
+- `field_extraction_audit.status = possivel_contaminacao`: o valor contem o rotulo associado a outro campo.
 - `duplicate_audit.status = unico`: nenhum outro PDF parecido foi encontrado no lote.
 - `duplicate_audit.status = duplicado_exato_arquivo`: outro PDF possui o mesmo hash binario SHA256, ou seja, o arquivo e identico byte a byte.
 - `duplicate_audit.status = duplicado_textual`: outro PDF possui o mesmo texto normalizado, mesmo que o arquivo binario seja diferente.
@@ -368,8 +374,10 @@ Dados cadastrais, coleta e cabecalho da amostra.
 - `localizacao`: Local da coleta.
 - `latitude`: Latitude decimal da coleta.
 - `longitude`: Longitude decimal da coleta.
-- `clima_ultimas_24h`: Condicoes climaticas nas ultimas 24 horas.
-- `clima`: Condicoes climaticas no momento da coleta.
+- `latitude_real`: Latitude identificada no PDF como coordenada real.
+- `longitude_real`: Longitude identificada no PDF como coordenada real.
+- `condicoes_climaticas_nas_ultimas_24_horas`: Condicoes climaticas nas ultimas 24 horas.
+- `condicoes_climaticas_no_momento_da_coleta`: Condicoes climaticas no momento da coleta.
 - `tipo_coleta`: Tipo de coleta.
 - `responsavel_amostra`: Responsavel pela amostragem.
 - `planejamento_amostragem`: Codigo/plano de amostragem, como `CA1682/2025`.
@@ -500,6 +508,19 @@ Auditoria generica de quadros, secoes e tabelas. O modo `conhecida` verifica o q
 - `ocorrencias_detectadas`: Quantidade de ocorrencias encontradas no documento.
 - `registros_extraidos`: Quantidade de registros gerados para a secao.
 - `status`: Resultado da verificacao.
+- `observacao`: Explicacao objetiva do status.
+
+### `field_extraction_audit`
+Auditoria generica dos campos textuais configurados na taxonomia para `metadata`, `sample` e `client`.
+
+- `schema_origem`: Grupo de regras de origem do campo.
+- `campo`: Campo auditado.
+- `pagina`: Primeira pagina em que a regra foi encontrada.
+- `regra_encontrada`: Regex usada para localizar o campo.
+- `ocorrencias_detectadas`: Quantidade de correspondencias no documento.
+- `valor_extraido`: Valor efetivamente enviado para a saida.
+- `campos_detectados_no_valor`: Outros campos cujos rotulos aparecem dentro do valor extraido.
+- `status`: Resultado da comparacao entre regra e valor.
 - `observacao`: Explicacao objetiva do status.
 
 ### `duplicate_audit`

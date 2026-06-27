@@ -10,6 +10,7 @@ from openpyxl import load_workbook
 from harpia_parser.constants import (
     CLIENT_COLUMNS,
     DUPLICATE_AUDIT_COLUMNS,
+    FIELD_EXTRACTION_AUDIT_COLUMNS,
     PACKAGING_PRESERVATIVES_COLUMNS,
     RESULTS_EXTRACT_COLUMNS,
     SAMPLE_COLUMNS,
@@ -275,8 +276,8 @@ class OutputWriterTest(unittest.TestCase):
             "localizacao": None,
             "latitude": "-19,123",
             "longitude": "-43.123",
-            "clima_ultimas_24h": None,
-            "clima": None,
+            "condicoes_climaticas_nas_ultimas_24_horas": None,
+            "condicoes_climaticas_no_momento_da_coleta": None,
             "tipo_coleta": None,
             "responsavel_amostra": None,
             "planejamento_amostragem": None,
@@ -474,6 +475,39 @@ class OutputWriterTest(unittest.TestCase):
 
             payload = json.loads(output_path.with_suffix(".json").read_text(encoding="utf-8"))
             audit = payload["documentos"][0]["auditoria"]["section_extraction_audit"][0]
+            self.assertEqual(audit["status"], "ok")
+
+    def test_field_extraction_audit_is_written_to_excel_and_json(self):
+        df = pd.DataFrame([_valid_row()], columns=RESULTS_EXTRACT_COLUMNS)
+        field_audit_df = pd.DataFrame([{
+            "nome_do_arquivo": "a.pdf",
+            "id_taxonomia": 1,
+            "nome_taxonomia": "Agua Superficial",
+            "versao_template": 1,
+            "schema_origem": "sample",
+            "campo": "latitude_real",
+            "pagina": 1,
+            "regra_encontrada": "Latitude real",
+            "ocorrencias_detectadas": 1,
+            "valor_extraido": "-19,23234",
+            "status": "ok",
+        }]).reindex(columns=FIELD_EXTRACTION_AUDIT_COLUMNS)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            output_path = Path(tmp) / "out.xlsx"
+            salvar(
+                df,
+                output_path,
+                output_tabs=["results_extract", "field_extraction_audit", "validation_errors"],
+                field_extraction_audit_df=field_audit_df,
+            )
+
+            workbook = load_workbook(output_path, data_only=True)
+            self.assertIn("field_extraction_audit", workbook.sheetnames)
+            self.assertEqual(workbook["field_extraction_audit"].cell(row=2, column=13).value, "ok")
+
+            payload = json.loads(output_path.with_suffix(".json").read_text(encoding="utf-8"))
+            audit = payload["documentos"][0]["auditoria"]["field_extraction_audit"][0]
             self.assertEqual(audit["status"], "ok")
 
 

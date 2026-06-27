@@ -82,6 +82,54 @@ class MetadataExtractorTest(unittest.TestCase):
         self.assertEqual(sample.loc[0, "planejamento_amostragem"], "CA5056/2025")
         self.assertEqual(sample.loc[0, "descricao_nao_conformidade"], "-")
 
+    def test_real_coordinates_are_separate_and_do_not_contaminate_sample(self):
+        config = filter_config_for_template(load_config(Path.cwd()), "template_laudo_agua_v1")
+        texto = (
+            "ID Amostra: 636341\n"
+            "Data Coleta: 12/09/2025 08:00\n"
+            "Latitude: -19,2324 Longitude: -42,3271\n"
+            "Observações: NA Condições climáticas nas últimas 24 horas: Sol\n"
+            "Condições climáticas no momento da coleta: Nublado Local da Coleta: RSA 01\n"
+            "Descrição da não-conformidade: Texto preservado antes da coordenada.\n"
+            "Planejamento de Amostragem: CA5602/2025\n"
+            "Texto preservado depois da coordenada.\n"
+            "Latitude (coordenada real): -19,23234\n"
+            "Resultados Analíticos\n"
+        )
+
+        metadata = extract_metadata(texto, config)
+        sample = extract_sample(texto, metadata, config)
+
+        self.assertEqual(sample.loc[0, "latitude"], -19.2324)
+        self.assertEqual(sample.loc[0, "longitude"], -42.3271)
+        self.assertEqual(sample.loc[0, "latitude_real"], -19.23234)
+        self.assertIsNone(sample.loc[0, "longitude_real"])
+        self.assertEqual(sample.loc[0, "observacoes"], "NA")
+        self.assertEqual(sample.loc[0, "condicoes_climaticas_nas_ultimas_24_horas"], "Sol")
+        self.assertEqual(sample.loc[0, "condicoes_climaticas_no_momento_da_coleta"], "Nublado")
+        descricao = str(sample.loc[0, "descricao_nao_conformidade"])
+        self.assertIn("Texto preservado antes", descricao)
+        self.assertIn("Texto preservado depois", descricao)
+        self.assertNotIn("coordenada real", descricao)
+
+    def test_both_real_coordinates_are_kept_separate_from_standard_coordinates(self):
+        config = filter_config_for_template(load_config(Path.cwd()), "template_laudo_agua_v1")
+        texto = (
+            "ID Amostra: 739911\n"
+            "Data Coleta: 21/10/2025 08:00\n"
+            "Latitude: -19,3500 Longitude: -40,0800\n"
+            "Latitude (coordenada real): -19,35302336 "
+            "Longitude (coordenada real): -40,08751597\n"
+        )
+
+        metadata = extract_metadata(texto, config)
+        sample = extract_sample(texto, metadata, config)
+
+        self.assertEqual(sample.loc[0, "latitude"], -19.35)
+        self.assertEqual(sample.loc[0, "longitude"], -40.08)
+        self.assertEqual(sample.loc[0, "latitude_real"], -19.35302336)
+        self.assertEqual(sample.loc[0, "longitude_real"], -40.08751597)
+
     def test_extracts_replaced_report_notice(self):
         config = filter_config_for_template(load_config(Path.cwd()), "template_laudo_agua_v1")
         texto = (

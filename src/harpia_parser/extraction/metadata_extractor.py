@@ -43,6 +43,8 @@ def extract_sample(texto: str, metadata: dict, config) -> pd.DataFrame:
 
     latitude = parse_decimal_pt(metadata.get("latitude"))
     longitude = parse_decimal_pt(metadata.get("longitude"))
+    latitude_real = parse_decimal_pt(extracted.get("latitude_real"))
+    longitude_real = parse_decimal_pt(extracted.get("longitude_real"))
 
     sample = {
         "id_amostra": metadata.get("id_amostra"),
@@ -56,8 +58,14 @@ def extract_sample(texto: str, metadata: dict, config) -> pd.DataFrame:
         "localizacao": extracted.get("localizacao"),
         "latitude": latitude,
         "longitude": longitude,
-        "clima_ultimas_24h": extracted.get("clima_ultimas_24h"),
-        "clima": extracted.get("clima"),
+        "latitude_real": latitude_real,
+        "longitude_real": longitude_real,
+        "condicoes_climaticas_nas_ultimas_24_horas": extracted.get(
+            "condicoes_climaticas_nas_ultimas_24_horas"
+        ),
+        "condicoes_climaticas_no_momento_da_coleta": extracted.get(
+            "condicoes_climaticas_no_momento_da_coleta"
+        ),
         "tipo_coleta": extracted.get("tipo_coleta"),
         "responsavel_amostra": extracted.get("responsavel_amostra"),
         "planejamento_amostragem": extracted.get("planejamento_amostragem"),
@@ -70,6 +78,12 @@ def extract_sample(texto: str, metadata: dict, config) -> pd.DataFrame:
 def _clean_descricao_nao_conformidade(value: str) -> str:
     value = re.sub(
         r"\s*Planejamento de Amostragem:\s*\S+\s*",
+        " ",
+        value,
+        flags=re.IGNORECASE,
+    )
+    value = re.sub(
+        r"\s*(?:Latitude|Longitude)\s*\(coordenada\s+real\)\s*:\s*[+-]?\d+(?:[.,]\d+)?\s*",
         " ",
         value,
         flags=re.IGNORECASE,

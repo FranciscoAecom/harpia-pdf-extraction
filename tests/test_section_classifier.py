@@ -33,6 +33,16 @@ class SectionClassifierTest(unittest.TestCase):
 
         self.assertTrue(tabela_resultado(rows, estado))
 
+    def test_result_table_continuation_uses_configured_result_column(self):
+        rows = [
+            ["Antimonio Dissolvido", "mg/L", "0,00001", "0,00005", "< 0,00001", "NA"],
+            ["Arsenio Dissolvido", "mg/L", "0,00010", "0,00050", "< 0,00010", "NA"],
+        ]
+        estado = {"tipo_registro": "AMOSTRA", "categoria": "Metais"}
+        config = SimpleNamespace(table_layouts={"AMOSTRA": {"resultado_col": 4}})
+
+        self.assertTrue(tabela_resultado(rows, estado, config))
+
     def test_qaqc_recovery_section_without_alias_is_classified_generically(self):
         config = SimpleNamespace(
             category_alias_rules=[],

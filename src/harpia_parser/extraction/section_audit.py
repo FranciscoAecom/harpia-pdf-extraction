@@ -16,7 +16,12 @@ def _clean(value: Any, limit: int = 300) -> str | None:
     return text[:limit] if text else None
 
 
-def _patterns(rules_df: pd.DataFrame, field: str | None = None) -> list[Pattern[str]]:
+def _patterns(
+    rules_df: pd.DataFrame,
+    field: str | None = None,
+    *,
+    fallback_to_all: bool = True,
+) -> list[Pattern[str]]:
     patterns: list[Pattern[str]] = []
     if rules_df.empty:
         return patterns
@@ -25,6 +30,8 @@ def _patterns(rules_df: pd.DataFrame, field: str | None = None) -> list[Pattern[
         selected = source[source["campo"].astype(str) == field]
         if not selected.empty:
             source = selected
+        elif not fallback_to_all:
+            return patterns
     for _, row in source.iterrows():
         regex = value_or_none(row, "regex")
         if regex is not None:
@@ -51,6 +58,7 @@ def _known_section_rows(
     for section_name, output_df in outputs.items():
         rules_df = getattr(config, f"df_{section_name}_rules", pd.DataFrame())
         title_patterns = _patterns(rules_df, "section_start")
+        ignore_patterns = _patterns(rules_df, "audit_ignore", fallback_to_all=False)
         if not title_patterns:
             title_patterns = _patterns(rules_df)
 
@@ -63,9 +71,17 @@ def _known_section_rows(
                         occurrences.append((page_number, title, pattern.pattern))
 
         extracted_count = len(output_df)
+        ignored = any(
+            pattern.search(page_text or "")
+            for page_text, _ in paginas
+            for pattern in ignore_patterns
+        )
         if occurrences and extracted_count:
             status = "ok"
             observation = "Secao reconhecida e dados extraidos."
+        elif occurrences and ignored:
+            status = "nao_aplicavel"
+            observation = "Secao encontrada apenas com conteudo explicitamente ignorado pela taxonomia."
         elif occurrences:
             status = "encontrada_sem_extracao"
             observation = "A secao foi encontrada, mas nenhum registro foi gerado."
@@ -119,10 +135,12 @@ def _matches_known(line: str, patterns: list[Pattern[str]]) -> bool:
 def _looks_like_heading(line: str) -> bool:
     if not 3 <= len(line) <= 100 or re.search(r"\d", line):
         return False
-    if line.endswith((".", ",", ";")) or ":" in line or not re.search(r"[A-Za-z\u00c0-\u00ff]", line):
+    if line.endswith((".", ",", ";", "\u037e")) or ":" in line or not re.search(r"[A-Za-z\u00c0-\u00ff]", line):
         return False
     words = re.findall(r"[A-Za-z\u00c0-\u00ff]+", line)
     if not 1 <= len(words) <= 10 or re.fullmatch(r"[IVXLCDM]+", line, re.IGNORECASE):
+        return False
+    if len(words) == 1 and line.upper() != line:
         return False
     stopwords = {"a", "as", "da", "das", "de", "do", "dos", "e", "em", "para"}
     title_words = [word for word in words if normalizar(word) not in stopwords]

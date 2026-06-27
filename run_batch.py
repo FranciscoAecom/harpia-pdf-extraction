@@ -248,6 +248,7 @@ def extract_batch(input_dirs: list[Path], output_dir: Path, workers: int = 3) ->
     all_audits: dict[str, list[pd.DataFrame]] = {}
     all_table_audits: dict[str, list[pd.DataFrame]] = {}
     all_section_audits: dict[str, list[pd.DataFrame]] = {}
+    all_field_audits: dict[str, list[pd.DataFrame]] = {}
     all_duplicate_candidates = {}
     candidate_by_path = {}
     theme_by_path: dict[str, str] = {}
@@ -294,6 +295,7 @@ def extract_batch(input_dirs: list[Path], output_dir: Path, workers: int = 3) ->
                 audit_df,
                 table_audit_df,
                 section_audit_df,
+                field_audit_df,
             ) = pipeline_outputs
             template_id = _winner_template_id(audit_df)
             template = config.templates.get(template_id or "", {})
@@ -346,6 +348,7 @@ def extract_batch(input_dirs: list[Path], output_dir: Path, workers: int = 3) ->
                 "conformity_statement_rows": len(conformity_statement_df),
                 "validation_key_rows": len(validation_key_df),
                 "section_extraction_audit_rows": len(section_audit_df),
+                "field_extraction_audit_rows": len(field_audit_df),
             }
             summary.append(summary_row)
             text_key = (tipo_laudo, duplicate_candidate.hash_texto)
@@ -370,6 +373,7 @@ def extract_batch(input_dirs: list[Path], output_dir: Path, workers: int = 3) ->
                     "classification_audit": audit_df,
                     "table_extraction_audit": table_audit_df,
                     "section_extraction_audit": section_audit_df,
+                    "field_extraction_audit": field_audit_df,
                     "summary": summary_row,
                 })
             _log_document_alerts(pdf, section_audit_df, table_audit_df)
@@ -443,6 +447,7 @@ def extract_batch(input_dirs: list[Path], output_dir: Path, workers: int = 3) ->
                     "conformity_statement_rows",
                     "validation_key_rows",
                     "section_extraction_audit_rows",
+                    "field_extraction_audit_rows",
                 ]:
                     summary_row[column] = 0
                 continue
@@ -458,6 +463,7 @@ def extract_batch(input_dirs: list[Path], output_dir: Path, workers: int = 3) ->
             all_audits.setdefault(tipo_laudo, []).append(document["classification_audit"])
             all_table_audits.setdefault(tipo_laudo, []).append(document["table_extraction_audit"])
             all_section_audits.setdefault(tipo_laudo, []).append(document["section_extraction_audit"])
+            all_field_audits.setdefault(tipo_laudo, []).append(document["field_extraction_audit"])
         documents.clear()
 
     extracted_documents.clear()
@@ -494,6 +500,11 @@ def extract_batch(input_dirs: list[Path], output_dir: Path, workers: int = 3) ->
             if all_section_audits.get(tipo_laudo)
             else pd.DataFrame()
         )
+        field_audit_df = (
+            pd.concat(all_field_audits.get(tipo_laudo, []), ignore_index=True)
+            if all_field_audits.get(tipo_laudo)
+            else pd.DataFrame()
+        )
         duplicate_audit_df = duplicate_audits_by_theme.get(tipo_laudo, pd.DataFrame())
 
         template_id = _winner_template_id(audit_df)
@@ -507,6 +518,7 @@ def extract_batch(input_dirs: list[Path], output_dir: Path, workers: int = 3) ->
             classification_audit_df=audit_df,
             table_extraction_audit_df=table_audit_df,
             section_extraction_audit_df=section_audit_df,
+            field_extraction_audit_df=field_audit_df,
             duplicate_audit_df=duplicate_audit_df,
             packaging_preservatives_df=packaging_preservatives_df,
             notes_df=notes_df,

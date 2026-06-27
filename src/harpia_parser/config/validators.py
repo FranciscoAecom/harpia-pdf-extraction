@@ -9,6 +9,7 @@ from ..constants import (
     CLIENT_COLUMNS,
     CONFORMITY_STATEMENT_COLUMNS,
     DUPLICATE_AUDIT_COLUMNS,
+    FIELD_EXTRACTION_AUDIT_COLUMNS,
     GENERAL_CONSIDERATIONS_COLUMNS,
     LAYOUT_FIELD_KEYS,
     NOTES_COLUMNS,
@@ -172,6 +173,11 @@ def validate_contract_frames(frames: dict[str, pd.DataFrame], template_ids: set[
         frames["section_extraction_audit_model"],
         SECTION_EXTRACTION_AUDIT_COLUMNS,
     )
+    validate_output_model(
+        "field_extraction_audit",
+        frames["field_extraction_audit_model"],
+        FIELD_EXTRACTION_AUDIT_COLUMNS,
+    )
     validate_detection_sources("template_rules", frames["template_rules"])
 
     for sheet_name, df in {
@@ -202,6 +208,7 @@ def validate_contract_frames(frames: dict[str, pd.DataFrame], template_ids: set[
         "validation_key_model": frames["validation_key_model"],
         "duplicate_audit_model": frames["duplicate_audit_model"],
         "section_extraction_audit_model": frames["section_extraction_audit_model"],
+        "field_extraction_audit_model": frames["field_extraction_audit_model"],
     }.items():
         validate_boolean_columns(sheet_name, df)
         validate_template_ids(sheet_name, df, template_ids)

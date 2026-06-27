@@ -9,6 +9,7 @@ from ..config.loader import filter_config_for_template, load_config, output_tabs
 from ..constants import (
     CLIENT_COLUMNS,
     CONFORMITY_STATEMENT_COLUMNS,
+    FIELD_EXTRACTION_AUDIT_COLUMNS,
     GENERAL_CONSIDERATIONS_COLUMNS,
     NOTES_COLUMNS,
     PACKAGING_PRESERVATIVES_COLUMNS,
@@ -22,6 +23,7 @@ from .context import DocumentContext
 from ..formatting.common import format_results_extract
 from ..extraction.metadata_extractor import codigo_laudo_from_text, extract_client, extract_metadata, extract_sample
 from ..extraction.document_sections import extract_document_section
+from ..extraction.field_audit import build_field_extraction_audit
 from ..extraction.packaging_preservatives import extract_packaging_preservatives
 from ..extraction.section_audit import build_section_extraction_audit
 from ..normalization import normalize_outputs
@@ -94,6 +96,7 @@ def _empty_outputs() -> tuple[
     pd.DataFrame,
     pd.DataFrame,
     pd.DataFrame,
+    pd.DataFrame,
 ]:
     return (
         pd.DataFrame(columns=RESULTS_EXTRACT_COLUMNS),
@@ -107,6 +110,7 @@ def _empty_outputs() -> tuple[
         pd.DataFrame(),
         pd.DataFrame(columns=TABLE_EXTRACTION_AUDIT_COLUMNS),
         pd.DataFrame(columns=SECTION_EXTRACTION_AUDIT_COLUMNS),
+        pd.DataFrame(columns=FIELD_EXTRACTION_AUDIT_COLUMNS),
     )
 
 
@@ -162,7 +166,9 @@ def _extract_result_rows(paginas, metadata: dict, sample_df: pd.DataFrame, conte
             rows = tabela[1:] if aplicar_section_pdf(first_row_text, estado, extraction_config) else tabela
             is_qaqc_continuacao = inferir_qaqc_continuacao(rows, estado, extraction_config)
 
-            if not estado.get("categoria") or (not is_qaqc_continuacao and not tabela_resultado(rows, estado)):
+            if not estado.get("categoria") or (
+                not is_qaqc_continuacao and not tabela_resultado(rows, estado, extraction_config)
+            ):
                 continue
 
             table_audit_rows.append(
@@ -278,6 +284,14 @@ def run_pipeline_document(pdf_path, config=None, pdf_content=None) -> tuple[
         },
         table_audit_df,
     )
+    field_audit_df = build_field_extraction_audit(
+        paginas,
+        context,
+        extraction_config,
+        metadata,
+        sample_df,
+        client_df,
+    )
 
     df = format_results_extract(raw_results_df, extraction_config, context)
     sample_df = sample_df.reindex(columns=SAMPLE_COLUMNS)
@@ -303,6 +317,8 @@ def run_pipeline_document(pdf_path, config=None, pdf_content=None) -> tuple[
         classification_audit_df,
         table_audit_df,
         section_audit_df,
+        field_audit_df,
+        field_audit_df,
     )
 
 
@@ -359,6 +375,7 @@ def main(argv=None) -> int:
         classification_audit_df,
         table_audit_df,
         section_extraction_audit_df=section_audit_df,
+        field_extraction_audit_df=field_audit_df,
         packaging_preservatives_df=packaging_preservatives_df,
         notes_df=notes_df,
         general_considerations_df=general_considerations_df,

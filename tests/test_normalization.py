@@ -163,9 +163,10 @@ class NormalizationTest(unittest.TestCase):
         df = pd.DataFrame([{
             "parameter": "pH - Leitura 1",
             "resultado": "7,10",
+            "unidade": "NA",
             "acm_resultado_tratado": None,
             "acm_qualificador": None,
-            "acm_unidade": None,
+            "acm_unidade": "NA",
             "lq": "2,00 - 12,00",
             "acm_lq_minimo": None,
             "acm_lq_maximo": None,
@@ -177,6 +178,8 @@ class NormalizationTest(unittest.TestCase):
 
         out, _, _ = normalize_outputs(df, pd.DataFrame(), pd.DataFrame(), context)
 
+        self.assertEqual(out.loc[0, "resultado"], "7,10")
+        self.assertEqual(out.loc[0, "unidade"], "NA")
         self.assertEqual(out.loc[0, "acm_resultado_tratado"], 7.1)
         self.assertIsNone(out.loc[0, "acm_unidade"])
         self.assertEqual(out.loc[0, "acm_lq_minimo"], 2.0)

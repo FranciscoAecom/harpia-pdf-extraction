@@ -118,6 +118,19 @@ class ValidationTest(unittest.TestCase):
 
         self.assertTrue(errors.empty)
 
+    def test_na_native_unit_does_not_require_structured_unit(self):
+        row = _valid_row()
+        row["parameter"] = "pH"
+        row["resultado"] = "7,17"
+        row["unidade"] = "NA"
+        row["acm_resultado_tratado"] = 7.17
+        row["acm_unidade"] = None
+        df = pd.DataFrame([row], columns=RESULTS_EXTRACT_COLUMNS)
+
+        errors = validate_results_extract(df)
+
+        self.assertTrue(errors.empty)
+
     def test_structured_unit_without_unit_in_source_is_reported(self):
         row = _valid_row()
         row["lq"] = "2,00 - 12,00"
@@ -197,8 +210,8 @@ class ValidationTest(unittest.TestCase):
             "localizacao": None,
             "latitude": "-19,123",
             "longitude": "-43.123",
-            "clima_ultimas_24h": None,
-            "clima": None,
+            "condicoes_climaticas_nas_ultimas_24_horas": None,
+            "condicoes_climaticas_no_momento_da_coleta": None,
             "tipo_coleta": None,
             "responsavel_amostra": None,
             "planejamento_amostragem": None,

@@ -11,6 +11,7 @@ from harpia_parser.constants import (
     CLIENT_COLUMNS,
     CONFORMITY_STATEMENT_COLUMNS,
     DUPLICATE_AUDIT_COLUMNS,
+    FIELD_EXTRACTION_AUDIT_COLUMNS,
     GENERAL_CONSIDERATIONS_COLUMNS,
     NOTES_COLUMNS,
     PACKAGING_PRESERVATIVES_COLUMNS,
@@ -40,6 +41,10 @@ class ConfigLoaderTest(unittest.TestCase):
         self.assertEqual(
             config.df_section_extraction_audit_model["campo"].tolist(),
             SECTION_EXTRACTION_AUDIT_COLUMNS,
+        )
+        self.assertEqual(
+            config.df_field_extraction_audit_model["campo"].tolist(),
+            FIELD_EXTRACTION_AUDIT_COLUMNS,
         )
 
     def test_structured_normalized_fields_use_acm_prefix(self):
@@ -219,6 +224,7 @@ class ConfigLoaderTest(unittest.TestCase):
                 "validation_key",
                 "table_extraction_audit",
                 "section_extraction_audit",
+                "field_extraction_audit",
                 "classification_audit",
                 "duplicate_audit",
                 "validation_errors",

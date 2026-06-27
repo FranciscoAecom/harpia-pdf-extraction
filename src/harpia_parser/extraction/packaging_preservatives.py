@@ -56,6 +56,14 @@ def _sample_identification(table: list[list[Any]], header_index: int, sample_pat
     return None
 
 
+def _sample_identification_from_text(text: str, sample_patterns: list[Pattern[str]]) -> str | None:
+    for line in (text or "").splitlines():
+        cleaned = _clean_text(line)
+        if cleaned and (not sample_patterns or _matches_any(sample_patterns, cleaned)):
+            return cleaned
+    return None
+
+
 def _sample_id(identificacao_amostra: str | None) -> str | None:
     if not identificacao_amostra:
         return None
@@ -86,23 +94,38 @@ def extract_packaging_preservatives(
         return pd.DataFrame(columns=PACKAGING_PRESERVATIVES_COLUMNS)
 
     output_rows: list[dict[str, Any]] = []
+    carry_section_to_next_page = False
+    carried_identification: str | None = None
     for page_text, tables in paginas:
         page_has_section = _matches_any(section_patterns, page_text or "")
+        section_is_active = page_has_section or carry_section_to_next_page
+        page_identification = _sample_identification_from_text(page_text or "", sample_patterns)
+        if page_has_section and page_identification:
+            carried_identification = page_identification
+        header_is_in_page_text = _matches_any(header_patterns, page_text or "")
+        extracted_on_page = False
         for table in tables:
             if not table:
                 continue
 
             table_text = " ".join(_joined_row(row) for row in table)
-            if not page_has_section and not _matches_any(section_patterns, table_text):
+            if not section_is_active and not _matches_any(section_patterns, table_text):
                 continue
 
             header_index = _find_header_index(table, header_patterns)
+            if header_index is None and section_is_active and header_is_in_page_text:
+                header_index = -1
             if header_index is None:
                 continue
 
-            identificacao_amostra = _sample_identification(table, header_index, sample_patterns)
+            identificacao_amostra = (
+                _sample_identification(table, header_index, sample_patterns)
+                if header_index >= 0
+                else None
+            ) or page_identification or carried_identification
             id_amostra = _sample_id(identificacao_amostra)
             for embalagem, volume, preservacao, metodos in _data_rows(table, header_index):
+                extracted_on_page = True
                 output_rows.append({
                     "nome_do_arquivo": context.nome_do_arquivo,
                     "id_taxonomia": context.id_taxonomia,
@@ -115,5 +138,8 @@ def extract_packaging_preservatives(
                     "preservacao": _clean_text(preservacao),
                     "metodos": _clean_text(metodos),
                 })
+        carry_section_to_next_page = page_has_section and not extracted_on_page
+        if extracted_on_page:
+            carried_identification = None
 
     return pd.DataFrame(output_rows, columns=PACKAGING_PRESERVATIVES_COLUMNS)

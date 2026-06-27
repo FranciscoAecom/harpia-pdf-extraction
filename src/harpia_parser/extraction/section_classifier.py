@@ -112,19 +112,31 @@ def linha_header(row: list) -> bool:
     return col0 in {"analise", "parametros"} and col1 in {"resultado", "numero do cq", "unidade"}
 
 
-def tabela_resultado(rows: list, estado: dict) -> bool:
+def tabela_resultado(rows: list, estado: dict, config=None) -> bool:
     if any(linha_header(row) for row in rows[:2]):
         return True
 
     if not estado.get("categoria") or estado.get("tipo_registro") != "AMOSTRA":
         return False
 
+    result_index = 1
+    if config is not None:
+        tipo_registro = estado.get("tipo_registro") or "AMOSTRA"
+        layout = (
+            estado.get("layout_override")
+            if estado.get("layout_override_tipo") == tipo_registro
+            else None
+        ) or config.table_layouts.get(tipo_registro) or config.table_layouts.get("AMOSTRA", {})
+        configured_index = layout.get("resultado_col")
+        if configured_index is not None:
+            result_index = configured_index
+
     data_rows = 0
     for row in rows[:5]:
-        if len(row) < 5:
+        if len(row) < 5 or len(row) <= result_index:
             continue
         parametro = normalizar(str(row[0] or ""))
-        resultado = str(row[1] or "").strip()
+        resultado = str(row[result_index] or "").strip()
         if parametro and re.search(r"(^[<>]=?|[+-]?\d)", resultado):
             data_rows += 1
     return data_rows >= 2

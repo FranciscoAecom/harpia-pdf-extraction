@@ -11,7 +11,7 @@ from ..constants import (
     RESULTS_EXTRACT_COLUMNS,
     SAMPLE_COLUMNS,
 )
-from ..parsing.measure_parser import possui_unidade_aparente, unidade_from_partes
+from ..parsing.measure_parser import possui_unidade_aparente, texto_vazio, unidade_from_partes
 from ..utils import normalizar
 
 
@@ -220,7 +220,7 @@ class ResultsExtractRow(BaseModel):
                 continue
             expected_unit = unidade_from_partes([source_value])
             unit_is_present = expected_unit is not None or possui_unidade_aparente(source_value)
-            if source_field == "resultado" and self.unidade is not None:
+            if source_field == "resultado" and not texto_vazio(self.unidade):
                 unit_is_present = True
             if unit_is_present and parsed_unit is None:
                 raise ValueError(f"{unit_field} vazio para texto com unidade: {source_value}")
@@ -290,8 +290,10 @@ class SampleRow(BaseModel):
     localizacao: str | None = None
     latitude: float | None = None
     longitude: float | None = None
-    clima_ultimas_24h: str | None = None
-    clima: str | None = None
+    latitude_real: float | None = None
+    longitude_real: float | None = None
+    condicoes_climaticas_nas_ultimas_24_horas: str | None = None
+    condicoes_climaticas_no_momento_da_coleta: str | None = None
     tipo_coleta: str | None = None
     responsavel_amostra: str | None = None
     planejamento_amostragem: str | None = None
@@ -310,7 +312,7 @@ class SampleRow(BaseModel):
             raise ValueError("campo obrigatorio vazio")
         return value
 
-    @field_validator("latitude", "longitude", mode="before")
+    @field_validator("latitude", "longitude", "latitude_real", "longitude_real", mode="before")
     @classmethod
     def decimal_value(cls, value: Any) -> Any:
         if value is None:

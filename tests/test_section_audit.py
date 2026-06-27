@@ -59,6 +59,29 @@ def _config():
 
 
 class SectionAuditTest(unittest.TestCase):
+    def test_ignored_validation_form_code_is_not_an_extraction_failure(self):
+        config = _config()
+        config.df_validation_key_rules = pd.concat([
+            config.df_validation_key_rules,
+            pd.DataFrame([{
+                "campo": "audit_ignore",
+                "regex": r"Chave\s+de\s+Validacao\s*:?\s*\n?\s*FO-ANL-\d+",
+            }]),
+        ], ignore_index=True)
+        pages = [("Chave de Validacao:\nFO-ANL-162", [])]
+        outputs = {
+            "packaging_preservatives": pd.DataFrame(),
+            "notes": pd.DataFrame(),
+            "general_considerations": pd.DataFrame(),
+            "conformity_statement": pd.DataFrame(),
+            "validation_key": pd.DataFrame(),
+        }
+
+        audit = build_section_extraction_audit(pages, _context(), config, outputs, pd.DataFrame())
+
+        validation = audit[audit["secao"] == "validation_key"].iloc[0]
+        self.assertEqual(validation["status"], "nao_aplicavel")
+
     def test_audits_known_and_discovered_sections_and_tables(self):
         pages = [(
             "Relatorio Analitico\nNotas:\nConteudo da nota.\nConsideracoes Gerais\nResumo Executivo\nTexto livre",
