@@ -94,6 +94,30 @@ class ValidationTest(unittest.TestCase):
         self.assertFalse(errors.empty)
         self.assertTrue(errors["message"].astype(str).str.contains("acm_unidade vazio").any())
 
+    def test_unknown_unit_is_reported_when_structured_unit_is_empty(self):
+        row = _valid_row()
+        row["resultado"] = "10 unidadeNova/L"
+        row["acm_resultado_tratado"] = 10
+        row["acm_unidade"] = None
+        df = pd.DataFrame([row], columns=RESULTS_EXTRACT_COLUMNS)
+
+        errors = validate_results_extract(df)
+
+        self.assertFalse(errors.empty)
+        self.assertTrue(errors["message"].astype(str).str.contains("acm_unidade vazio").any())
+
+    def test_unitless_range_does_not_raise_missing_unit_error(self):
+        row = _valid_row()
+        row["conama"] = "6,5 a 8,5"
+        row["acm_conama_minimo"] = 6.5
+        row["acm_conama_maximo"] = 8.5
+        row["acm_conama_unidade"] = None
+        df = pd.DataFrame([row], columns=RESULTS_EXTRACT_COLUMNS)
+
+        errors = validate_results_extract(df)
+
+        self.assertTrue(errors.empty)
+
     def test_packaging_preservatives_required_fields_are_validated(self):
         row = {
             "nome_do_arquivo": "relatorio.pdf",

@@ -77,12 +77,26 @@ class MeasureParserTest(unittest.TestCase):
         self.assertEqual(parsed["conama_maximo"], 75.0)
         self.assertEqual(parsed["conama_unidade"], "mgPt/L")
 
+    def test_normative_value_extracts_mg_pt_per_l_unit_with_space(self):
+        parsed = parse_medida("Máx. 75 mg Pt/L", "conama")
+
+        self.assertEqual(parsed["conama_operador"], "max")
+        self.assertEqual(parsed["conama_maximo"], 75.0)
+        self.assertEqual(parsed["conama_unidade"], "mg Pt/L")
+
     def test_result_value_extracts_mgpt_co_per_l_unit(self):
         valor, qualificador, unidade = parse_resultado("< 5 mgPt-Co/L")
 
         self.assertEqual(valor, 5.0)
         self.assertEqual(qualificador, "<")
         self.assertEqual(unidade, "mgPt-Co/L")
+
+    def test_normative_value_extracts_spaced_mgpt_co_per_l_unit(self):
+        parsed = parse_medida("75 mgPt- Co/L", "copam_cerh")
+
+        self.assertEqual(parsed["copam_cerh_minimo"], 75.0)
+        self.assertEqual(parsed["copam_cerh_maximo"], 75.0)
+        self.assertEqual(parsed["copam_cerh_unidade"], "mgPt- Co/L")
 
     def test_result_scientific_notation(self):
         valor, qualificador, unidade = parse_resultado("1,2 x 10 3 UFC/mL")

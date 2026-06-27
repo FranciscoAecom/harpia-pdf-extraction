@@ -198,6 +198,11 @@ class NormalizationTest(unittest.TestCase):
             "acm_conama_minimo": None,
             "acm_conama_maximo": None,
             "acm_conama_unidade": None,
+            "copam_cerh": "75 mgPt- Co/L",
+            "acm_copam_cerh_operador": None,
+            "acm_copam_cerh_minimo": None,
+            "acm_copam_cerh_maximo": None,
+            "acm_copam_cerh_unidade": None,
             "lq": "5 Pt/Co (mgPt/L)",
             "acm_lq_minimo": None,
             "acm_lq_maximo": None,
@@ -218,6 +223,7 @@ class NormalizationTest(unittest.TestCase):
 
         self.assertEqual(out.loc[0, "acm_unidade"], "Pt/Co (mgPt/L)")
         self.assertEqual(out.loc[0, "acm_conama_unidade"], "mgPt/L")
+        self.assertEqual(out.loc[0, "acm_copam_cerh_unidade"], "mgPt- Co/L")
         self.assertEqual(out.loc[0, "acm_lq_unidade"], "Pt/Co (mgPt/L)")
         self.assertEqual(out.loc[1, "acm_unidade"], "mL/L")
         self.assertEqual(out.loc[1, "acm_lq_unidade"], "mL/L")

@@ -7,9 +7,14 @@ from ..utils import normalizar
 EMPTY_TOKENS = {"", "NA", "ND", "N/A", "NAN"}
 UNIDADES_CONHECIDAS = re.compile(
     r"(Pt/Co\s*\(mgPt/L\)|mg/L\s*\(como\s*[^)]+\)|NMP/100\s*mL|NMP/100mL|"
-    r"UFC/100\s*mL|UFC/100mL|\u00b5S/cm|uS/cm|\u00b5g/L|ug/L|mgPt-?Co/L|mgPt/L|"
+    r"UFC/100\s*mL|UFC/100mL|\u00b5S/cm|uS/cm|\u00b5g/L|ug/L|mg\s*Pt(?:\s*-?\s*Co)?\s*/\s*L|"
     r"mL/L|mg/L|UNT|NTU|NMP/mL|UFC/mL|mg/kg|\u00b0C|pH|mV|"
     r"\u2030|%|Pt/Co|(?<![A-Za-zÀ-ÿ/])m(?![A-Za-zÀ-ÿ/]))",
+    re.IGNORECASE,
+)
+UNIDADE_APARENTE = re.compile(
+    r"[+-]?[\d.,]+(?:\s*x\s*10\s*[+-]?\d+)?\s+"
+    r"([A-Za-z\u00c0-\u00ff\u00b5\u00b0\u2030%][A-Za-z\u00c0-\u00ff0-9\u00b5\u00b0\u2030%/()._-]*)",
     re.IGNORECASE,
 )
 
@@ -44,6 +49,14 @@ def unidade_from_partes(partes: list) -> str | None:
         if match:
             return match.group(0)
     return None
+
+
+def possui_unidade_aparente(texto: Any) -> bool:
+    """Detecta uma possivel unidade ainda ausente do catalogo conhecido."""
+    for match in UNIDADE_APARENTE.finditer(str(texto or "")):
+        if normalizar(match.group(1)) not in {"a", "e", "x", "para"}:
+            return True
+    return False
 
 
 def parse_medida(original: Any, prefixo: str, duplicar_valor_simples: bool = False) -> dict[str, Any]:

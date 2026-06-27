@@ -11,7 +11,7 @@ from ..constants import (
     RESULTS_EXTRACT_COLUMNS,
     SAMPLE_COLUMNS,
 )
-from ..parsing.measure_parser import unidade_from_partes
+from ..parsing.measure_parser import possui_unidade_aparente, unidade_from_partes
 from ..utils import normalizar
 
 
@@ -189,7 +189,8 @@ class ResultsExtractRow(BaseModel):
                 continue
             expected_unit = unidade_from_partes([source_value])
             parsed_unit = getattr(self, unit_field)
-            if expected_unit is not None and parsed_unit is None:
+            unit_is_present = expected_unit is not None or possui_unidade_aparente(source_value)
+            if unit_is_present and parsed_unit is None:
                 raise ValueError(f"{unit_field} vazio para texto com unidade: {source_value}")
 
 
