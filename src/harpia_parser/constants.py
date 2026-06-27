@@ -200,6 +200,25 @@ DUPLICATE_AUDIT_COLUMNS = [
     "status",
 ]
 
+SECTION_EXTRACTION_AUDIT_COLUMNS = [
+    "nome_do_arquivo",
+    "id_taxonomia",
+    "nome_taxonomia",
+    "versao_template",
+    ACM_EXTRACTION_TIMESTAMP_COLUMN,
+    "pagina",
+    "tabela_indice",
+    "objeto_tipo",
+    "secao",
+    "titulo_detectado",
+    "modo_auditoria",
+    "regra_encontrada",
+    "ocorrencias_detectadas",
+    "registros_extraidos",
+    "status",
+    "observacao",
+]
+
 LAYOUT_FIELD_KEYS = [
     "resultado_col",
     "unidade_col",

@@ -14,7 +14,7 @@ def _clean_text(value: Any) -> str | None:
     return text or None
 
 
-def _compile_rules(rules_df: pd.DataFrame) -> dict[str, list[Pattern[str]]]:
+def _compile_rules(rules_df: pd.DataFrame, allowed_fields: set[str]) -> dict[str, list[Pattern[str]]]:
     rules: dict[str, list[Pattern[str]]] = {}
     if rules_df.empty:
         return rules
@@ -22,7 +22,7 @@ def _compile_rules(rules_df: pd.DataFrame) -> dict[str, list[Pattern[str]]]:
     for _, row in rules_df.iterrows():
         campo = str(value_or_none(row, "campo") or "").strip()
         regex = value_or_none(row, "regex")
-        if not campo or regex is None:
+        if not campo or campo not in allowed_fields or regex is None:
             continue
         rules.setdefault(campo, []).append(re.compile(str(regex), re.IGNORECASE | re.DOTALL))
     return rules
@@ -36,7 +36,7 @@ def extract_document_section(
     *,
     columns: list[str],
 ) -> pd.DataFrame:
-    rules = _compile_rules(rules_df)
+    rules = _compile_rules(rules_df, set(columns))
     if not rules:
         return pd.DataFrame(columns=columns)
 

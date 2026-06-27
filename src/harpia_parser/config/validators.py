@@ -15,6 +15,7 @@ from ..constants import (
     PACKAGING_PRESERVATIVES_COLUMNS,
     RESULTS_EXTRACT_COLUMNS,
     SAMPLE_COLUMNS,
+    SECTION_EXTRACTION_AUDIT_COLUMNS,
     VALIDATION_KEY_COLUMNS,
 )
 from .common import is_empty_marker, normalize_token, parse_attrs
@@ -166,6 +167,11 @@ def validate_contract_frames(frames: dict[str, pd.DataFrame], template_ids: set[
     )
     validate_output_model("validation_key", frames["validation_key_model"], VALIDATION_KEY_COLUMNS)
     validate_output_model("duplicate_audit", frames["duplicate_audit_model"], DUPLICATE_AUDIT_COLUMNS)
+    validate_output_model(
+        "section_extraction_audit",
+        frames["section_extraction_audit_model"],
+        SECTION_EXTRACTION_AUDIT_COLUMNS,
+    )
     validate_detection_sources("template_rules", frames["template_rules"])
 
     for sheet_name, df in {
@@ -195,6 +201,7 @@ def validate_contract_frames(frames: dict[str, pd.DataFrame], template_ids: set[
         "conformity_statement_model": frames["conformity_statement_model"],
         "validation_key_model": frames["validation_key_model"],
         "duplicate_audit_model": frames["duplicate_audit_model"],
+        "section_extraction_audit_model": frames["section_extraction_audit_model"],
     }.items():
         validate_boolean_columns(sheet_name, df)
         validate_template_ids(sheet_name, df, template_ids)

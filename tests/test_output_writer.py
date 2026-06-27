@@ -13,6 +13,7 @@ from harpia_parser.constants import (
     PACKAGING_PRESERVATIVES_COLUMNS,
     RESULTS_EXTRACT_COLUMNS,
     SAMPLE_COLUMNS,
+    SECTION_EXTRACTION_AUDIT_COLUMNS,
 )
 from harpia_parser.formatting.output_writer import salvar
 from test_validation import _valid_row
@@ -419,6 +420,42 @@ class OutputWriterTest(unittest.TestCase):
             self.assertEqual(document["auditoria"]["duplicate_audit"][0]["status"], "unico")
             self.assertIn("acm_data_hora_extracao", document["auditoria"]["validation_errors"][0])
             self.assertIn("validation_errors", document["auditoria"])
+
+
+    def test_section_extraction_audit_is_written_to_excel_and_json(self):
+        df = pd.DataFrame([_valid_row()], columns=RESULTS_EXTRACT_COLUMNS)
+        section_audit_df = pd.DataFrame([{
+            "nome_do_arquivo": "a.pdf",
+            "id_taxonomia": 1,
+            "nome_taxonomia": "Agua Superficial",
+            "versao_template": 1,
+            "pagina": 5,
+            "objeto_tipo": "secao",
+            "secao": "notes",
+            "titulo_detectado": "Notas",
+            "modo_auditoria": "conhecida",
+            "ocorrencias_detectadas": 1,
+            "registros_extraidos": 1,
+            "status": "ok",
+            "observacao": "Secao reconhecida e dados extraidos.",
+        }]).reindex(columns=SECTION_EXTRACTION_AUDIT_COLUMNS)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            output_path = Path(tmp) / "out.xlsx"
+            salvar(
+                df,
+                output_path,
+                output_tabs=["results_extract", "section_extraction_audit", "validation_errors"],
+                section_extraction_audit_df=section_audit_df,
+            )
+
+            workbook = load_workbook(output_path, data_only=True)
+            self.assertIn("section_extraction_audit", workbook.sheetnames)
+            self.assertEqual(workbook["section_extraction_audit"].cell(row=2, column=15).value, "ok")
+
+            payload = json.loads(output_path.with_suffix(".json").read_text(encoding="utf-8"))
+            audit = payload["documentos"][0]["auditoria"]["section_extraction_audit"][0]
+            self.assertEqual(audit["status"], "ok")
 
 
 if __name__ == "__main__":

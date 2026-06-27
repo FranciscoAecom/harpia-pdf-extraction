@@ -26,9 +26,10 @@ OUTPUT_ORDER = {
     "conformity_statement": 7,
     "validation_key": 8,
     "table_extraction_audit": 9,
-    "classification_audit": 10,
-    "duplicate_audit": 11,
-    "validation_errors": 12,
+    "section_extraction_audit": 10,
+    "classification_audit": 11,
+    "duplicate_audit": 12,
+    "validation_errors": 13,
 }
 
 CONFIG_ONLY_SCHEMAS = {
@@ -94,6 +95,7 @@ def map_taxonomy_to_runtime_frames(workbook: TaxonomyWorkbook) -> dict[str, pd.D
         "conformity_statement_model": _fields_from_item_schema(workbook.item_schema, "conformity_statement"),
         "validation_key_model": _fields_from_item_schema(workbook.item_schema, "validation_key"),
         "duplicate_audit_model": _fields_from_item_schema(workbook.item_schema, "duplicate_audit"),
+        "section_extraction_audit_model": _fields_from_item_schema(workbook.item_schema, "section_extraction_audit"),
         "table_layouts": _layout_rules(base_items),
         "header_alias_rules": _header_alias_rules(base_items),
         "continuation_rules": _continuation_rules(base_items),

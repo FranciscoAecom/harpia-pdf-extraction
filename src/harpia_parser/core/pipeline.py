@@ -15,6 +15,7 @@ from ..constants import (
     PACKAGING_PRESERVATIVES_COLUMNS,
     RESULTS_EXTRACT_COLUMNS,
     SAMPLE_COLUMNS,
+    SECTION_EXTRACTION_AUDIT_COLUMNS,
     TABLE_EXTRACTION_AUDIT_COLUMNS,
     VALIDATION_KEY_COLUMNS,
 )
@@ -23,6 +24,7 @@ from ..formatting.common import format_results_extract
 from ..extraction.metadata_extractor import codigo_laudo_from_text, extract_client, extract_metadata, extract_sample
 from ..extraction.document_sections import extract_document_section
 from ..extraction.packaging_preservatives import extract_packaging_preservatives
+from ..extraction.section_audit import build_section_extraction_audit
 from ..normalization import normalize_outputs
 from ..formatting.output_writer import salvar
 from ..extraction.pdf_reader import read_pdf
@@ -92,6 +94,7 @@ def _empty_outputs() -> tuple[
     pd.DataFrame,
     pd.DataFrame,
     pd.DataFrame,
+    pd.DataFrame,
 ]:
     return (
         pd.DataFrame(columns=RESULTS_EXTRACT_COLUMNS),
@@ -104,6 +107,7 @@ def _empty_outputs() -> tuple[
         pd.DataFrame(columns=VALIDATION_KEY_COLUMNS),
         pd.DataFrame(),
         pd.DataFrame(columns=TABLE_EXTRACTION_AUDIT_COLUMNS),
+        pd.DataFrame(columns=SECTION_EXTRACTION_AUDIT_COLUMNS),
     )
 
 
@@ -217,6 +221,7 @@ def run_pipeline_document(pdf_path, config=None) -> tuple[
     pd.DataFrame,
     pd.DataFrame,
     pd.DataFrame,
+    pd.DataFrame,
 ]:
     pdf_path = Path(pdf_path)
     config = config or load_config(PROJECT_ROOT)
@@ -267,6 +272,19 @@ def run_pipeline_document(pdf_path, config=None) -> tuple[
         extraction_config.df_validation_key_rules,
         columns=VALIDATION_KEY_COLUMNS,
     )
+    section_audit_df = build_section_extraction_audit(
+        paginas,
+        context,
+        extraction_config,
+        {
+            "packaging_preservatives": packaging_preservatives_df,
+            "notes": notes_df,
+            "general_considerations": general_considerations_df,
+            "conformity_statement": conformity_statement_df,
+            "validation_key": validation_key_df,
+        },
+        table_audit_df,
+    )
 
     df = format_results_extract(raw_results_df, extraction_config, context)
     sample_df = sample_df.reindex(columns=SAMPLE_COLUMNS)
@@ -291,6 +309,7 @@ def run_pipeline_document(pdf_path, config=None) -> tuple[
         validation_key_df,
         classification_audit_df,
         table_audit_df,
+        section_audit_df,
     )
 
 
@@ -329,6 +348,7 @@ def main(argv=None) -> int:
         validation_key_df,
         classification_audit_df,
         table_audit_df,
+        section_audit_df,
     ) = run_pipeline_document(pdf_path, config)
     if df.empty and sample_df.empty and client_df.empty:
         log.warning("Nenhum dado extraido. Verifique o PDF e as regras da taxonomy.")
@@ -345,6 +365,7 @@ def main(argv=None) -> int:
         output_tabs,
         classification_audit_df,
         table_audit_df,
+        section_extraction_audit_df=section_audit_df,
         packaging_preservatives_df=packaging_preservatives_df,
         notes_df=notes_df,
         general_considerations_df=general_considerations_df,

@@ -210,7 +210,7 @@ Campos de cada aba/tabela de saida.
 
 ## Saidas
 
-O arquivo de extracao padrao e separado por tema em `output/<tipo_laudo>/extracted_data.xlsx`. As abas criadas sao definidas em `schema` e seus campos em `item_schema`. No estado atual, o template de agua gera `results_extract`, `sample`, `client`, `packaging_preservatives`, `notes`, `general_considerations`, `conformity_statement`, `validation_key`, `table_extraction_audit`, `classification_audit`, `duplicate_audit` e `validation_errors`.
+O arquivo de extracao padrao e separado por tema em `output/<tipo_laudo>/extracted_data.xlsx`. As abas criadas sao definidas em `schema` e seus campos em `item_schema`. No estado atual, o template de agua gera `results_extract`, `sample`, `client`, `packaging_preservatives`, `notes`, `general_considerations`, `conformity_statement`, `validation_key`, `table_extraction_audit`, `section_extraction_audit`, `classification_audit`, `duplicate_audit` e `validation_errors`.
 
 Junto com o Excel, o processo tambem gera `output/<tipo_laudo>/extracted_data.json`. Esse arquivo tem o mesmo conteudo agrupado por PDF, pensado para carga em banco com coluna `jsonb`.
 
@@ -225,7 +225,7 @@ Estrutura principal do JSON:
 - `documentos`: Lista de documentos processados.
 - `documentos[].arquivo`: Metadados do PDF, como `nome_do_arquivo`, `id_taxonomia`, `nome_taxonomia` e `versao_template`.
 - `documentos[].tabelas`: Dados extraidos, como `results_extract`, `sample`, `client`, `packaging_preservatives`, `notes`, `general_considerations`, `conformity_statement` e `validation_key`.
-- `documentos[].auditoria`: Dados de controle, como `classification_audit`, `table_extraction_audit`, `duplicate_audit` e `validation_errors`.
+- `documentos[].auditoria`: Dados de controle, como `classification_audit`, `table_extraction_audit`, `section_extraction_audit`, `duplicate_audit` e `validation_errors`.
 
 ## Auditorias
 
@@ -235,6 +235,7 @@ As auditorias sao abas de controle criadas junto com os dados extraidos. Elas na
 
 - `classification_audit`: verifica qual taxonomia/template o PDF acionou antes da extracao. Use essa aba para confirmar se o documento entrou no escopo correto.
 - `table_extraction_audit`: verifica cada tabela encontrada, comparando cabecalhos detectados, campos mapeados e campos esperados pela taxonomia.
+- `section_extraction_audit`: compara quadros e secoes previstos na taxonomia com os registros gerados e procura possiveis titulos ou tabelas ainda nao mapeados.
 - `duplicate_audit`: verifica duplicidade entre PDFs do mesmo lote por hash do arquivo, hash do texto, chave logica do laudo/amostra e sinais de versionamento.
 - `validation_errors`: valida a saida final com Pydantic. Hoje cobre `results_extract`, `sample`, `client` e `packaging_preservatives`. Use essa aba para encontrar campos obrigatorios vazios, tipos invalidos, datas/horarios invalidos, colunas ausentes ou colunas inesperadas.
 
@@ -253,6 +254,12 @@ As auditorias sao abas de controle criadas junto com os dados extraidos. Elas na
 - `table_extraction_audit.status = fallback_cabecalho_texto_layout_incompleto`: o cabecalho apareceu no texto da pagina, mas o layout nao ficou totalmente consistente. Revisar a taxonomia antes de confiar cegamente.
 - `table_extraction_audit.status = fallback_layout_confiavel`: o cabecalho nao foi detectado, mas a estrutura da tabela bateu com o layout cadastrado.
 - `table_extraction_audit.status = fallback`: a tabela foi processada usando apenas o layout cadastrado, sem cabecalho detectado e sem evidencia forte de confianca. Esse e o principal status para revisao manual.
+- `section_extraction_audit.status = ok`: secao reconhecida e registros extraidos.
+- `section_extraction_audit.status = nao_aplicavel`: secao opcional nao encontrada no documento.
+- `section_extraction_audit.status = encontrada_sem_extracao`: titulo conhecido encontrado, mas nenhum registro foi gerado; exige revisao.
+- `section_extraction_audit.status = extraida_sem_titulo`: houve extracao sem localizar a regra de inicio da secao.
+- `section_extraction_audit.status = secao_nao_mapeada`: possivel titulo de secao ainda sem regra na taxonomia.
+- `section_extraction_audit.status = tabela_nao_mapeada`: estrutura tabular encontrada sem correspondencia nas regras conhecidas.
 - `duplicate_audit.status = unico`: nenhum outro PDF parecido foi encontrado no lote.
 - `duplicate_audit.status = duplicado_exato_arquivo`: outro PDF possui o mesmo hash binario SHA256, ou seja, o arquivo e identico byte a byte.
 - `duplicate_audit.status = duplicado_textual`: outro PDF possui o mesmo texto normalizado, mesmo que o arquivo binario seja diferente.
@@ -461,6 +468,21 @@ Auditoria generica das tabelas processadas. Essa aba ajuda a conferir se as colu
 - `usou_fallback`: Indica se a tabela foi processada sem cabecalho detectado, usando apenas o layout cadastrado.
 - `status`: Resultado da auditoria da tabela. Pode indicar leitura direta por cabecalho (`ok`, `ok_com_opcional_ausente`), descoberta de coluna nova (`alerta_descoberta`, `alerta_descoberta_com_opcional_ausente`) ou uso de fallback (`fallback_cabecalho_texto_layout_confiavel`, `fallback_cabecalho_texto_layout_incompleto`, `fallback_layout_confiavel`, `fallback`).
 - `observacao`: Detalhe textual sobre ausencias, colunas novas ou uso de fallback.
+
+### `section_extraction_audit`
+Auditoria generica de quadros, secoes e tabelas. O modo `conhecida` verifica o que esta cadastrado na taxonomia; o modo `descoberta` sinaliza estruturas que podem exigir novas regras.
+
+- `pagina`: Primeira pagina em que a estrutura foi encontrada.
+- `tabela_indice`: Posicao da tabela na pagina, quando aplicavel.
+- `objeto_tipo`: Indica `secao` ou `tabela`.
+- `secao`: Nome da saida conhecida, como `notes` ou `packaging_preservatives`.
+- `titulo_detectado`: Titulo ou cabecalho encontrado no PDF.
+- `modo_auditoria`: `conhecida` ou `descoberta`.
+- `regra_encontrada`: Regex da taxonomia que reconheceu a secao.
+- `ocorrencias_detectadas`: Quantidade de ocorrencias encontradas no documento.
+- `registros_extraidos`: Quantidade de registros gerados para a secao.
+- `status`: Resultado da verificacao.
+- `observacao`: Explicacao objetiva do status.
 
 ### `duplicate_audit`
 Auditoria de duplicidade entre PDFs processados no mesmo lote. Essa aba ajuda a separar copia exata, conteudo textual repetido, possivel versionamento e conflito de amostra.

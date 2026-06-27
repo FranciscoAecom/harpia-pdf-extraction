@@ -288,6 +288,7 @@ def _build_json_payload(
     client_df: pd.DataFrame | None,
     classification_audit_df: pd.DataFrame | None,
     table_extraction_audit_df: pd.DataFrame | None,
+    section_extraction_audit_df: pd.DataFrame | None,
     duplicate_audit_df: pd.DataFrame | None,
     packaging_preservatives_df: pd.DataFrame | None,
     notes_df: pd.DataFrame | None,
@@ -308,6 +309,7 @@ def _build_json_payload(
         validation_key_df,
         classification_audit_df,
         table_extraction_audit_df,
+        section_extraction_audit_df,
         duplicate_audit_df,
         validation_errors,
     ]
@@ -332,6 +334,7 @@ def _build_json_payload(
     audit_sources: dict[str, pd.DataFrame | None] = {
         "classification_audit": classification_audit_df,
         "table_extraction_audit": table_extraction_audit_df,
+        "section_extraction_audit": section_extraction_audit_df,
         "duplicate_audit": duplicate_audit_df,
         "validation_errors": validation_errors,
     }
@@ -375,6 +378,7 @@ def _write_json_output(
     client_df: pd.DataFrame | None,
     classification_audit_df: pd.DataFrame | None,
     table_extraction_audit_df: pd.DataFrame | None,
+    section_extraction_audit_df: pd.DataFrame | None,
     duplicate_audit_df: pd.DataFrame | None,
     packaging_preservatives_df: pd.DataFrame | None,
     notes_df: pd.DataFrame | None,
@@ -390,6 +394,7 @@ def _write_json_output(
         client_df,
         classification_audit_df,
         table_extraction_audit_df,
+        section_extraction_audit_df,
         duplicate_audit_df,
         packaging_preservatives_df,
         notes_df,
@@ -413,6 +418,7 @@ def salvar(
     output_tabs: list[str] | None = None,
     classification_audit_df: pd.DataFrame | None = None,
     table_extraction_audit_df: pd.DataFrame | None = None,
+    section_extraction_audit_df: pd.DataFrame | None = None,
     duplicate_audit_df: pd.DataFrame | None = None,
     packaging_preservatives_df: pd.DataFrame | None = None,
     notes_df: pd.DataFrame | None = None,
@@ -433,6 +439,7 @@ def salvar(
         "conformity_statement",
         "validation_key",
         "table_extraction_audit",
+        "section_extraction_audit",
         "classification_audit",
         "duplicate_audit",
         "validation_errors",
@@ -442,6 +449,7 @@ def salvar(
     client_df = _with_extraction_timestamp(client_df, extraction_timestamp)
     classification_audit_df = _with_extraction_timestamp(classification_audit_df, extraction_timestamp)
     table_extraction_audit_df = _with_extraction_timestamp(table_extraction_audit_df, extraction_timestamp)
+    section_extraction_audit_df = _with_extraction_timestamp(section_extraction_audit_df, extraction_timestamp)
     duplicate_audit_df = _with_extraction_timestamp(duplicate_audit_df, extraction_timestamp)
     packaging_preservatives_df = _with_extraction_timestamp(packaging_preservatives_df, extraction_timestamp)
     notes_df = _with_extraction_timestamp(notes_df, extraction_timestamp)
@@ -517,6 +525,9 @@ def salvar(
                 elif sheet_name == "table_extraction_audit" and table_extraction_audit_df is not None:
                     table_extraction_audit_df.to_excel(writer, sheet_name="table_extraction_audit", index=False)
                     written_sheets.append("table_extraction_audit")
+                elif sheet_name == "section_extraction_audit" and section_extraction_audit_df is not None:
+                    section_extraction_audit_df.to_excel(writer, sheet_name="section_extraction_audit", index=False)
+                    written_sheets.append("section_extraction_audit")
                 elif sheet_name == "duplicate_audit":
                     duplicate_frame = (
                         duplicate_audit_df
@@ -539,6 +550,7 @@ def salvar(
             client_df,
             classification_audit_df,
             table_extraction_audit_df,
+            section_extraction_audit_df,
             duplicate_audit_df,
             packaging_preservatives_df,
             notes_df,
