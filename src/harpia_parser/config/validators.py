@@ -225,7 +225,10 @@ def _validate_foreign_keys(workbook: TaxonomyWorkbook) -> None:
     _assert_known_values("item_schema.id_schema", workbook.item_schema["id_schema"], schema_ids)
     _assert_known_values("item_schema.schema", workbook.item_schema["schema"].astype(str), schema_names)
 
-    schema_name_by_id = dict(zip(workbook.schema["id"], workbook.schema["nome"], strict=False))
+    schema_name_by_id = {
+        schema_id: schema_name
+        for schema_id, schema_name in workbook.schema[["id", "nome"]].itertuples(index=False, name=None)
+    }
     mismatches = []
     for _, row in workbook.item_schema.iterrows():
         expected = schema_name_by_id.get(row["id_schema"])

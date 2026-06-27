@@ -174,7 +174,10 @@ class OutputWriterTest(unittest.TestCase):
             self.assertIn("duplicate_audit", workbook.sheetnames)
             worksheet = workbook["duplicate_audit"]
             headers = [worksheet.cell(row=1, column=column).value for column in range(1, worksheet.max_column + 1)]
-            payload = dict(zip(headers, [worksheet.cell(row=2, column=column).value for column in range(1, worksheet.max_column + 1)], strict=False))
+            payload = {
+                str(header): worksheet.cell(row=2, column=column).value
+                for column, header in enumerate(headers, start=1)
+            }
             self.assertEqual(worksheet.cell(row=2, column=1).value, "a.pdf")
             self.assertEqual(payload["status"], "unico")
             self.assertIsInstance(payload["acm_data_hora_extracao"], datetime)
@@ -207,7 +210,10 @@ class OutputWriterTest(unittest.TestCase):
             self.assertIn("packaging_preservatives", workbook.sheetnames)
             worksheet = workbook["packaging_preservatives"]
             headers = [worksheet.cell(row=1, column=column).value for column in range(1, worksheet.max_column + 1)]
-            payload = dict(zip(headers, [worksheet.cell(row=2, column=column).value for column in range(1, worksheet.max_column + 1)], strict=False))
+            payload = {
+                str(header): worksheet.cell(row=2, column=column).value
+                for column, header in enumerate(headers, start=1)
+            }
             self.assertEqual(worksheet.cell(row=2, column=1).value, "a.pdf")
             self.assertEqual(payload["embalagem"], "Polietileno")
             self.assertIsInstance(payload["acm_data_hora_extracao"], datetime)
@@ -241,7 +247,11 @@ class OutputWriterTest(unittest.TestCase):
             worksheet = workbook["validation_errors"]
             headers = [worksheet.cell(row=1, column=column).value for column in range(1, worksheet.max_column + 1)]
             row_values = [worksheet.cell(row=2, column=column).value for column in range(1, worksheet.max_column + 1)]
-            payload = dict(zip(headers, row_values, strict=False))
+            payload = {
+                str(header): row_values[index]
+                for index, header in enumerate(headers)
+                if index < len(row_values)
+            }
 
             self.assertEqual(payload["sheet"], "packaging_preservatives")
             self.assertEqual(payload["field"], "metodos")
@@ -299,7 +309,10 @@ class OutputWriterTest(unittest.TestCase):
             worksheet = workbook["validation_errors"]
             headers = [worksheet.cell(row=1, column=column).value for column in range(1, worksheet.max_column + 1)]
             rows = [
-                dict(zip(headers, [worksheet.cell(row=row, column=column).value for column in range(1, worksheet.max_column + 1)], strict=False))
+                {
+                    str(header): worksheet.cell(row=row, column=column).value
+                    for column, header in enumerate(headers, start=1)
+                }
                 for row in range(2, worksheet.max_row + 1)
             ]
             observed = {(row["sheet"], row["field"]) for row in rows}

@@ -58,9 +58,10 @@ class DocumentSectionsTest(unittest.TestCase):
         )
 
         self.assertEqual(len(df), 1)
-        self.assertIn("Nota 2 = texto completo", df.loc[0, "texto"])
-        self.assertIn("Nota 3 = 3,7 mg/L N", df.loc[0, "texto"])
-        self.assertNotIn("Registro da Coleta", df.loc[0, "texto"])
+        notes_text = str(df.loc[0, "texto"])
+        self.assertIn("Nota 2 = texto completo", notes_text)
+        self.assertIn("Nota 3 = 3,7 mg/L N", notes_text)
+        self.assertNotIn("Registro da Coleta", notes_text)
 
     def test_validation_key_ignores_nonexistent_form_code(self):
         classification = ClassificationResult(
