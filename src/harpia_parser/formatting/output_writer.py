@@ -479,7 +479,7 @@ def salvar(
     general_considerations_df: pd.DataFrame | None = None,
     conformity_statement_df: pd.DataFrame | None = None,
     validation_key_df: pd.DataFrame | None = None,
-) -> None:
+) -> pd.DataFrame:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     ext = output_path.suffix.lower()
     extraction_timestamp = datetime.now().replace(microsecond=0)
@@ -614,3 +614,4 @@ def salvar(
             validation_errors,
             sheets_to_write,
         )
+    return validation_errors

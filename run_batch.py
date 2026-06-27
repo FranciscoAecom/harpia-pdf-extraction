@@ -1,8 +1,10 @@
 import argparse
+from collections import Counter
 import logging
 import sys
 from datetime import datetime
 from pathlib import Path
+from time import monotonic
 
 import pandas as pd
 import pdfplumber
@@ -30,6 +32,86 @@ DEFAULT_INPUT_DIRS = [
     Path(r"L:\Secure_DCS\BRBLH1PINFW001\COE_Digital\others\lumen"),
 ]
 log = logging.getLogger(__name__)
+error_log = logging.getLogger("harpia_parser.errors")
+
+
+def _configure_logging(output_dir: Path) -> None:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    root_logger = logging.getLogger()
+    root_logger.handlers.clear()
+    root_logger.setLevel(logging.INFO)
+
+    formatter = logging.Formatter(
+        "%(asctime)s [%(levelname)s] %(message)s",
+        datefmt="%d/%m/%Y %H:%M:%S",
+    )
+    console = logging.StreamHandler()
+    console.setLevel(logging.INFO)
+    console.setFormatter(formatter)
+    root_logger.addHandler(console)
+
+    execution_file = logging.FileHandler(output_dir / "extraction.log", mode="w", encoding="utf-8")
+    execution_file.setLevel(logging.INFO)
+    execution_file.setFormatter(formatter)
+    root_logger.addHandler(execution_file)
+
+    error_log.handlers.clear()
+    error_log.setLevel(logging.ERROR)
+    error_log.propagate = False
+    error_file = logging.FileHandler(output_dir / "extraction_errors.log", mode="w", encoding="utf-8")
+    error_file.setLevel(logging.ERROR)
+    error_file.setFormatter(logging.Formatter(
+        "%(asctime)s [%(levelname)s] %(message)s",
+        datefmt="%d/%m/%Y %H:%M:%S",
+    ))
+    error_log.addHandler(error_file)
+
+    logging.getLogger("harpia_parser.core.pipeline").setLevel(logging.WARNING)
+
+
+def _elapsed_text(started_at: float) -> str:
+    elapsed = max(0, int(monotonic() - started_at))
+    hours, remainder = divmod(elapsed, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+
+
+def _log_progress(index: int, total: int, summary: list[dict], started_at: float) -> None:
+    if index != total and index % 100 != 0:
+        return
+    statuses = Counter(str(row.get("status") or "") for row in summary)
+    percent = (index / total * 100) if total else 100.0
+    log.info(
+        "[PROGRESSO] %d/%d (%.1f%%) | extraidos=%d | fora_escopo=%d | erros=%d | tempo=%s",
+        index,
+        total,
+        percent,
+        statuses["extraido"],
+        statuses["fora_escopo"],
+        statuses["erro"],
+        _elapsed_text(started_at),
+    )
+
+
+def _log_document_alerts(pdf: Path, section_audit_df: pd.DataFrame, table_audit_df: pd.DataFrame) -> None:
+    section_alerts = set()
+    if not section_audit_df.empty and "status" in section_audit_df.columns:
+        section_alerts = set(section_audit_df["status"].dropna().astype(str)) - {"ok", "nao_aplicavel"}
+    table_alerts = set()
+    if not table_audit_df.empty and "status" in table_audit_df.columns:
+        table_alerts = set(table_audit_df["status"].dropna().astype(str)) & {
+            "alerta_descoberta",
+            "alerta_descoberta_com_opcional_ausente",
+            "fallback",
+            "fallback_cabecalho_texto_layout_incompleto",
+        }
+    if section_alerts or table_alerts:
+        log.warning(
+            "[ALERTA] %s | secoes=%s | tabelas=%s",
+            pdf.name,
+            ",".join(sorted(section_alerts)) or "ok",
+            ",".join(sorted(table_alerts)) or "ok",
+        )
 
 
 def _timestamp_text() -> str:
@@ -117,6 +199,7 @@ def classify_batch(input_dirs: list[Path], output_path: Path, max_pages: int | N
 
 
 def extract_batch(input_dirs: list[Path], output_dir: Path) -> None:
+    started_at = monotonic()
     config = load_config(ROOT)
     all_results: dict[str, list[pd.DataFrame]] = {}
     all_samples: dict[str, list[pd.DataFrame]] = {}
@@ -134,9 +217,15 @@ def extract_batch(input_dirs: list[Path], output_dir: Path) -> None:
     summary = []
     pdfs = _list_pdfs(input_dirs)
     extraction_timestamp = _timestamp_text()
+    log.info("=" * 70)
+    log.info("EXTRACAO DE DOCUMENTOS")
+    log.info("Inicio: %s", extraction_timestamp)
+    log.info("Taxonomia: %s", config.taxonomy_path)
+    log.info("Pastas de entrada: %s", "; ".join(str(path) for path in input_dirs))
+    log.info("PDFs encontrados: %d", len(pdfs))
+    log.info("=" * 70)
 
     for index, pdf in enumerate(pdfs, start=1):
-        log.info("[%d/%d] Extraindo %s", index, len(pdfs), pdf.name)
         try:
             (
                 df,
@@ -211,6 +300,7 @@ def extract_batch(input_dirs: list[Path], output_dir: Path) -> None:
                 "section_extraction_audit": section_audit_df,
                 "summary": summary_row,
             })
+            _log_document_alerts(pdf, section_audit_df, table_audit_df)
         except Exception as exc:
             summary.append({
                 "arquivo": pdf.name,
@@ -225,6 +315,9 @@ def extract_batch(input_dirs: list[Path], output_dir: Path) -> None:
                 "client_rows": 0,
                 "erro": f"{type(exc).__name__}: {exc}",
             })
+            log.error("[ERRO] %s | %s: %s", pdf.name, type(exc).__name__, exc)
+            error_log.exception("Falha ao processar %s", pdf)
+        _log_progress(index, len(pdfs), summary, started_at)
 
     output_dir.mkdir(parents=True, exist_ok=True)
     duplicate_audits_by_theme: dict[str, pd.DataFrame] = {}
@@ -303,7 +396,7 @@ def extract_batch(input_dirs: list[Path], output_dir: Path) -> None:
 
         template_id = _winner_template_id(audit_df)
         output_tabs = output_tabs_for_template(config, template_id) if template_id else None
-        salvar(
+        validation_errors_df = salvar(
             results_df,
             output_dir / tipo_laudo / "extracted_data.xlsx",
             sample_df=sample_df,
@@ -319,13 +412,31 @@ def extract_batch(input_dirs: list[Path], output_dir: Path) -> None:
             conformity_statement_df=conformity_statement_df,
             validation_key_df=validation_key_df,
         )
+        log.info(
+            "[SAIDA] %s | resultados=%d | amostras=%d | clientes=%d | validacoes=%d",
+            tipo_laudo,
+            len(results_df),
+            len(sample_df),
+            len(client_df),
+            len(validation_errors_df),
+        )
 
     summary_df = pd.DataFrame(summary)
     summary_path = output_dir / "batch_extraction_summary.xlsx"
     summary_df.to_excel(summary_path, index=False)
-    log.info("Resumo salvo em: %s", summary_path)
-    if not summary_df.empty:
-        log.info("Status:\n%s", summary_df["status"].value_counts(dropna=False).to_string())
+    statuses = Counter(summary_df["status"].dropna().astype(str)) if not summary_df.empty else Counter()
+    log.info("=" * 70)
+    log.info("RESUMO FINAL")
+    log.info("Duracao: %s", _elapsed_text(started_at))
+    log.info("PDFs processados: %d", len(summary_df))
+    log.info("Extraidos: %d", statuses["extraido"])
+    log.info("Fora do escopo: %d", statuses["fora_escopo"])
+    log.info("Duplicados nao persistidos: %d", statuses["duplicado_nao_persistido"])
+    log.info("Com erro: %d", statuses["erro"])
+    log.info("Resumo: %s", summary_path)
+    log.info("Log: %s", output_dir / "extraction.log")
+    log.info("Erros: %s", output_dir / "extraction_errors.log")
+    log.info("=" * 70)
 
 
 def main(argv=None) -> int:
@@ -355,6 +466,7 @@ def main(argv=None) -> int:
         help="Numero de paginas lidas por PDF no modo classify. Use 0 para ler todas.",
     )
     args = parser.parse_args(argv)
+    _configure_logging(args.output)
 
     if args.mode == "classify":
         max_pages = args.classify_pages if args.classify_pages > 0 else None
@@ -362,13 +474,6 @@ def main(argv=None) -> int:
     else:
         extract_batch(args.input, args.output)
     return 0
-
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    datefmt="%H:%M:%S",
-)
 
 
 if __name__ == "__main__":

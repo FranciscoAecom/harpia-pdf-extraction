@@ -85,6 +85,13 @@ cd "C:\Temp\Repositórios\harpia-pdf-extraction"
 py .\run_batch.py extract
 ```
 
+Durante a extracao, o terminal mostra apenas progresso periodico, alertas relevantes, erros e o resumo final. O processo tambem gera:
+
+- `output/extraction.log`: log UTF-8 com inicio, entradas, progresso, alertas, totais por saida e resumo final.
+- `output/extraction_errors.log`: detalhes tecnicos e stack traces dos documentos que falharam.
+
+Os arquivos sao recriados a cada execucao para representar somente o lote atual.
+
 Por padrão, as saídas são salvas em arquivos por tema:
 
 ```text
