@@ -162,6 +162,7 @@ class ResultsExtractRow(BaseModel):
         self._validate_measure("ld")
         self._validate_measure("lq")
         self._validate_measure("faixa_aceitacao")
+        self._validate_derived_field_lineage()
         self._validate_units_from_original_text()
         return self
 
@@ -171,6 +172,33 @@ class ResultsExtractRow(BaseModel):
 
         if minimo is not None and maximo is not None and minimo > maximo:
             raise ValueError(f"acm_{prefix}_minimo maior que acm_{prefix}_maximo")
+
+    def _validate_derived_field_lineage(self) -> None:
+        lineage = {
+            "codigo_laudo": ["acm_codigo_laudo"],
+            "data_inicio": ["acm_data_inicio"],
+            "resultado": ["acm_resultado_tratado", "acm_qualificador"],
+            "conama": ["acm_conama_operador", "acm_conama_minimo", "acm_conama_maximo"],
+            "copam_cerh": [
+                "acm_copam_cerh_operador",
+                "acm_copam_cerh_minimo",
+                "acm_copam_cerh_maximo",
+            ],
+            "ld": ["acm_ld_minimo", "acm_ld_maximo"],
+            "lq": ["acm_lq_minimo", "acm_lq_maximo"],
+            "incerteza": ["acm_incerteza_valor"],
+            "faixa_aceitacao": [
+                "acm_faixa_aceitacao_operador",
+                "acm_faixa_aceitacao_minimo",
+                "acm_faixa_aceitacao_maximo",
+            ],
+        }
+        for source_field, derived_fields in lineage.items():
+            if getattr(self, source_field) is not None:
+                continue
+            for derived_field in derived_fields:
+                if getattr(self, derived_field) is not None:
+                    raise ValueError(f"{derived_field} preenchido com {source_field} vazio")
 
     def _validate_units_from_original_text(self) -> None:
         for source_field, unit_field in [
@@ -183,15 +211,21 @@ class ResultsExtractRow(BaseModel):
             ("faixa_aceitacao", "acm_faixa_aceitacao_unidade"),
         ]:
             source_value = getattr(self, source_field)
+            parsed_unit = getattr(self, unit_field)
             if source_value is None:
+                if parsed_unit is not None:
+                    raise ValueError(f"{unit_field} preenchido com campo de origem vazio")
                 continue
             if source_field in {"conama", "copam_cerh"} and _complex_normative_note(source_value):
                 continue
             expected_unit = unidade_from_partes([source_value])
-            parsed_unit = getattr(self, unit_field)
             unit_is_present = expected_unit is not None or possui_unidade_aparente(source_value)
+            if source_field == "resultado" and self.unidade is not None:
+                unit_is_present = True
             if unit_is_present and parsed_unit is None:
                 raise ValueError(f"{unit_field} vazio para texto com unidade: {source_value}")
+            if not unit_is_present and parsed_unit is not None:
+                raise ValueError(f"{unit_field} preenchido sem unidade no campo de origem: {source_value}")
 
 
 def _complex_normative_note(value: Any) -> bool:

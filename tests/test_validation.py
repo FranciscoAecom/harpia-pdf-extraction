@@ -25,7 +25,7 @@ def _valid_row() -> dict:
         "codigo_laudo_substituido": None,
         "parameter": "pH",
         "resultado": "7,100",
-        "unidade": None,
+        "unidade": "pH",
         "acm_resultado_tratado": 7.1,
         "acm_qualificador": None,
         "acm_unidade": "pH",
@@ -117,6 +117,49 @@ class ValidationTest(unittest.TestCase):
         errors = validate_results_extract(df)
 
         self.assertTrue(errors.empty)
+
+    def test_structured_unit_without_unit_in_source_is_reported(self):
+        row = _valid_row()
+        row["lq"] = "2,00 - 12,00"
+        row["acm_lq_minimo"] = 2.0
+        row["acm_lq_maximo"] = 12.0
+        row["acm_lq_unidade"] = "pH"
+        df = pd.DataFrame([row], columns=RESULTS_EXTRACT_COLUMNS)
+
+        errors = validate_results_extract(df)
+
+        self.assertFalse(errors.empty)
+        self.assertTrue(
+            errors["message"].astype(str).str.contains("acm_lq_unidade preenchido sem unidade").any()
+        )
+
+    def test_structured_unit_with_empty_source_is_reported(self):
+        row = _valid_row()
+        row["incerteza"] = None
+        row["acm_incerteza_valor"] = None
+        row["acm_incerteza_unidade"] = "pH"
+        df = pd.DataFrame([row], columns=RESULTS_EXTRACT_COLUMNS)
+
+        errors = validate_results_extract(df)
+
+        self.assertFalse(errors.empty)
+        self.assertTrue(
+            errors["message"].astype(str).str.contains("acm_incerteza_unidade preenchido com campo de origem vazio").any()
+        )
+
+    def test_derived_value_with_empty_source_is_reported(self):
+        row = _valid_row()
+        row["lq"] = None
+        row["acm_lq_minimo"] = 2.0
+        row["acm_lq_maximo"] = None
+        df = pd.DataFrame([row], columns=RESULTS_EXTRACT_COLUMNS)
+
+        errors = validate_results_extract(df)
+
+        self.assertFalse(errors.empty)
+        self.assertTrue(
+            errors["message"].astype(str).str.contains("acm_lq_minimo preenchido com lq vazio").any()
+        )
 
     def test_packaging_preservatives_required_fields_are_validated(self):
         row = {

@@ -158,7 +158,7 @@ class NormalizationTest(unittest.TestCase):
         self.assertIsNone(out.loc[0, "acm_copam_cerh_minimo"])
         self.assertIsNone(out.loc[0, "acm_copam_cerh_maximo"])
 
-    def test_laudo_agua_normalization_sets_ph_unit(self):
+    def test_laudo_agua_normalization_does_not_infer_ph_unit_from_parameter(self):
         context = SimpleNamespace(tipo_laudo="laudo_agua")
         df = pd.DataFrame([{
             "parameter": "pH - Leitura 1",
@@ -178,12 +178,12 @@ class NormalizationTest(unittest.TestCase):
         out, _, _ = normalize_outputs(df, pd.DataFrame(), pd.DataFrame(), context)
 
         self.assertEqual(out.loc[0, "acm_resultado_tratado"], 7.1)
-        self.assertEqual(out.loc[0, "acm_unidade"], "pH")
+        self.assertIsNone(out.loc[0, "acm_unidade"])
         self.assertEqual(out.loc[0, "acm_lq_minimo"], 2.0)
         self.assertEqual(out.loc[0, "acm_lq_maximo"], 12.0)
-        self.assertEqual(out.loc[0, "acm_lq_unidade"], "pH")
+        self.assertIsNone(out.loc[0, "acm_lq_unidade"])
         self.assertEqual(out.loc[0, "acm_incerteza_valor"], 0.09)
-        self.assertEqual(out.loc[0, "acm_incerteza_unidade"], "pH")
+        self.assertIsNone(out.loc[0, "acm_incerteza_unidade"])
 
     def test_laudo_agua_normalization_extracts_extended_units(self):
         context = SimpleNamespace(tipo_laudo="laudo_agua")
