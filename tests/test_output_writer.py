@@ -374,6 +374,9 @@ class OutputWriterTest(unittest.TestCase):
         row["versao_template"] = "1"
         row["id_amostra"] = "687944"
         row["acm_data_inicio"] = "04/12/2024 00:00:00"
+        row["lq"] = "2,00 - 12,000"
+        row["acm_lq_minimo"] = 2.0
+        row["acm_lq_maximo"] = 12.0
         df = pd.DataFrame([row], columns=RESULTS_EXTRACT_COLUMNS)
         sample_df = pd.DataFrame([{
             "nome_do_arquivo": "a.pdf",
@@ -416,11 +419,15 @@ class OutputWriterTest(unittest.TestCase):
 
             json_path = output_path.with_suffix(".json")
             self.assertTrue(json_path.exists())
-            payload = json.loads(json_path.read_text(encoding="utf-8"))
+            json_text = json_path.read_text(encoding="utf-8")
+            payload = json.loads(json_text)
             document = payload["documentos"][0]
 
             self.assertEqual(payload["formato"], "harpia_extracao_documento")
             self.assertEqual(document["arquivo"]["nome_do_arquivo"], "a.pdf")
+            self.assertIn('"acm_resultado_tratado": 7.100', json_text)
+            self.assertIn('"acm_lq_minimo": 2.00', json_text)
+            self.assertIn('"acm_lq_maximo": 12.000', json_text)
             self.assertEqual(document["arquivo"]["id_taxonomia"], 1)
             self.assertIn("acm_data_hora_extracao", document["tabelas"]["results_extract"][0])
             self.assertEqual(document["tabelas"]["results_extract"][0]["id_amostra"], 687944)

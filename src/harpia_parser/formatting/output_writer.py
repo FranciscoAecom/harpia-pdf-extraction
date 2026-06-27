@@ -1,10 +1,11 @@
 from pathlib import Path
 from datetime import datetime
-import json
+from decimal import Decimal, InvalidOperation
 import re
 from typing import Any
 
 import pandas as pd
+import simplejson as json
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 
@@ -14,6 +15,10 @@ from ..validation.schemas import VALIDATION_ERROR_COLUMNS, validate_outputs
 
 NUMERIC_TEXT = re.compile(r"^([+-]?\d+(?:[,.]\d+)?)(?:\s*x\s*10\s*([+-]?\d+))?$", re.IGNORECASE)
 NUMBER_IN_TEXT = re.compile(r"[<>]?\s*([+-]?\d+(?:[,.]\d+)?)")
+SOURCE_NUMBER_IN_TEXT = re.compile(
+    r"[<>]?\s*([+-]?\d+(?:[,.]\d+)?)(?:\s*(?:x\s*10|[Ee])\s*[+-]?\d+)?",
+    re.IGNORECASE,
+)
 INTEGER_TEXT = re.compile(r"^\d+$")
 DATE_TEXT = re.compile(r"^\d{2}/\d{2}/\d{4}$")
 DATE_TIME_TEXT = re.compile(r"^\d{2}/\d{2}/\d{4}\s+\d{2}:\d{2}(?::\d{2})?$")
@@ -35,6 +40,21 @@ HEADER_BORDER = Border(
     top=Side(style="thin", color="9EADCC"),
     bottom=Side(style="thin", color="9EADCC"),
 )
+
+JSON_DECIMAL_SOURCE_COLUMNS = {
+    "acm_resultado_tratado": ("resultado", 0),
+    "acm_conama_minimo": ("conama", 0),
+    "acm_conama_maximo": ("conama", 1),
+    "acm_copam_cerh_minimo": ("copam_cerh", 0),
+    "acm_copam_cerh_maximo": ("copam_cerh", 1),
+    "acm_ld_minimo": ("ld", 0),
+    "acm_ld_maximo": ("ld", 1),
+    "acm_lq_minimo": ("lq", 0),
+    "acm_lq_maximo": ("lq", 1),
+    "acm_incerteza_valor": ("incerteza", 0),
+    "acm_faixa_aceitacao_minimo": ("faixa_aceitacao", 0),
+    "acm_faixa_aceitacao_maximo": ("faixa_aceitacao", 1),
+}
 
 
 def _numeric_value_and_format(value) -> tuple[float, str] | None:
@@ -233,14 +253,48 @@ def _json_scalar(key: str, value: Any) -> Any:
     return value
 
 
+def _decimal_places_from_source(value: Any, number_index: int) -> int | None:
+    if value is None or pd.isna(value):
+        return None
+    matches = list(SOURCE_NUMBER_IN_TEXT.finditer(str(value)))
+    if not matches:
+        return None
+    selected = matches[min(number_index, len(matches) - 1)].group(1)
+    separator = "," if "," in selected else "." if "." in selected else None
+    return len(selected.rsplit(separator, 1)[1]) if separator else 0
+
+
+def _decimal_with_source_scale(value: Any, source: Any, number_index: int) -> Any:
+    if value is None or pd.isna(value):
+        return value
+    decimal_places = _decimal_places_from_source(source, number_index)
+    if decimal_places is None:
+        return value
+    try:
+        decimal_value = Decimal(str(value))
+        scale = Decimal(1).scaleb(-decimal_places)
+        return decimal_value.quantize(scale)
+    except (InvalidOperation, TypeError, ValueError):
+        return value
+
+
 def _records(df: pd.DataFrame | None) -> list[dict[str, Any]]:
     if df is None or df.empty:
         return []
     cleaned = df.astype(object).where(pd.notna(df), None)
-    return [
-        {str(key): _json_scalar(str(key), value) for key, value in row.items()}
-        for row in cleaned.to_dict(orient="records")
-    ]
+    records = []
+    for row in cleaned.to_dict(orient="records"):
+        record: dict[str, Any] = {}
+        for key, value in row.items():
+            key_text = str(key)
+            serialized = _json_scalar(key_text, value)
+            source_mapping = JSON_DECIMAL_SOURCE_COLUMNS.get(key_text)
+            if source_mapping is not None:
+                source_column, number_index = source_mapping
+                serialized = _decimal_with_source_scale(serialized, row.get(source_column), number_index)
+            record[key_text] = serialized
+        records.append(record)
+    return records
 
 
 def _records_for_file(df: pd.DataFrame | None, file_name: str) -> list[dict[str, Any]]:
@@ -405,7 +459,7 @@ def _write_json_output(
         sheets_to_write,
     )
     output_path.write_text(
-        json.dumps(payload, ensure_ascii=False, indent=2),
+        json.dumps(payload, ensure_ascii=False, indent=2, use_decimal=True),
         encoding="utf-8",
     )
 
