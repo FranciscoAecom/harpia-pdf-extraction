@@ -1,6 +1,5 @@
 import argparse
 import logging
-import re
 import sys
 from pathlib import Path
 
@@ -147,7 +146,6 @@ def _extract_result_rows(paginas, metadata: dict, sample_df: pd.DataFrame, conte
     resultados = []
     table_audit_rows = []
     estado = novo_estado()
-    dh_inicio_atividade = sample_df.loc[0, "dh_inicio_atividade"]
     pending_estado = None
     codigo_laudo_atual = metadata.get("codigo_laudo")
 
@@ -189,11 +187,6 @@ def _extract_result_rows(paginas, metadata: dict, sample_df: pd.DataFrame, conte
                 if not dado:
                     continue
 
-                if pd.isna(dh_inicio_atividade) and len(row) > 2:
-                    data_inicio = re.search(r"\b\d{2}/\d{2}/\d{4}\b", str(row[2] or ""))
-                    if data_inicio:
-                        dh_inicio_atividade = data_inicio.group(0)
-
                 resultados.append({
                     "nome_do_arquivo": context.nome_do_arquivo,
                     "id_taxonomia": context.id_taxonomia,
@@ -207,7 +200,7 @@ def _extract_result_rows(paginas, metadata: dict, sample_df: pd.DataFrame, conte
 
         pending_estado = pending_section_from_page_text(page_text, extraction_config)
 
-    return pd.DataFrame(resultados), dh_inicio_atividade, pd.DataFrame(table_audit_rows, columns=TABLE_EXTRACTION_AUDIT_COLUMNS)
+    return pd.DataFrame(resultados), pd.DataFrame(table_audit_rows, columns=TABLE_EXTRACTION_AUDIT_COLUMNS)
 
 
 def run_pipeline_document(pdf_path, config=None) -> tuple[
@@ -236,7 +229,7 @@ def run_pipeline_document(pdf_path, config=None) -> tuple[
     log.info("Template identificado: %s (%s)", context.template_id, context.tipo_laudo)
     extraction_config = filter_config_for_template(config, context.template_id)
     metadata, sample_df, client_df = _extract_header_tables(texto, context, extraction_config)
-    raw_results_df, dh_inicio_atividade, table_audit_df = _extract_result_rows(
+    raw_results_df, table_audit_df = _extract_result_rows(
         paginas,
         metadata,
         sample_df,

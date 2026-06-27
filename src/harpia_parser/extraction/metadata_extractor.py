@@ -53,7 +53,6 @@ def extract_sample(texto: str, metadata: dict, config) -> pd.DataFrame:
         "data_publicacao": extracted.get("data_publicacao"),
         "data_recebimento": extracted.get("data_recebimento"),
         "observacoes": extracted.get("observacoes"),
-        "dh_inicio_atividade": extracted.get("dh_inicio_atividade"),
         "localizacao": extracted.get("localizacao"),
         "latitude": latitude,
         "longitude": longitude,

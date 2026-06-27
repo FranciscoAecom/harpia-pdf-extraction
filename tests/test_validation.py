@@ -194,7 +194,6 @@ class ValidationTest(unittest.TestCase):
             "data_publicacao": "22/01/2025",
             "data_recebimento": "22/01/2025",
             "observacoes": None,
-            "dh_inicio_atividade": "22/01/2025 12:00",
             "localizacao": None,
             "latitude": "-19,123",
             "longitude": "-43.123",

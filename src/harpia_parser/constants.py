@@ -70,7 +70,6 @@ SAMPLE_COLUMNS = [
     "data_publicacao",
     "data_recebimento",
     "observacoes",
-    "dh_inicio_atividade",
     "localizacao",
     "latitude",
     "longitude",

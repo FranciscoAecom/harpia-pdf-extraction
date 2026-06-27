@@ -287,7 +287,6 @@ class SampleRow(BaseModel):
     data_publicacao: str | None = Field(default=None, pattern=DATA_HORA_PT)
     data_recebimento: str | None = Field(default=None, pattern=DATA_HORA_PT)
     observacoes: str | None = None
-    dh_inicio_atividade: str | None = Field(default=None, pattern=DATA_HORA_PT)
     localizacao: str | None = None
     latitude: float | None = None
     longitude: float | None = None

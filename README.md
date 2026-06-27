@@ -346,7 +346,6 @@ Dados cadastrais, coleta e cabecalho da amostra.
 - `data_publicacao`: Data e hora de publicacao do laudo, quando a hora existir no PDF.
 - `data_recebimento`: Data e hora de recebimento da amostra, quando a hora existir no PDF.
 - `observacoes`: Observacoes do cabecalho da amostra.
-- `dh_inicio_atividade`: Data/hora de inicio de atividade extraida apenas quando cadastrada nas regras de `sample`.
 - `localizacao`: Local da coleta.
 - `latitude`: Latitude decimal da coleta.
 - `longitude`: Longitude decimal da coleta.
