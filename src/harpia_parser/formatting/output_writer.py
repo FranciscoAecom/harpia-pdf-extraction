@@ -297,13 +297,19 @@ def _records(df: pd.DataFrame | None) -> list[dict[str, Any]]:
     return records
 
 
-def _records_for_file(df: pd.DataFrame | None, file_name: str) -> list[dict[str, Any]]:
+def _indices_by_file(df: pd.DataFrame | None) -> dict[str, Any]:
     if df is None or df.empty:
-        return []
+        return {}
     if "nome_do_arquivo" not in df.columns:
-        return _records(df)
-    filtered = df[df["nome_do_arquivo"].astype(str) == file_name]
-    return _records(filtered)
+        return {"": slice(None)}
+    names = df["nome_do_arquivo"].fillna("").astype(str)
+    return {str(name): indices for name, indices in names.groupby(names, sort=False).indices.items()}
+
+
+def _records_for_indices(df: pd.DataFrame | None, indices: Any) -> list[dict[str, Any]]:
+    if df is None or indices is None:
+        return []
+    return _records(df.iloc[indices] if not isinstance(indices, slice) else df)
 
 
 def _timestamp_text(timestamp: datetime) -> str:
@@ -336,95 +342,6 @@ def _document_identity(records: list[dict[str, Any]], file_name: str) -> dict[st
     return identity
 
 
-def _build_json_payload(
-    df: pd.DataFrame,
-    sample_df: pd.DataFrame | None,
-    client_df: pd.DataFrame | None,
-    classification_audit_df: pd.DataFrame | None,
-    table_extraction_audit_df: pd.DataFrame | None,
-    section_extraction_audit_df: pd.DataFrame | None,
-    duplicate_audit_df: pd.DataFrame | None,
-    packaging_preservatives_df: pd.DataFrame | None,
-    notes_df: pd.DataFrame | None,
-    general_considerations_df: pd.DataFrame | None,
-    conformity_statement_df: pd.DataFrame | None,
-    validation_key_df: pd.DataFrame | None,
-    validation_errors: pd.DataFrame,
-    sheets_to_write: list[str],
-) -> dict[str, Any]:
-    source_frames = [
-        df,
-        sample_df,
-        client_df,
-        packaging_preservatives_df,
-        notes_df,
-        general_considerations_df,
-        conformity_statement_df,
-        validation_key_df,
-        classification_audit_df,
-        table_extraction_audit_df,
-        section_extraction_audit_df,
-        duplicate_audit_df,
-        validation_errors,
-    ]
-    file_names: set[str] = set()
-    for frame in source_frames:
-        if frame is not None and not frame.empty and "nome_do_arquivo" in frame.columns:
-            file_names.update(frame["nome_do_arquivo"].dropna().astype(str))
-
-    if not file_names:
-        file_names = {""}
-
-    table_sources: dict[str, pd.DataFrame | None] = {
-        "results_extract": df,
-        "sample": sample_df,
-        "client": client_df,
-        "packaging_preservatives": packaging_preservatives_df,
-        "notes": notes_df,
-        "general_considerations": general_considerations_df,
-        "conformity_statement": conformity_statement_df,
-        "validation_key": validation_key_df,
-    }
-    audit_sources: dict[str, pd.DataFrame | None] = {
-        "classification_audit": classification_audit_df,
-        "table_extraction_audit": table_extraction_audit_df,
-        "section_extraction_audit": section_extraction_audit_df,
-        "duplicate_audit": duplicate_audit_df,
-        "validation_errors": validation_errors,
-    }
-
-    documents = []
-    for file_name in sorted(file_names):
-        all_records_for_identity: list[dict[str, Any]] = []
-        tables: dict[str, Any] = {}
-        for table_name, frame in table_sources.items():
-            if table_name not in sheets_to_write:
-                continue
-            records = _records_for_file(frame, file_name)
-            tables[table_name] = records
-            all_records_for_identity.extend(records)
-
-        audits: dict[str, Any] = {}
-        for table_name, frame in audit_sources.items():
-            if table_name not in sheets_to_write:
-                continue
-            records = _records_for_file(frame, file_name)
-            audits[table_name] = records
-            all_records_for_identity.extend(records)
-
-        documents.append({
-            "arquivo": _document_identity(all_records_for_identity, file_name),
-            "tabelas": tables,
-            "auditoria": audits,
-        })
-
-    return {
-        "formato": "harpia_extracao_documento",
-        "versao_formato": 1,
-        "documentos": documents,
-    }
-
-
 def _write_json_output(
     output_path: Path,
     df: pd.DataFrame,
@@ -442,26 +359,67 @@ def _write_json_output(
     validation_errors: pd.DataFrame,
     sheets_to_write: list[str],
 ) -> None:
-    payload = _build_json_payload(
-        df,
-        sample_df,
-        client_df,
-        classification_audit_df,
-        table_extraction_audit_df,
-        section_extraction_audit_df,
-        duplicate_audit_df,
-        packaging_preservatives_df,
-        notes_df,
-        general_considerations_df,
-        conformity_statement_df,
-        validation_key_df,
-        validation_errors,
-        sheets_to_write,
-    )
-    output_path.write_text(
-        json.dumps(payload, ensure_ascii=False, indent=2, use_decimal=True),
-        encoding="utf-8",
-    )
+    table_sources: dict[str, pd.DataFrame | None] = {
+        "results_extract": df,
+        "sample": sample_df,
+        "client": client_df,
+        "packaging_preservatives": packaging_preservatives_df,
+        "notes": notes_df,
+        "general_considerations": general_considerations_df,
+        "conformity_statement": conformity_statement_df,
+        "validation_key": validation_key_df,
+    }
+    audit_sources: dict[str, pd.DataFrame | None] = {
+        "classification_audit": classification_audit_df,
+        "table_extraction_audit": table_extraction_audit_df,
+        "section_extraction_audit": section_extraction_audit_df,
+        "duplicate_audit": duplicate_audit_df,
+        "validation_errors": validation_errors,
+    }
+    source_frames = list(table_sources.values()) + list(audit_sources.values())
+    table_indices = {name: _indices_by_file(frame) for name, frame in table_sources.items()}
+    audit_indices = {name: _indices_by_file(frame) for name, frame in audit_sources.items()}
+    file_names: set[str] = set()
+    for frame in source_frames:
+        if frame is not None and not frame.empty and "nome_do_arquivo" in frame.columns:
+            file_names.update(frame["nome_do_arquivo"].dropna().astype(str))
+    if not file_names:
+        file_names.add("")
+
+    with output_path.open("w", encoding="utf-8") as handle:
+        handle.write('{"formato":"harpia_extracao_documento","versao_formato":1,"documentos":[')
+        for document_index, file_name in enumerate(sorted(file_names)):
+            if document_index:
+                handle.write(",")
+            identity_records: list[dict[str, Any]] = []
+            tables = {}
+            for table_name, frame in table_sources.items():
+                if table_name not in sheets_to_write:
+                    continue
+                indices = table_indices[table_name].get(file_name, table_indices[table_name].get(""))
+                records = _records_for_indices(frame, indices)
+                tables[table_name] = records
+                identity_records.extend(records)
+            audits = {}
+            for audit_name, frame in audit_sources.items():
+                if audit_name not in sheets_to_write:
+                    continue
+                indices = audit_indices[audit_name].get(file_name, audit_indices[audit_name].get(""))
+                records = _records_for_indices(frame, indices)
+                audits[audit_name] = records
+                identity_records.extend(records)
+            json.dump(
+                {
+                    "arquivo": _document_identity(identity_records, file_name),
+                    "tabelas": tables,
+                    "auditoria": audits,
+                },
+                handle,
+                ensure_ascii=False,
+                use_decimal=True,
+                separators=(",", ":"),
+            )
+        handle.write("]}")
 
 
 def salvar(

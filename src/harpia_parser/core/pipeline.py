@@ -203,7 +203,7 @@ def _extract_result_rows(paginas, metadata: dict, sample_df: pd.DataFrame, conte
     return pd.DataFrame(resultados), pd.DataFrame(table_audit_rows, columns=TABLE_EXTRACTION_AUDIT_COLUMNS)
 
 
-def run_pipeline_document(pdf_path, config=None) -> tuple[
+def run_pipeline_document(pdf_path, config=None, pdf_content=None) -> tuple[
     pd.DataFrame,
     pd.DataFrame,
     pd.DataFrame,
@@ -220,7 +220,7 @@ def run_pipeline_document(pdf_path, config=None) -> tuple[
     config = config or load_config(PROJECT_ROOT)
     log.info("Processando: %s", pdf_path)
 
-    texto, paginas = read_pdf(pdf_path)
+    texto, paginas = pdf_content if pdf_content is not None else read_pdf(pdf_path)
     context = _build_context(pdf_path, texto, config)
     if not context:
         log.info("PDF fora do escopo da taxonomy: %s", pdf_path.name)

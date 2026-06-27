@@ -57,6 +57,7 @@ def build_duplicate_candidate(
     text: str,
     result_df: pd.DataFrame,
     sample_df: pd.DataFrame,
+    file_hash: str | None = None,
 ) -> DuplicateCandidate:
     sample = _first_record(sample_df)
     result_identity = _first_record(result_df)
@@ -77,7 +78,7 @@ def build_duplicate_candidate(
         identificacao_amostra=identificacao_amostra,
         data_publicacao=data_publicacao,
         data_coleta=data_coleta,
-        hash_arquivo=file_sha256(pdf_path),
+        hash_arquivo=file_hash or file_sha256(pdf_path),
         hash_texto=text_sha256(text),
         chave_laudo=chave_laudo,
         assinatura_resultados=_results_signature(result_df),

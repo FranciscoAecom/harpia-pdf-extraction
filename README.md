@@ -92,6 +92,18 @@ Durante a extracao, o terminal mostra apenas progresso periodico, alertas releva
 
 Os arquivos sao recriados a cada execucao para representar somente o lote atual.
 
+Por padrao, hashes e PDFs sao processados com tres workers e um buffer limitado de tarefas. Para ajustar:
+
+```powershell
+py .\run_batch.py extract --workers 2
+```
+
+Use `--workers 1` para execucao sequencial. Em unidade de rede, aumentos acima de 3 ou 4 workers devem ser testados com cuidado, pois podem gerar disputa de leitura.
+
+Antes da extracao, o lote calcula hashes binarios e nao envia copias exatas ao parser. Duplicados textuais tambem sao descartados assim que identificados. Ambos continuam registrados em `duplicate_audit` e no resumo do lote.
+
+O JSON consolidado e gravado de forma incremental e compacta, documento por documento, preservando a mesma estrutura e reduzindo memoria e tamanho do arquivo.
+
 Por padrão, as saídas são salvas em arquivos por tema:
 
 ```text

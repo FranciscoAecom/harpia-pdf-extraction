@@ -425,9 +425,9 @@ class OutputWriterTest(unittest.TestCase):
 
             self.assertEqual(payload["formato"], "harpia_extracao_documento")
             self.assertEqual(document["arquivo"]["nome_do_arquivo"], "a.pdf")
-            self.assertIn('"acm_resultado_tratado": 7.100', json_text)
-            self.assertIn('"acm_lq_minimo": 2.00', json_text)
-            self.assertIn('"acm_lq_maximo": 12.000', json_text)
+            self.assertIn('"acm_resultado_tratado":7.100', json_text)
+            self.assertIn('"acm_lq_minimo":2.00', json_text)
+            self.assertIn('"acm_lq_maximo":12.000', json_text)
             self.assertEqual(document["arquivo"]["id_taxonomia"], 1)
             self.assertIn("acm_data_hora_extracao", document["tabelas"]["results_extract"][0])
             self.assertEqual(document["tabelas"]["results_extract"][0]["id_amostra"], 687944)
