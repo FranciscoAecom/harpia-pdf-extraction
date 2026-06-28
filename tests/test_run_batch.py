@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from run_batch import _cached_file_hashes, _exact_duplicate_plan, _file_hashes
+from harpia_parser.batch.cache import BatchCache, exact_duplicate_plan
 
 
 class RunBatchTest(unittest.TestCase):
@@ -13,10 +13,11 @@ class RunBatchTest(unittest.TestCase):
             cache = root / "cache" / "hashes.json"
             pdf.write_bytes(b"first")
 
-            first, first_hits = _cached_file_hashes([pdf], 1, cache)
-            second, second_hits = _cached_file_hashes([pdf], 1, cache)
+            batch_cache = BatchCache(cache.parent, root, root)
+            first, first_hits = batch_cache.file_hashes([pdf], 1)
+            second, second_hits = batch_cache.file_hashes([pdf], 1)
             pdf.write_bytes(b"changed-content")
-            third, third_hits = _cached_file_hashes([pdf], 1, cache)
+            third, third_hits = batch_cache.file_hashes([pdf], 1)
 
             self.assertEqual(first_hits, 0)
             self.assertEqual(second_hits, 1)
@@ -35,8 +36,8 @@ class RunBatchTest(unittest.TestCase):
             different.write_bytes(b"different-pdf")
             pdfs = [first, duplicate, different]
 
-            hashes = _file_hashes(pdfs, workers=2)
-            canonical, duplicates = _exact_duplicate_plan(pdfs, hashes)
+            hashes, _ = BatchCache(root / "cache", root, root).file_hashes(pdfs, workers=2)
+            canonical, duplicates = exact_duplicate_plan(pdfs, hashes)
 
             self.assertEqual(canonical, [first, different])
             self.assertEqual(duplicates, {str(duplicate): first})

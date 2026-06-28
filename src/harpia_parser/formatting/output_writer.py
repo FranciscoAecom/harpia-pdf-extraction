@@ -1,16 +1,16 @@
 from pathlib import Path
 from datetime import datetime
-from decimal import Decimal, InvalidOperation
 import re
 from typing import Any
 
 import pandas as pd
-import simplejson as json
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 
-from ..constants import ACM_EXTRACTION_TIMESTAMP_COLUMN, DUPLICATE_AUDIT_COLUMNS
+from ..constants import ACM_EXTRACTION_TIMESTAMP_COLUMN
 from ..validation.schemas import VALIDATION_ERROR_COLUMNS, validate_outputs
+from .jsonl_writer import write_jsonl
+from .excel_writer import write_excel
 
 
 NUMERIC_TEXT = re.compile(r"^([+-]?\d+(?:[,.]\d+)?)(?:\s*x\s*10\s*([+-]?\d+))?$", re.IGNORECASE)
@@ -27,10 +27,6 @@ DATE_OUTPUT_COLUMNS = {
     "results_extract": {"acm_data_inicio"},
     "sample": {"data_coleta", "data_publicacao", "data_recebimento"},
 }
-DATETIME_JSON_COLUMNS = (
-    {ACM_EXTRACTION_TIMESTAMP_COLUMN}
-    | set().union(*DATE_OUTPUT_COLUMNS.values())
-)
 HEADER_FILL = PatternFill(fill_type="solid", fgColor="1F4E78")
 HEADER_FONT = Font(color="FFFFFF", bold=True)
 HEADER_ALIGNMENT = Alignment(horizontal="center", vertical="center", wrap_text=True)
@@ -40,22 +36,6 @@ HEADER_BORDER = Border(
     top=Side(style="thin", color="9EADCC"),
     bottom=Side(style="thin", color="9EADCC"),
 )
-
-JSON_DECIMAL_SOURCE_COLUMNS = {
-    "acm_resultado_tratado": ("resultado", 0),
-    "acm_conama_minimo": ("conama", 0),
-    "acm_conama_maximo": ("conama", 1),
-    "acm_copam_cerh_minimo": ("copam_cerh", 0),
-    "acm_copam_cerh_maximo": ("copam_cerh", 1),
-    "acm_ld_minimo": ("ld", 0),
-    "acm_ld_maximo": ("ld", 1),
-    "acm_lq_minimo": ("lq", 0),
-    "acm_lq_maximo": ("lq", 1),
-    "acm_incerteza_valor": ("incerteza", 0),
-    "acm_faixa_aceitacao_minimo": ("faixa_aceitacao", 0),
-    "acm_faixa_aceitacao_maximo": ("faixa_aceitacao", 1),
-}
-
 
 def _numeric_value_and_format(value) -> tuple[float, str] | None:
     if value is None or pd.isna(value):
@@ -222,96 +202,6 @@ def _apply_date_format_to_columns(worksheet, sheet_name: str) -> None:
                 cell.number_format = "dd/mm/yyyy hh:mm"
 
 
-def _datetime_text_with_seconds(value: Any) -> str | None:
-    if value is None or pd.isna(value):
-        return None
-    if isinstance(value, datetime):
-        return value.strftime("%d/%m/%Y %H:%M:%S")
-
-    text = str(value).strip()
-    if DATE_TIME_TEXT.match(text):
-        date_format = "%d/%m/%Y %H:%M:%S" if text.count(":") == 2 else "%d/%m/%Y %H:%M"
-        return datetime.strptime(text, date_format).strftime("%d/%m/%Y %H:%M:%S")
-    if DATE_TEXT.match(text):
-        return f"{text} 00:00:00"
-    return text
-
-
-def _json_scalar(key: str, value: Any) -> Any:
-    if value is None or pd.isna(value):
-        return None
-    if key in DATETIME_JSON_COLUMNS:
-        return _datetime_text_with_seconds(value)
-    if key in INTEGER_OUTPUT_COLUMNS:
-        text = str(value).strip()
-        if INTEGER_TEXT.match(text):
-            return int(text)
-    if hasattr(value, "item"):
-        return value.item()
-    if hasattr(value, "isoformat"):
-        return value.isoformat()
-    return value
-
-
-def _decimal_places_from_source(value: Any, number_index: int) -> int | None:
-    if value is None or pd.isna(value):
-        return None
-    matches = list(SOURCE_NUMBER_IN_TEXT.finditer(str(value)))
-    if not matches:
-        return None
-    selected = matches[min(number_index, len(matches) - 1)].group(1)
-    separator = "," if "," in selected else "." if "." in selected else None
-    return len(selected.rsplit(separator, 1)[1]) if separator else 0
-
-
-def _decimal_with_source_scale(value: Any, source: Any, number_index: int) -> Any:
-    if value is None or pd.isna(value):
-        return value
-    decimal_places = _decimal_places_from_source(source, number_index)
-    if decimal_places is None:
-        return value
-    try:
-        decimal_value = Decimal(str(value))
-        scale = Decimal(1).scaleb(-decimal_places)
-        return decimal_value.quantize(scale)
-    except (InvalidOperation, TypeError, ValueError):
-        return value
-
-
-def _records(df: pd.DataFrame | None) -> list[dict[str, Any]]:
-    if df is None or df.empty:
-        return []
-    cleaned = df.astype(object).where(pd.notna(df), None)
-    records = []
-    for row in cleaned.to_dict(orient="records"):
-        record: dict[str, Any] = {}
-        for key, value in row.items():
-            key_text = str(key)
-            serialized = _json_scalar(key_text, value)
-            source_mapping = JSON_DECIMAL_SOURCE_COLUMNS.get(key_text)
-            if source_mapping is not None:
-                source_column, number_index = source_mapping
-                serialized = _decimal_with_source_scale(serialized, row.get(source_column), number_index)
-            record[key_text] = serialized
-        records.append(record)
-    return records
-
-
-def _indices_by_file(df: pd.DataFrame | None) -> dict[str, Any]:
-    if df is None or df.empty:
-        return {}
-    if "nome_do_arquivo" not in df.columns:
-        return {"": slice(None)}
-    names = df["nome_do_arquivo"].fillna("").astype(str)
-    return {str(name): indices for name, indices in names.groupby(names, sort=False).indices.items()}
-
-
-def _records_for_indices(df: pd.DataFrame | None, indices: Any) -> list[dict[str, Any]]:
-    if df is None or indices is None:
-        return []
-    return _records(df.iloc[indices] if not isinstance(indices, slice) else df)
-
-
 def _timestamp_text(timestamp: datetime) -> str:
     return timestamp.strftime("%d/%m/%Y %H:%M:%S")
 
@@ -328,21 +218,7 @@ def _with_required_extraction_timestamp(df: pd.DataFrame, timestamp: datetime) -
     return result
 
 
-def _document_identity(records: list[dict[str, Any]], file_name: str) -> dict[str, Any]:
-    identity = {
-        "nome_do_arquivo": file_name,
-        "id_taxonomia": None,
-        "nome_taxonomia": None,
-        "versao_template": None,
-    }
-    for record in records:
-        for field in ["id_taxonomia", "nome_taxonomia", "versao_template"]:
-            if identity[field] is None and record.get(field) is not None:
-                identity[field] = record.get(field)
-    return identity
-
-
-def _write_json_output(
+def _write_jsonl_output(
     output_path: Path,
     df: pd.DataFrame,
     sample_df: pd.DataFrame | None,
@@ -380,47 +256,7 @@ def _write_json_output(
         "duplicate_audit": duplicate_audit_df,
         "validation_errors": validation_errors,
     }
-    source_frames = list(table_sources.values()) + list(audit_sources.values())
-    table_indices = {name: _indices_by_file(frame) for name, frame in table_sources.items()}
-    audit_indices = {name: _indices_by_file(frame) for name, frame in audit_sources.items()}
-    file_names: set[str] = set()
-    for frame in source_frames:
-        if frame is not None and not frame.empty and "nome_do_arquivo" in frame.columns:
-            file_names.update(frame["nome_do_arquivo"].dropna().astype(str))
-    if not file_names:
-        file_names.add("")
-
-    with output_path.open("w", encoding="utf-8") as handle:
-        for file_name in sorted(file_names):
-            identity_records: list[dict[str, Any]] = []
-            tables = {}
-            for table_name, frame in table_sources.items():
-                if table_name not in sheets_to_write:
-                    continue
-                indices = table_indices[table_name].get(file_name, table_indices[table_name].get(""))
-                records = _records_for_indices(frame, indices)
-                tables[table_name] = records
-                identity_records.extend(records)
-            audits = {}
-            for audit_name, frame in audit_sources.items():
-                if audit_name not in sheets_to_write:
-                    continue
-                indices = audit_indices[audit_name].get(file_name, audit_indices[audit_name].get(""))
-                records = _records_for_indices(frame, indices)
-                audits[audit_name] = records
-                identity_records.extend(records)
-            json.dump(
-                {
-                    "arquivo": _document_identity(identity_records, file_name),
-                    "tabelas": tables,
-                    "auditoria": audits,
-                },
-                handle,
-                ensure_ascii=False,
-                use_decimal=True,
-                separators=(",", ":"),
-            )
-            handle.write("\n")
+    write_jsonl(output_path, table_sources, audit_sources, sheets_to_write)
 
 
 def salvar(
@@ -510,65 +346,23 @@ def salvar(
                 indent=2,
             )
     else:
-        with pd.ExcelWriter(output_path) as writer:
-            written_sheets = []
-            for sheet_name in sheets_to_write:
-                if sheet_name == "results_extract":
-                    df.to_excel(writer, sheet_name="results_extract", index=False)
-                    _format_numeric_results_sheet(writer, df)
-                    written_sheets.append("results_extract")
-                elif sheet_name == "sample" and sample_df is not None:
-                    sample_df.to_excel(writer, sheet_name="sample", index=False)
-                    written_sheets.append("sample")
-                elif sheet_name == "client" and client_df is not None:
-                    client_df.to_excel(writer, sheet_name="client", index=False)
-                    written_sheets.append("client")
-                elif sheet_name == "packaging_preservatives" and packaging_preservatives_df is not None:
-                    packaging_preservatives_df.to_excel(writer, sheet_name="packaging_preservatives", index=False)
-                    written_sheets.append("packaging_preservatives")
-                elif sheet_name == "notes" and notes_df is not None:
-                    notes_df.to_excel(writer, sheet_name="notes", index=False)
-                    written_sheets.append("notes")
-                elif sheet_name == "general_considerations" and general_considerations_df is not None:
-                    general_considerations_df.to_excel(writer, sheet_name="general_considerations", index=False)
-                    written_sheets.append("general_considerations")
-                elif sheet_name == "conformity_statement" and conformity_statement_df is not None:
-                    conformity_statement_df.to_excel(writer, sheet_name="conformity_statement", index=False)
-                    written_sheets.append("conformity_statement")
-                elif sheet_name == "validation_key" and validation_key_df is not None:
-                    validation_key_df.to_excel(writer, sheet_name="validation_key", index=False)
-                    written_sheets.append("validation_key")
-                elif sheet_name == "revision_reason" and revision_reason_df is not None:
-                    revision_reason_df.to_excel(writer, sheet_name="revision_reason", index=False)
-                    written_sheets.append("revision_reason")
-                elif sheet_name == "classification_audit" and classification_audit_df is not None:
-                    classification_audit_df.to_excel(writer, sheet_name="classification_audit", index=False)
-                    written_sheets.append("classification_audit")
-                elif sheet_name == "table_extraction_audit" and table_extraction_audit_df is not None:
-                    table_extraction_audit_df.to_excel(writer, sheet_name="table_extraction_audit", index=False)
-                    written_sheets.append("table_extraction_audit")
-                elif sheet_name == "section_extraction_audit" and section_extraction_audit_df is not None:
-                    section_extraction_audit_df.to_excel(writer, sheet_name="section_extraction_audit", index=False)
-                    written_sheets.append("section_extraction_audit")
-                elif sheet_name == "field_extraction_audit" and field_extraction_audit_df is not None:
-                    field_extraction_audit_df.to_excel(writer, sheet_name="field_extraction_audit", index=False)
-                    written_sheets.append("field_extraction_audit")
-                elif sheet_name == "duplicate_audit":
-                    duplicate_frame = (
-                        duplicate_audit_df
-                        if duplicate_audit_df is not None
-                        else pd.DataFrame(columns=DUPLICATE_AUDIT_COLUMNS)
-                    )
-                    duplicate_frame.to_excel(writer, sheet_name="duplicate_audit", index=False)
-                    written_sheets.append("duplicate_audit")
-                elif sheet_name == "validation_errors":
-                    validation_errors.to_excel(writer, sheet_name="validation_errors", index=False)
-                    written_sheets.append("validation_errors")
+        frames = {
+            "results_extract": df, "sample": sample_df, "client": client_df,
+            "packaging_preservatives": packaging_preservatives_df, "notes": notes_df,
+            "general_considerations": general_considerations_df,
+            "conformity_statement": conformity_statement_df, "validation_key": validation_key_df,
+            "revision_reason": revision_reason_df, "classification_audit": classification_audit_df,
+            "table_extraction_audit": table_extraction_audit_df,
+            "section_extraction_audit": section_extraction_audit_df,
+            "field_extraction_audit": field_extraction_audit_df,
+            "duplicate_audit": duplicate_audit_df, "validation_errors": validation_errors,
+        }
+        write_excel(
+            output_path, sheets_to_write, frames,
+            _format_numeric_results_sheet, _format_output_sheet,
+        )
 
-            for sheet_name in written_sheets:
-                _format_output_sheet(writer, sheet_name)
-
-        _write_json_output(
+        _write_jsonl_output(
             json_output_path,
             df,
             sample_df,

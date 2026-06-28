@@ -21,6 +21,7 @@ from ..constants import (
     VALIDATION_KEY_COLUMNS,
 )
 from .context import DocumentContext
+from .outputs import PipelineOutputs
 from ..formatting.common import format_results_extract
 from ..extraction.metadata_extractor import codigo_laudo_from_text, extract_client, extract_metadata, extract_sample
 from ..extraction.document_sections import extract_document_section
@@ -85,22 +86,8 @@ def _default_output_path(base_dir: Path, df: pd.DataFrame, sample_df: pd.DataFra
     return base_dir / "output" / output_group / "extracted_data.xlsx"
 
 
-def _empty_outputs() -> tuple[
-    pd.DataFrame,
-    pd.DataFrame,
-    pd.DataFrame,
-    pd.DataFrame,
-    pd.DataFrame,
-    pd.DataFrame,
-    pd.DataFrame,
-    pd.DataFrame,
-    pd.DataFrame,
-    pd.DataFrame,
-    pd.DataFrame,
-    pd.DataFrame,
-    pd.DataFrame,
-]:
-    return (
+def _empty_outputs() -> PipelineOutputs:
+    return PipelineOutputs(
         pd.DataFrame(columns=RESULTS_EXTRACT_COLUMNS),
         pd.DataFrame(columns=SAMPLE_COLUMNS),
         pd.DataFrame(columns=CLIENT_COLUMNS),
@@ -212,21 +199,7 @@ def _extract_result_rows(paginas, metadata: dict, sample_df: pd.DataFrame, conte
     return pd.DataFrame(resultados), pd.DataFrame(table_audit_rows, columns=TABLE_EXTRACTION_AUDIT_COLUMNS)
 
 
-def run_pipeline_document(pdf_path, config=None, pdf_content=None) -> tuple[
-    pd.DataFrame,
-    pd.DataFrame,
-    pd.DataFrame,
-    pd.DataFrame,
-    pd.DataFrame,
-    pd.DataFrame,
-    pd.DataFrame,
-    pd.DataFrame,
-    pd.DataFrame,
-    pd.DataFrame,
-    pd.DataFrame,
-    pd.DataFrame,
-    pd.DataFrame,
-]:
+def run_pipeline_document(pdf_path, config=None, pdf_content=None) -> PipelineOutputs:
     pdf_path = Path(pdf_path)
     config = config or load_config(PROJECT_ROOT)
     log.info("Processando: %s", pdf_path)
@@ -319,7 +292,7 @@ def run_pipeline_document(pdf_path, config=None, pdf_content=None) -> tuple[
     classification_audit_df = context.classification.to_dataframe(context.nome_do_arquivo)
 
     log.info("Pipeline concluido: %d registros extraidos de %s", len(df), pdf_path.name)
-    return (
+    return PipelineOutputs(
         df,
         sample_df,
         client_df,
@@ -337,8 +310,7 @@ def run_pipeline_document(pdf_path, config=None, pdf_content=None) -> tuple[
 
 
 def run_pipeline(pdf_path) -> pd.DataFrame:
-    df, *_ = run_pipeline_document(pdf_path)
-    return df
+    return run_pipeline_document(pdf_path).results
 
 
 def main(argv=None) -> int:
@@ -360,26 +332,13 @@ def main(argv=None) -> int:
         return 1
 
     config = load_config(PROJECT_ROOT)
-    (
-        df,
-        sample_df,
-        client_df,
-        packaging_preservatives_df,
-        notes_df,
-        general_considerations_df,
-        conformity_statement_df,
-        validation_key_df,
-        classification_audit_df,
-        table_audit_df,
-        section_audit_df,
-        field_audit_df,
-        revision_reason_df,
-    ) = run_pipeline_document(pdf_path, config)
+    outputs = run_pipeline_document(pdf_path, config)
+    df, sample_df, client_df = outputs.results, outputs.sample, outputs.client
     if df.empty and sample_df.empty and client_df.empty:
         log.warning("Nenhum dado extraido. Verifique o PDF e as regras da taxonomy.")
         return 0
 
-    template_id = _winner_template_id(classification_audit_df)
+    template_id = _winner_template_id(outputs.classification_audit)
     output_tabs = output_tabs_for_template(config, template_id) if template_id else None
     output_path = Path(args.output) if args.output else _default_output_path(PROJECT_ROOT, df, sample_df, client_df)
     salvar(
@@ -388,16 +347,16 @@ def main(argv=None) -> int:
         sample_df,
         client_df,
         output_tabs,
-        classification_audit_df,
-        table_audit_df,
-        section_extraction_audit_df=section_audit_df,
-        field_extraction_audit_df=field_audit_df,
-        packaging_preservatives_df=packaging_preservatives_df,
-        notes_df=notes_df,
-        general_considerations_df=general_considerations_df,
-        conformity_statement_df=conformity_statement_df,
-        validation_key_df=validation_key_df,
-        revision_reason_df=revision_reason_df,
+        outputs.classification_audit,
+        outputs.table_extraction_audit,
+        section_extraction_audit_df=outputs.section_extraction_audit,
+        field_extraction_audit_df=outputs.field_extraction_audit,
+        packaging_preservatives_df=outputs.packaging_preservatives,
+        notes_df=outputs.notes,
+        general_considerations_df=outputs.general_considerations,
+        conformity_statement_df=outputs.conformity_statement,
+        validation_key_df=outputs.validation_key,
+        revision_reason_df=outputs.revision_reason,
     )
     log.info("Resultado salvo em: %s  (%d registros)", output_path, len(df))
     if not df.empty:

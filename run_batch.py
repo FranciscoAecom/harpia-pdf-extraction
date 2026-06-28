@@ -2,18 +2,13 @@ import argparse
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
-import gzip
-import hashlib
-import json
 import logging
-import pickle
 import sys
 from datetime import datetime
 from pathlib import Path
 from time import monotonic
 
 import pandas as pd
-import pdfplumber
 
 
 ROOT = Path(__file__).resolve().parent
@@ -22,17 +17,18 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from harpia_parser.config.loader import load_config, output_tabs_for_template  # noqa: E402
+from harpia_parser.batch.models import DocumentExtraction  # noqa: E402
+from harpia_parser.batch.cache import BatchCache, exact_duplicate_plan  # noqa: E402
+from harpia_parser.batch.discovery import list_pdfs, read_pdf_text  # noqa: E402
+from harpia_parser.batch.executor import extract_pdf_once  # noqa: E402
 from harpia_parser.audit.duplicate_audit import (  # noqa: E402
     build_duplicate_audit,
     build_duplicate_candidate,
     duplicate_paths_to_skip,
-    file_sha256,
     text_sha256,
 )
 from harpia_parser.constants import ACM_EXTRACTION_TIMESTAMP_COLUMN  # noqa: E402
-from harpia_parser.core.pipeline import run_pipeline_document  # noqa: E402
 from harpia_parser.core.scope import classify_document  # noqa: E402
-from harpia_parser.extraction.pdf_reader import read_pdf  # noqa: E402
 from harpia_parser.formatting.output_writer import salvar  # noqa: E402
 
 
@@ -148,127 +144,16 @@ def _winner_template_id(audit_df: pd.DataFrame) -> str | None:
     return str(values.iloc[0]) if not values.empty else None
 
 
-def _list_pdfs(input_dirs: list[Path]) -> list[Path]:
-    pdfs: dict[str, Path] = {}
-    for input_dir in input_dirs:
-        if not input_dir.exists():
-            raise FileNotFoundError(f"Pasta de entrada nao encontrada: {input_dir}")
-        for pdf in input_dir.rglob("*.pdf"):
-            pdfs[str(pdf)] = pdf
-    return sorted(pdfs.values(), key=lambda path: str(path).lower())
-
-
-def _file_hashes(pdfs: list[Path], workers: int) -> dict[str, str]:
-    with ThreadPoolExecutor(max_workers=max(1, workers)) as executor:
-        hashes = list(executor.map(file_sha256, pdfs))
-        return {str(path): hashes[index] for index, path in enumerate(pdfs)}
-
-
-def _cached_file_hashes(pdfs: list[Path], workers: int, cache_path: Path) -> tuple[dict[str, str], int]:
-    try:
-        cache = json.loads(cache_path.read_text(encoding="utf-8"))
-    except (OSError, ValueError, TypeError):
-        cache = {}
-    hashes: dict[str, str] = {}
-    pending: list[Path] = []
-    refreshed: dict[str, dict] = {}
-    for path in pdfs:
-        key = str(path)
-        stat = path.stat()
-        cached = cache.get(key, {})
-        if cached.get("size") == stat.st_size and cached.get("mtime_ns") == stat.st_mtime_ns and cached.get("sha256"):
-            hashes[key] = str(cached["sha256"])
-        else:
-            pending.append(path)
-        refreshed[key] = {"size": stat.st_size, "mtime_ns": stat.st_mtime_ns}
-    if pending:
-        hashes.update(_file_hashes(pending, workers))
-    for key, metadata in refreshed.items():
-        metadata["sha256"] = hashes[key]
-    cache_path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = cache_path.with_suffix(".tmp")
-    temporary.write_text(json.dumps(refreshed, ensure_ascii=False), encoding="utf-8")
-    temporary.replace(cache_path)
-    return hashes, len(pdfs) - len(pending)
-
-
-def _exact_duplicate_plan(pdfs: list[Path], file_hashes: dict[str, str]) -> tuple[list[Path], dict[str, Path]]:
-    groups: dict[str, list[Path]] = {}
-    for pdf in pdfs:
-        groups.setdefault(file_hashes[str(pdf)], []).append(pdf)
-
-    canonical_paths: list[Path] = []
-    duplicate_to_canonical: dict[str, Path] = {}
-    for group in groups.values():
-        ordered = sorted(group, key=lambda path: str(path).lower())
-        canonical_paths.append(ordered[0])
-        for duplicate in ordered[1:]:
-            duplicate_to_canonical[str(duplicate)] = ordered[0]
-    return sorted(canonical_paths, key=lambda path: str(path).lower()), duplicate_to_canonical
-
-
-def _read_pdf_text(pdf_path: Path, max_pages: int | None = None) -> str:
-    texts = []
-    with pdfplumber.open(pdf_path) as pdf:
-        pages = pdf.pages[:max_pages] if max_pages else pdf.pages
-        for page in pages:
-            texts.append(page.extract_text() or "")
-    return "\n".join(texts)
-
-
-def _extraction_cache_path(cache_dir: Path, taxonomy_hash: str, file_hash: str) -> Path:
-    return cache_dir / "extractions" / taxonomy_hash / f"{file_hash}.pkl.gz"
-
-
-def _runtime_cache_signature(taxonomy_path: Path) -> str:
-    digest = hashlib.sha256()
-    for path in [taxonomy_path, *sorted(SRC.rglob("*.py")), Path(__file__)]:
-        digest.update(str(path.relative_to(ROOT) if path.is_relative_to(ROOT) else path).encode("utf-8"))
-        digest.update(path.read_bytes())
-    return digest.hexdigest()
-
-
-def _extract_pdf_once(
-    pdf: Path,
-    config,
-    file_hash: str,
-    taxonomy_hash: str,
-    cache_dir: Path,
-    preclassify_pages: int,
-) -> tuple[Path, str | None, tuple | None, Exception | None, bool]:
-    try:
-        cache_path = _extraction_cache_path(cache_dir, taxonomy_hash, file_hash)
-        if cache_path.exists():
-            with gzip.open(cache_path, "rb") as handle:
-                texto, outputs = pickle.load(handle)
-            return pdf, texto, outputs, None, True
-        preview = _read_pdf_text(pdf, max_pages=preclassify_pages) if preclassify_pages > 0 else ""
-        if preview and not classify_document(preview, config, pdf).template_id:
-            outputs = run_pipeline_document(pdf, config, pdf_content=(preview, [(preview, [])]))
-            texto = preview
-        else:
-            texto, paginas = read_pdf(pdf)
-            outputs = run_pipeline_document(pdf, config, pdf_content=(texto, paginas))
-        cache_path.parent.mkdir(parents=True, exist_ok=True)
-        temporary = cache_path.with_suffix(".tmp")
-        with gzip.open(temporary, "wb", compresslevel=3) as handle:
-            pickle.dump((texto, outputs), handle, protocol=pickle.HIGHEST_PROTOCOL)
-        temporary.replace(cache_path)
-        return pdf, texto, outputs, None, False
-    except Exception as exc:
-        return pdf, None, None, exc, False
-
-
 def classify_batch(input_dirs: list[Path], output_path: Path, max_pages: int | None = 3) -> None:
     config = load_config(ROOT)
     rows = []
-    pdfs = _list_pdfs(input_dirs)
+    pdfs = list_pdfs(input_dirs)
     extraction_timestamp = _timestamp_text()
 
     for index, pdf in enumerate(pdfs, start=1):
         log.info("[%d/%d] Classificando %s", index, len(pdfs), pdf.name)
         try:
-            texto = _read_pdf_text(pdf, max_pages=max_pages)
+            texto = read_pdf_text(pdf, max_pages=max_pages)
             result = classify_document(texto, config, pdf)
             rows.append({
                 "arquivo": pdf.name,
@@ -321,14 +206,14 @@ def extract_batch(input_dirs: list[Path], output_dir: Path, workers: int = 5, pr
     theme_by_path: dict[str, str] = {}
     canonical_text_paths: dict[tuple[str, str], str] = {}
     empty_text_hash = text_sha256("")
-    extracted_documents: dict[str, list[dict]] = {}
+    extracted_documents: dict[str, list[DocumentExtraction]] = {}
     summary = []
-    pdfs = _list_pdfs(input_dirs)
-    cache_dir = output_dir / ".cache"
+    pdfs = list_pdfs(input_dirs)
+    cache = BatchCache(output_dir / ".cache", ROOT, SRC)
     log.info("Calculando hashes binarios com %d workers...", workers)
-    file_hashes, cached_hashes = _cached_file_hashes(pdfs, workers, cache_dir / "file_hashes.json")
-    taxonomy_hash = _runtime_cache_signature(config.taxonomy_path)
-    pdfs_to_extract, exact_duplicates = _exact_duplicate_plan(pdfs, file_hashes)
+    file_hashes, cached_hashes = cache.file_hashes(pdfs, workers)
+    taxonomy_hash = cache.runtime_signature(config.taxonomy_path, Path(__file__))
+    pdfs_to_extract, exact_duplicates = exact_duplicate_plan(pdfs, file_hashes)
     extraction_timestamp = _timestamp_text()
     log.info("=" * 70)
     log.info("EXTRACAO DE DOCUMENTOS")
@@ -343,35 +228,36 @@ def extract_batch(input_dirs: list[Path], output_dir: Path, workers: int = 5, pr
 
     extraction_executor = ThreadPoolExecutor(max_workers=max(1, workers))
     extraction_results = extraction_executor.map(
-        lambda pdf: _extract_pdf_once(
-            pdf, config, file_hashes[str(pdf)], taxonomy_hash, cache_dir, preclassify_pages
+        lambda pdf: extract_pdf_once(
+            pdf, config, file_hashes[str(pdf)], taxonomy_hash, cache, preclassify_pages
         ),
         pdfs_to_extract,
         buffersize=max(2, workers * 2),
     )
     cached_extractions = 0
-    for index, (pdf, texto, pipeline_outputs, extraction_error, from_cache) in enumerate(extraction_results, start=1):
-        cached_extractions += int(from_cache)
+    for index, extraction in enumerate(extraction_results, start=1):
+        pdf = extraction.path
+        texto = extraction.text
+        pipeline_outputs = extraction.outputs
+        extraction_error = extraction.error
+        cached_extractions += int(extraction.from_cache)
         try:
             if extraction_error is not None:
                 raise extraction_error
             if texto is None or pipeline_outputs is None:
                 raise RuntimeError("Extracao nao retornou dados nem erro.")
-            (
-                df,
-                sample_df,
-                client_df,
-                packaging_preservatives_df,
-                notes_df,
-                general_considerations_df,
-                conformity_statement_df,
-                validation_key_df,
-                audit_df,
-                table_audit_df,
-                section_audit_df,
-                field_audit_df,
-                revision_reason_df,
-            ) = pipeline_outputs
+            outputs = pipeline_outputs
+            df, sample_df, client_df = outputs.results, outputs.sample, outputs.client
+            packaging_preservatives_df = outputs.packaging_preservatives
+            notes_df = outputs.notes
+            general_considerations_df = outputs.general_considerations
+            conformity_statement_df = outputs.conformity_statement
+            validation_key_df = outputs.validation_key
+            revision_reason_df = outputs.revision_reason
+            audit_df = outputs.classification_audit
+            table_audit_df = outputs.table_extraction_audit
+            section_audit_df = outputs.section_extraction_audit
+            field_audit_df = outputs.field_extraction_audit
             template_id = _winner_template_id(audit_df)
             template = config.templates.get(template_id or "", {})
             tipo_laudo = str(template.get("theme_id") or "") if template else None
@@ -436,23 +322,9 @@ def extract_batch(input_dirs: list[Path], output_dir: Path, workers: int = 5, pr
                     summary_row[column] = 0
             else:
                 canonical_text_paths[text_key] = str(pdf)
-                extracted_documents.setdefault(tipo_laudo, []).append({
-                    "caminho": str(pdf),
-                    "results": df,
-                    "sample": sample_df,
-                    "client": client_df,
-                    "packaging_preservatives": packaging_preservatives_df,
-                    "notes": notes_df,
-                    "general_considerations": general_considerations_df,
-                    "conformity_statement": conformity_statement_df,
-                    "validation_key": validation_key_df,
-                    "revision_reason": revision_reason_df,
-                    "classification_audit": audit_df,
-                    "table_extraction_audit": table_audit_df,
-                    "section_extraction_audit": section_audit_df,
-                    "field_extraction_audit": field_audit_df,
-                    "summary": summary_row,
-                })
+                extracted_documents.setdefault(tipo_laudo, []).append(
+                    DocumentExtraction(pdf, outputs, summary_row)
+                )
             _log_document_alerts(pdf, section_audit_df, table_audit_df)
         except Exception as exc:
             summary.append({
@@ -510,8 +382,8 @@ def extract_batch(input_dirs: list[Path], output_dir: Path, workers: int = 5, pr
         skipped_paths = duplicate_paths_to_skip(candidates)
 
         for document in documents:
-            summary_row = document["summary"]
-            if document["caminho"] in skipped_paths:
+            summary_row = document.summary
+            if str(document.path) in skipped_paths:
                 summary_row["status"] = "duplicado_nao_persistido"
                 summary_row["motivo"] = "PDF duplicado; registros mantidos apenas no arquivo canonico do grupo."
                 for column in [
@@ -530,19 +402,20 @@ def extract_batch(input_dirs: list[Path], output_dir: Path, workers: int = 5, pr
                     summary_row[column] = 0
                 continue
 
-            all_results.setdefault(tipo_laudo, []).append(document["results"])
-            all_samples.setdefault(tipo_laudo, []).append(document["sample"])
-            all_clients.setdefault(tipo_laudo, []).append(document["client"])
-            all_packaging_preservatives.setdefault(tipo_laudo, []).append(document["packaging_preservatives"])
-            all_notes.setdefault(tipo_laudo, []).append(document["notes"])
-            all_general_considerations.setdefault(tipo_laudo, []).append(document["general_considerations"])
-            all_conformity_statement.setdefault(tipo_laudo, []).append(document["conformity_statement"])
-            all_validation_key.setdefault(tipo_laudo, []).append(document["validation_key"])
-            all_revision_reason.setdefault(tipo_laudo, []).append(document["revision_reason"])
-            all_audits.setdefault(tipo_laudo, []).append(document["classification_audit"])
-            all_table_audits.setdefault(tipo_laudo, []).append(document["table_extraction_audit"])
-            all_section_audits.setdefault(tipo_laudo, []).append(document["section_extraction_audit"])
-            all_field_audits.setdefault(tipo_laudo, []).append(document["field_extraction_audit"])
+            outputs = document.outputs
+            all_results.setdefault(tipo_laudo, []).append(outputs.results)
+            all_samples.setdefault(tipo_laudo, []).append(outputs.sample)
+            all_clients.setdefault(tipo_laudo, []).append(outputs.client)
+            all_packaging_preservatives.setdefault(tipo_laudo, []).append(outputs.packaging_preservatives)
+            all_notes.setdefault(tipo_laudo, []).append(outputs.notes)
+            all_general_considerations.setdefault(tipo_laudo, []).append(outputs.general_considerations)
+            all_conformity_statement.setdefault(tipo_laudo, []).append(outputs.conformity_statement)
+            all_validation_key.setdefault(tipo_laudo, []).append(outputs.validation_key)
+            all_revision_reason.setdefault(tipo_laudo, []).append(outputs.revision_reason)
+            all_audits.setdefault(tipo_laudo, []).append(outputs.classification_audit)
+            all_table_audits.setdefault(tipo_laudo, []).append(outputs.table_extraction_audit)
+            all_section_audits.setdefault(tipo_laudo, []).append(outputs.section_extraction_audit)
+            all_field_audits.setdefault(tipo_laudo, []).append(outputs.field_extraction_audit)
         documents.clear()
 
     extracted_documents.clear()

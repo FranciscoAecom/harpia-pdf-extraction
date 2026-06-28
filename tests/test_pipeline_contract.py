@@ -6,7 +6,7 @@ from harpia_parser.core.pipeline import run_pipeline_document
 
 
 class PipelineContractTest(unittest.TestCase):
-    def test_in_scope_document_returns_all_thirteen_outputs(self):
+    def test_in_scope_document_returns_named_outputs(self):
         text = (
             "Relatório Analítico 123/2025.0\n"
             "Informações da Amostra - Nº: 123-1/2025.0\n"
@@ -21,7 +21,9 @@ class PipelineContractTest(unittest.TestCase):
             pdf_content=(text, [(text, [])]),
         )
 
-        self.assertEqual(len(outputs), 13)
+        self.assertFalse(outputs.sample.empty)
+        self.assertTrue(hasattr(outputs, "field_extraction_audit"))
+        self.assertTrue(hasattr(outputs, "revision_reason"))
 
 
 if __name__ == "__main__":

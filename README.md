@@ -39,8 +39,14 @@ Harpia_Testes/
       |   `-- validators.py
       |-- core/
       |   |-- context.py
+      |   |-- outputs.py
       |   |-- pipeline.py
       |   `-- scope.py
+      |-- batch/
+      |   |-- cache.py
+      |   |-- discovery.py
+      |   |-- executor.py
+      |   `-- models.py
       |-- extraction/
       |   |-- pdf_reader.py
       |   |-- metadata_extractor.py
@@ -51,6 +57,8 @@ Harpia_Testes/
       |   |-- laudo_agua.py
       |   |-- laudo_fito.py
       |   |-- laudo_sedimento.py
+      |   |-- excel_writer.py
+      |   |-- jsonl_writer.py
       |   `-- output_writer.py
       |-- normalization/
       |   |-- common.py
@@ -107,7 +115,7 @@ py .\run_batch.py extract --preclassify-pages 5
 py .\run_batch.py extract --preclassify-pages 0
 ```
 
-Hashes e resultados de extracao sao armazenados em `output/.cache`. Arquivos inalterados reutilizam o cache; mudancas no PDF ou na `taxonomy.xlsx` invalidam automaticamente a entrada correspondente.
+Hashes e resultados de extracao sao armazenados em `output/.cache`. Arquivos inalterados reutilizam o cache; mudancas no PDF, na `taxonomy.xlsx` ou no codigo do motor invalidam automaticamente a entrada correspondente.
 
 Antes da extracao, o lote calcula hashes binarios e nao envia copias exatas ao parser. Duplicados textuais tambem sao descartados assim que identificados. Ambos continuam registrados em `duplicate_audit` e no resumo do lote.
 
@@ -591,7 +599,14 @@ Erros encontrados pela validacao final com Pydantic nas abas de saida validadas:
 - `formatting/laudo_agua.py`: monta o contrato tabular da aba `results_extract` para o tema agua.
 - `formatting/laudo_fito.py`: ponto preparado para o contrato de saida do tema fito.
 - `formatting/laudo_sedimento.py`: ponto preparado para o contrato de saida do tema sedimento.
-- `formatting/output_writer.py`: grava o arquivo final respeitando as abas configuradas pela taxonomia.
+- `core/outputs.py`: define o contrato nomeado das saidas produzidas por documento.
+- `batch/discovery.py`: descobre PDFs e faz leituras preliminares.
+- `batch/cache.py`: gerencia hashes, invalidacao e cache incremental.
+- `batch/executor.py`: executa pre-classificacao e extracao de um documento.
+- `batch/models.py`: define o documento extraido usado na consolidacao do lote.
+- `formatting/output_writer.py`: coordena validacao e formatos de saida.
+- `formatting/excel_writer.py`: grava e organiza as abas do Excel.
+- `formatting/jsonl_writer.py`: serializa documentos em JSONL preservando a escala decimal.
 - `normalization/common.py`: aplica normalizacoes comuns sem alterar os textos originais preservados do PDF.
 - `normalization/laudo_agua.py`: ponto central para normalizacoes especificas do tema agua, incluindo resultado, unidade, pH, LQ, incerteza e faixa de aceitacao.
 - `normalization/laudo_fito.py`: ponto central para normalizacoes especificas do tema fito.
