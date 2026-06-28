@@ -378,6 +378,9 @@ class OutputWriterTest(unittest.TestCase):
         row["lq"] = "2,00 - 12,000"
         row["acm_lq_minimo"] = 2.0
         row["acm_lq_maximo"] = 12.0
+        row["variacao_percentual"] = "4,50"
+        row["quantidade_adicionada"] = "10,000"
+        row["recuperacao_percentual"] = "98,5"
         df = pd.DataFrame([row], columns=RESULTS_EXTRACT_COLUMNS)
         sample_df = pd.DataFrame([{
             "nome_do_arquivo": "a.pdf",
@@ -427,6 +430,9 @@ class OutputWriterTest(unittest.TestCase):
             self.assertIn('"acm_resultado_tratado":7.100', json_text)
             self.assertIn('"acm_lq_minimo":2.00', json_text)
             self.assertIn('"acm_lq_maximo":12.000', json_text)
+            self.assertIn('"variacao_percentual":4.50', json_text)
+            self.assertIn('"quantidade_adicionada":10.000', json_text)
+            self.assertIn('"recuperacao_percentual":98.5', json_text)
             self.assertEqual(document["arquivo"]["id_taxonomia"], 1)
             self.assertIn("acm_data_hora_extracao", document["tabelas"]["results_extract"][0])
             self.assertEqual(document["tabelas"]["results_extract"][0]["id_amostra"], 687944)

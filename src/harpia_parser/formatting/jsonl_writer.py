@@ -17,6 +17,11 @@ SOURCE_NUMBER_IN_TEXT = re.compile(
 DATE_COLUMNS = {"acm_data_inicio", "data_coleta", "data_publicacao", "data_recebimento"}
 DATETIME_COLUMNS = {ACM_EXTRACTION_TIMESTAMP_COLUMN} | DATE_COLUMNS
 INTEGER_COLUMNS = {"id_amostra", "id_taxonomia", "versao_template"}
+DIRECT_DECIMAL_COLUMNS = {
+    "variacao_percentual",
+    "quantidade_adicionada",
+    "recuperacao_percentual",
+}
 DECIMAL_SOURCES = {
     "acm_resultado_tratado": ("resultado", 0), "acm_conama_minimo": ("conama", 0),
     "acm_conama_maximo": ("conama", 1), "acm_copam_cerh_minimo": ("copam_cerh", 0),
@@ -47,6 +52,10 @@ def _scalar(key: str, value: Any) -> Any:
         return _datetime_text(value)
     if key in INTEGER_COLUMNS and re.fullmatch(r"\d+", str(value).strip()):
         return int(str(value).strip())
+    if key in DIRECT_DECIMAL_COLUMNS:
+        text = str(value).strip().replace(",", ".")
+        if re.fullmatch(r"[+-]?\d+(?:\.\d+)?", text):
+            return Decimal(text)
     if isinstance(value, pd.Timestamp):
         return value.strftime("%d/%m/%Y %H:%M:%S")
     if hasattr(value, "item"):

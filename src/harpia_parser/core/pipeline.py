@@ -88,19 +88,19 @@ def _default_output_path(base_dir: Path, df: pd.DataFrame, sample_df: pd.DataFra
 
 def _empty_outputs() -> PipelineOutputs:
     return PipelineOutputs(
-        pd.DataFrame(columns=RESULTS_EXTRACT_COLUMNS),
-        pd.DataFrame(columns=SAMPLE_COLUMNS),
-        pd.DataFrame(columns=CLIENT_COLUMNS),
-        pd.DataFrame(columns=PACKAGING_PRESERVATIVES_COLUMNS),
-        pd.DataFrame(columns=NOTES_COLUMNS),
-        pd.DataFrame(columns=GENERAL_CONSIDERATIONS_COLUMNS),
-        pd.DataFrame(columns=CONFORMITY_STATEMENT_COLUMNS),
-        pd.DataFrame(columns=VALIDATION_KEY_COLUMNS),
-        pd.DataFrame(),
-        pd.DataFrame(columns=TABLE_EXTRACTION_AUDIT_COLUMNS),
-        pd.DataFrame(columns=SECTION_EXTRACTION_AUDIT_COLUMNS),
-        pd.DataFrame(columns=FIELD_EXTRACTION_AUDIT_COLUMNS),
-        pd.DataFrame(columns=REVISION_REASON_COLUMNS),
+        results=pd.DataFrame(columns=RESULTS_EXTRACT_COLUMNS),
+        sample=pd.DataFrame(columns=SAMPLE_COLUMNS),
+        client=pd.DataFrame(columns=CLIENT_COLUMNS),
+        packaging_preservatives=pd.DataFrame(columns=PACKAGING_PRESERVATIVES_COLUMNS),
+        notes=pd.DataFrame(columns=NOTES_COLUMNS),
+        general_considerations=pd.DataFrame(columns=GENERAL_CONSIDERATIONS_COLUMNS),
+        conformity_statement=pd.DataFrame(columns=CONFORMITY_STATEMENT_COLUMNS),
+        validation_key=pd.DataFrame(columns=VALIDATION_KEY_COLUMNS),
+        classification_audit=pd.DataFrame(),
+        table_extraction_audit=pd.DataFrame(columns=TABLE_EXTRACTION_AUDIT_COLUMNS),
+        section_extraction_audit=pd.DataFrame(columns=SECTION_EXTRACTION_AUDIT_COLUMNS),
+        field_extraction_audit=pd.DataFrame(columns=FIELD_EXTRACTION_AUDIT_COLUMNS),
+        revision_reason=pd.DataFrame(columns=REVISION_REASON_COLUMNS),
     )
 
 
@@ -293,19 +293,19 @@ def run_pipeline_document(pdf_path, config=None, pdf_content=None) -> PipelineOu
 
     log.info("Pipeline concluido: %d registros extraidos de %s", len(df), pdf_path.name)
     return PipelineOutputs(
-        df,
-        sample_df,
-        client_df,
-        packaging_preservatives_df,
-        notes_df,
-        general_considerations_df,
-        conformity_statement_df,
-        validation_key_df,
-        classification_audit_df,
-        table_audit_df,
-        section_audit_df,
-        field_audit_df,
-        revision_reason_df,
+        results=df,
+        sample=sample_df,
+        client=client_df,
+        packaging_preservatives=packaging_preservatives_df,
+        notes=notes_df,
+        general_considerations=general_considerations_df,
+        conformity_statement=conformity_statement_df,
+        validation_key=validation_key_df,
+        classification_audit=classification_audit_df,
+        table_extraction_audit=table_audit_df,
+        section_extraction_audit=section_audit_df,
+        field_extraction_audit=field_audit_df,
+        revision_reason=revision_reason_df,
     )
 
 
