@@ -32,6 +32,8 @@ class PackagingPreservativesTest(unittest.TestCase):
             {"campo": "section_start", "regex": r"Embalagens\s+e\s+Preservantes"},
             {"campo": "table_header", "regex": r"Embalagem\s+Volume\s+Preserva..o\s+M.todos"},
             {"campo": "sample_identification", "regex": r"^\s*\d+\s*-\s*.+$"},
+            {"campo": "container_value", "regex": r"^(?:Polietileno|Frasco\s+Est.ril|Vidro\s+.mbar|Vial)$"},
+            {"campo": "volume_value", "regex": r"^\d+(?:[,.]\d+)?\s*mL$"},
         ]))
         pages = [
             ("Embalagens e Preservantes\n123456 - Ponto A", [
@@ -47,6 +49,31 @@ class PackagingPreservativesTest(unittest.TestCase):
         self.assertEqual(len(result), 1)
         self.assertEqual(result.loc[0, "id_amostra"], "123456")
         self.assertEqual(result.loc[0, "embalagem"], "Polietileno")
+
+    def test_other_tables_on_section_page_are_not_extracted_as_packaging(self):
+        classification = ClassificationResult(
+            "template_laudo_agua_v1", "laudo_agua", 1, "Agua Superficial", "1", []
+        )
+        context = DocumentContext(
+            Path("a.pdf"), "a.pdf", "template_laudo_agua_v1", "laudo_agua",
+            1, "Agua Superficial", "1", classification,
+        )
+        config = SimpleNamespace(df_packaging_preservatives_rules=pd.DataFrame([
+            {"campo": "section_start", "regex": r"Embalagens\s+e\s+Preservantes"},
+            {"campo": "table_header", "regex": r"Embalagem\s+Volume\s+Preserva..o\s+M.todos"},
+            {"campo": "sample_identification", "regex": r"^\s*\d+\s*-\s*.+$"},
+            {"campo": "container_value", "regex": r"^(?:Polietileno|Frasco\s+Est.ril|Vidro\s+.mbar|Vial)$"},
+            {"campo": "volume_value", "regex": r"^\d+(?:[,.]\d+)?\s*mL$"},
+        ]))
+        pages = [("Embalagens e Preservantes\nEmbalagem Volume Preservacao Metodos", [
+            [["Polietileno", "100 mL", "0 a 6 C", "Metais"]],
+            [["Zinco Total", "CQ123", "0,25", "mg/L"]],
+            [["Notas", None, None, None]],
+        ])]
+
+        result = extract_packaging_preservatives(pages, context, config)
+
+        self.assertEqual(result["embalagem"].tolist(), ["Polietileno"])
 
 
 if __name__ == "__main__":

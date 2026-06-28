@@ -81,6 +81,25 @@ def _data_rows(table: list[list[Any]], header_index: int) -> list[list[Any]]:
     return rows
 
 
+def _valid_data_rows(
+    table: list[list[Any]],
+    header_index: int,
+    container_patterns: list[Pattern[str]],
+    volume_patterns: list[Pattern[str]],
+) -> list[list[Any]]:
+    rows = []
+    for row in _data_rows(table, header_index):
+        values = [_clean_text(cell) for cell in row]
+        if not all(values):
+            continue
+        if container_patterns and not _matches_any(container_patterns, values[0] or ""):
+            continue
+        if volume_patterns and not _matches_any(volume_patterns, values[1] or ""):
+            continue
+        rows.append(row)
+    return rows
+
+
 def extract_packaging_preservatives(
     paginas: list[tuple[str, list[list[list[Any]]]]],
     context: DocumentContext,
@@ -90,7 +109,9 @@ def extract_packaging_preservatives(
     section_patterns = rules.get("section_start", [])
     header_patterns = rules.get("table_header", [])
     sample_patterns = rules.get("sample_identification", [])
-    if not section_patterns or not header_patterns:
+    container_patterns = rules.get("container_value", [])
+    volume_patterns = rules.get("volume_value", [])
+    if not section_patterns or not header_patterns or not container_patterns or not volume_patterns:
         return pd.DataFrame(columns=PACKAGING_PRESERVATIVES_COLUMNS)
 
     output_rows: list[dict[str, Any]] = []
@@ -124,7 +145,13 @@ def extract_packaging_preservatives(
                 else None
             ) or page_identification or carried_identification
             id_amostra = _sample_id(identificacao_amostra)
-            for embalagem, volume, preservacao, metodos in _data_rows(table, header_index):
+            data_rows = _valid_data_rows(
+                table,
+                header_index,
+                container_patterns,
+                volume_patterns,
+            )
+            for embalagem, volume, preservacao, metodos in data_rows:
                 extracted_on_page = True
                 output_rows.append({
                     "nome_do_arquivo": context.nome_do_arquivo,
