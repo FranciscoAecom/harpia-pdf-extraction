@@ -17,7 +17,7 @@ def _context() -> DocumentContext:
         tipo_laudo="laudo_agua",
         id_taxonomia=1,
         nome_taxonomia="Água Superficial",
-        versao_template=1,
+        versao_template="1",
         classification=ClassificationResult(None, None, None, None, None, []),
     )
 
