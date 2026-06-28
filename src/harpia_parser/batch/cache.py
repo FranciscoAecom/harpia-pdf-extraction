@@ -5,6 +5,8 @@ import json
 from pathlib import Path
 import pickle
 
+import pandas as pd
+
 from ..audit.duplicate_audit import file_sha256
 from ..core.outputs import PipelineOutputs
 
@@ -66,12 +68,52 @@ class BatchCache:
 
     def runtime_signature(self, taxonomy_path: Path, runner_path: Path) -> str:
         digest = hashlib.sha256()
-        paths = [taxonomy_path, *sorted(self.source_root.rglob("*.py")), runner_path]
-        for path in paths:
+        digest.update(b"extraction-cache-v2")
+        for path in self._extraction_source_paths():
             relative = path.relative_to(self.project_root) if path.is_relative_to(self.project_root) else path
             digest.update(str(relative).encode("utf-8"))
             digest.update(path.read_bytes())
+        digest.update(self._taxonomy_extraction_payload(taxonomy_path))
         return digest.hexdigest()
+
+    def _extraction_source_paths(self) -> list[Path]:
+        package = self.source_root / "harpia_parser"
+        paths: set[Path] = set()
+        for directory in ["config", "core", "extraction", "normalization", "parsing"]:
+            paths.update((package / directory).rglob("*.py"))
+        paths.update([
+            package / "constants.py",
+            package / "utils.py",
+            package / "batch" / "discovery.py",
+            package / "formatting" / "common.py",
+            package / "formatting" / "laudo_agua.py",
+            package / "formatting" / "laudo_fito.py",
+            package / "formatting" / "laudo_sedimento.py",
+        ])
+        return sorted(path for path in paths if path.exists())
+
+    @staticmethod
+    def _taxonomy_extraction_payload(taxonomy_path: Path) -> bytes:
+        frames = pd.read_excel(
+            taxonomy_path,
+            sheet_name=["item_taxonomia", "template", "item_template"],
+            dtype=object,
+        )
+        digest = hashlib.sha256()
+        for sheet_name in ["item_taxonomia", "template", "item_template"]:
+            frame = frames[sheet_name].copy()
+            frame.columns = frame.columns.map(str)
+            frame = frame.reindex(sorted(frame.columns), axis=1)
+            if "id" in frame.columns:
+                frame = frame.sort_values("id", key=lambda values: values.astype(str), kind="stable")
+            payload = frame.fillna("").astype(str).to_json(
+                orient="split",
+                force_ascii=False,
+                index=False,
+            )
+            digest.update(sheet_name.encode("utf-8"))
+            digest.update(payload.encode("utf-8"))
+        return digest.digest()
 
     def load_extraction(self, signature: str, file_hash: str) -> tuple[str, PipelineOutputs] | None:
         path = self._extraction_path(signature, file_hash)
