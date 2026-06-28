@@ -193,6 +193,42 @@ class TableAuditTest(unittest.TestCase):
             "parameter; resultado; data_inicio; copam_cerh; conama; lq; referencia; incerteza",
         )
 
+    def test_previous_header_wins_over_later_page_header(self):
+        config = _config()
+        row = build_table_audit_row(
+            context=_context(),
+            page_number=2,
+            table_index=1,
+            rows=[
+                ["Clorofila A", "µg/L", "NA", "3", "< 3,00", "NA", "NA", "NA", "PO 022", "04/12/2024"],
+                ["Feofitina", "µg/L", "NA", "3", "< 3,00", "NA", "NA", "NA", "PO 022", "04/12/2024"],
+            ],
+            estado={
+                "categoria": "Provedores Externos",
+                "subcategoria": "Ethica Ambiental",
+                "tipo_registro": "AMOSTRA",
+                "layout_override_tipo": "AMOSTRA",
+                "layout_override": {
+                    "unidade_col": 1,
+                    "ld_col": 2,
+                    "lq_col": 3,
+                    "resultado_col": 4,
+                    "incerteza_col": 5,
+                    "copam_cerh_col": 6,
+                    "conama_col": 7,
+                    "referencia_col": 8,
+                    "data_inicio_col": 9,
+                },
+            },
+            config=config,
+            is_qaqc_continuacao=False,
+            page_text="Parâmetros Número do CQ Resultado Unidade Limite de Quantificação",
+        )
+
+        self.assertEqual(row["status"], "fallback_layout_confiavel")
+        self.assertNotIn("numero_cq", str(row["campos_esperados"]))
+        self.assertIn("copam_cerh", str(row["campos_esperados"]))
+
 
 if __name__ == "__main__":
     unittest.main()

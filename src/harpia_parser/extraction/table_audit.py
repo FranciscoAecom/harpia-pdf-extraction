@@ -202,7 +202,14 @@ def build_table_audit_row(
     expected = _expected_fields(tipo_registro, config)
 
     if header is None:
-        page_header_text, page_header_fields = _detect_page_header_context(page_text, expected)
+        has_layout_override = bool(
+            estado.get("layout_override_tipo") == tipo_registro
+            and estado.get("layout_override")
+        )
+        if has_layout_override:
+            page_header_text, page_header_fields = None, []
+        else:
+            page_header_text, page_header_fields = _detect_page_header_context(page_text, expected)
         layout_is_confident, layout_detail, positions = _layout_confidence(
             rows,
             tipo_registro,
