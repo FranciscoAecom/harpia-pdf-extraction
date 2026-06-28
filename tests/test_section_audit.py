@@ -119,7 +119,10 @@ class SectionAuditTest(unittest.TestCase):
         self.assertTrue((audit["status"] == "tabela_nao_mapeada").any())
 
     def test_discovery_ignore_rules_suppress_confirmed_false_positive(self):
-        pages = [("Relatorio Analitico\nABNT NBR\nResumo Executivo", [])]
+        pages = [(
+            "Relatorio Analitico\nABNT NBR\nResumo Executivo",
+            [["ABNT NBR", "Valor"], ["Metodo desconhecido", "123"]],
+        )]
         outputs = {
             "packaging_preservatives": pd.DataFrame(), "notes": pd.DataFrame(),
             "general_considerations": pd.DataFrame(), "conformity_statement": pd.DataFrame(),
@@ -131,6 +134,7 @@ class SectionAuditTest(unittest.TestCase):
         discovered = set(audit.loc[audit["status"] == "secao_nao_mapeada", "titulo_detectado"])
         self.assertNotIn("ABNT NBR", discovered)
         self.assertIn("Resumo Executivo", discovered)
+        self.assertTrue((audit["status"] == "tabela_nao_mapeada").any())
 
 
 if __name__ == "__main__":

@@ -110,10 +110,12 @@ def _known_section_rows(
     return rows
 
 
-def _all_known_patterns(config) -> list[Pattern[str]]:
+def _all_known_patterns(config, *, include_discovery_ignore: bool = True) -> list[Pattern[str]]:
     patterns: list[Pattern[str]] = []
     for attribute, frame in vars(config).items():
         if not attribute.startswith("df_") or not attribute.endswith("_rules") or not isinstance(frame, pd.DataFrame):
+            continue
+        if not include_discovery_ignore and attribute == "df_section_discovery_ignore_rules":
             continue
         for column in ["regex", "padrao_regex", "header_regex", "continuation_regex"]:
             if column not in frame.columns:
@@ -214,7 +216,7 @@ def _mapped_table_keys(table_audit_df: pd.DataFrame) -> set[tuple[int, int]]:
 
 
 def _discovered_table_rows(paginas, context: DocumentContext, config, table_audit_df: pd.DataFrame) -> list[dict[str, Any]]:
-    known_patterns = _all_known_patterns(config)
+    known_patterns = _all_known_patterns(config, include_discovery_ignore=False)
     mapped_keys = _mapped_table_keys(table_audit_df)
     rows: list[dict[str, Any]] = []
     for page_number, (_, tables) in enumerate(paginas, start=1):
