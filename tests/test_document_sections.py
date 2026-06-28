@@ -3,12 +3,37 @@ from pathlib import Path
 
 import pandas as pd
 
-from harpia_parser.constants import VALIDATION_KEY_COLUMNS
+from harpia_parser.constants import REVISION_REASON_COLUMNS, VALIDATION_KEY_COLUMNS
 from harpia_parser.core.context import ClassificationResult, DocumentContext
 from harpia_parser.extraction.document_sections import extract_document_section
 
 
 class DocumentSectionsTest(unittest.TestCase):
+    def test_revision_reasons_are_distinct_and_repeated_copies_are_removed(self):
+        context = DocumentContext(
+            pdf_path=Path("a.pdf"), nome_do_arquivo="a.pdf",
+            template_id="template_laudo_agua_v1", tipo_laudo="laudo_agua",
+            id_taxonomia=1, nome_taxonomia="Agua Superficial", versao_template="1",
+            classification=ClassificationResult(None, None, None, None, None, []),
+        )
+        rules = pd.DataFrame([{
+            "campo": "motivo_revisao",
+            "regex": r"Motivo\s+da\s+Revis.o\s*:?\s*\n\s*(Revis.o\s+\d+\s*-\s*[^\n]+)",
+        }])
+        pages = [
+            ("Motivo da Revisão\nRevisão 1 - Correção do resultado.", []),
+            ("Motivo da Revisão\nRevisão 1 - Correção do resultado.\nMotivo da Revisão\nRevisão 2 - Correção da unidade.", []),
+        ]
+
+        df = extract_document_section(
+            pages, context, {"id_amostra": "123456"}, rules, columns=REVISION_REASON_COLUMNS
+        )
+
+        self.assertEqual(df["motivo_revisao"].tolist(), [
+            "Revisão 1 - Correção do resultado.",
+            "Revisão 2 - Correção da unidade.",
+        ])
+
     def test_notes_capture_multiline_normative_text_until_document_footer(self):
         context = DocumentContext(
             pdf_path=Path("a.pdf"),

@@ -201,6 +201,17 @@ DUPLICATE_AUDIT_COLUMNS = [
     "status",
 ]
 
+REVISION_REASON_COLUMNS = [
+    "nome_do_arquivo",
+    "id_taxonomia",
+    "nome_taxonomia",
+    "versao_template",
+    ACM_EXTRACTION_TIMESTAMP_COLUMN,
+    "id_amostra",
+    "pagina",
+    "motivo_revisao",
+]
+
 SECTION_EXTRACTION_AUDIT_COLUMNS = [
     "nome_do_arquivo",
     "id_taxonomia",

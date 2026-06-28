@@ -245,6 +245,7 @@ def extract_batch(input_dirs: list[Path], output_dir: Path, workers: int = 3) ->
     all_general_considerations: dict[str, list[pd.DataFrame]] = {}
     all_conformity_statement: dict[str, list[pd.DataFrame]] = {}
     all_validation_key: dict[str, list[pd.DataFrame]] = {}
+    all_revision_reason: dict[str, list[pd.DataFrame]] = {}
     all_audits: dict[str, list[pd.DataFrame]] = {}
     all_table_audits: dict[str, list[pd.DataFrame]] = {}
     all_section_audits: dict[str, list[pd.DataFrame]] = {}
@@ -296,6 +297,7 @@ def extract_batch(input_dirs: list[Path], output_dir: Path, workers: int = 3) ->
                 table_audit_df,
                 section_audit_df,
                 field_audit_df,
+                revision_reason_df,
             ) = pipeline_outputs
             template_id = _winner_template_id(audit_df)
             template = config.templates.get(template_id or "", {})
@@ -347,6 +349,7 @@ def extract_batch(input_dirs: list[Path], output_dir: Path, workers: int = 3) ->
                 "general_considerations_rows": len(general_considerations_df),
                 "conformity_statement_rows": len(conformity_statement_df),
                 "validation_key_rows": len(validation_key_df),
+                "revision_reason_rows": len(revision_reason_df),
                 "section_extraction_audit_rows": len(section_audit_df),
                 "field_extraction_audit_rows": len(field_audit_df),
             }
@@ -370,6 +373,7 @@ def extract_batch(input_dirs: list[Path], output_dir: Path, workers: int = 3) ->
                     "general_considerations": general_considerations_df,
                     "conformity_statement": conformity_statement_df,
                     "validation_key": validation_key_df,
+                    "revision_reason": revision_reason_df,
                     "classification_audit": audit_df,
                     "table_extraction_audit": table_audit_df,
                     "section_extraction_audit": section_audit_df,
@@ -446,6 +450,7 @@ def extract_batch(input_dirs: list[Path], output_dir: Path, workers: int = 3) ->
                     "general_considerations_rows",
                     "conformity_statement_rows",
                     "validation_key_rows",
+                    "revision_reason_rows",
                     "section_extraction_audit_rows",
                     "field_extraction_audit_rows",
                 ]:
@@ -460,6 +465,7 @@ def extract_batch(input_dirs: list[Path], output_dir: Path, workers: int = 3) ->
             all_general_considerations.setdefault(tipo_laudo, []).append(document["general_considerations"])
             all_conformity_statement.setdefault(tipo_laudo, []).append(document["conformity_statement"])
             all_validation_key.setdefault(tipo_laudo, []).append(document["validation_key"])
+            all_revision_reason.setdefault(tipo_laudo, []).append(document["revision_reason"])
             all_audits.setdefault(tipo_laudo, []).append(document["classification_audit"])
             all_table_audits.setdefault(tipo_laudo, []).append(document["table_extraction_audit"])
             all_section_audits.setdefault(tipo_laudo, []).append(document["section_extraction_audit"])
@@ -491,6 +497,11 @@ def extract_batch(input_dirs: list[Path], output_dir: Path, workers: int = 3) ->
         validation_key_df = (
             pd.concat(all_validation_key.get(tipo_laudo, []), ignore_index=True)
             if all_validation_key.get(tipo_laudo)
+            else pd.DataFrame()
+        )
+        revision_reason_df = (
+            pd.concat(all_revision_reason.get(tipo_laudo, []), ignore_index=True)
+            if all_revision_reason.get(tipo_laudo)
             else pd.DataFrame()
         )
         audit_df = pd.concat(all_audits.get(tipo_laudo, []), ignore_index=True) if all_audits.get(tipo_laudo) else pd.DataFrame()
@@ -525,6 +536,7 @@ def extract_batch(input_dirs: list[Path], output_dir: Path, workers: int = 3) ->
             general_considerations_df=general_considerations_df,
             conformity_statement_df=conformity_statement_df,
             validation_key_df=validation_key_df,
+            revision_reason_df=revision_reason_df,
         )
         log.info(
             "[SAIDA] %s | resultados=%d | amostras=%d | clientes=%d | validacoes=%d",

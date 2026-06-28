@@ -47,6 +47,10 @@ def _config():
         df_general_considerations_rules=_rules("general", "Consideracoes Gerais"),
         df_conformity_statement_rules=_rules("conformity", "Declaracao de Conformidade"),
         df_validation_key_rules=_rules("key", "Chave de Validacao"),
+        df_revision_reason_rules=_rules("revision", "Motivo da Revisao"),
+        df_section_discovery_ignore_rules=pd.DataFrame([
+            {"campo": "method_reference", "regex": r"^ABNT\s+NBR$"},
+        ]),
         df_metadata_text_rules=pd.DataFrame(),
         df_sample_text_rules=pd.DataFrame(),
         df_client_text_rules=pd.DataFrame(),
@@ -75,6 +79,7 @@ class SectionAuditTest(unittest.TestCase):
             "general_considerations": pd.DataFrame(),
             "conformity_statement": pd.DataFrame(),
             "validation_key": pd.DataFrame(),
+            "revision_reason": pd.DataFrame(),
         }
 
         audit = build_section_extraction_audit(pages, _context(), config, outputs, pd.DataFrame())
@@ -93,6 +98,7 @@ class SectionAuditTest(unittest.TestCase):
             "general_considerations": pd.DataFrame(),
             "conformity_statement": pd.DataFrame(),
             "validation_key": pd.DataFrame(),
+            "revision_reason": pd.DataFrame(),
         }
 
         audit = build_section_extraction_audit(
@@ -111,6 +117,20 @@ class SectionAuditTest(unittest.TestCase):
             ((audit["titulo_detectado"] == "Resumo Executivo") & (audit["status"] == "secao_nao_mapeada")).any()
         )
         self.assertTrue((audit["status"] == "tabela_nao_mapeada").any())
+
+    def test_discovery_ignore_rules_suppress_confirmed_false_positive(self):
+        pages = [("Relatorio Analitico\nABNT NBR\nResumo Executivo", [])]
+        outputs = {
+            "packaging_preservatives": pd.DataFrame(), "notes": pd.DataFrame(),
+            "general_considerations": pd.DataFrame(), "conformity_statement": pd.DataFrame(),
+            "validation_key": pd.DataFrame(), "revision_reason": pd.DataFrame(),
+        }
+
+        audit = build_section_extraction_audit(pages, _context(), _config(), outputs, pd.DataFrame())
+
+        discovered = set(audit.loc[audit["status"] == "secao_nao_mapeada", "titulo_detectado"])
+        self.assertNotIn("ABNT NBR", discovered)
+        self.assertIn("Resumo Executivo", discovered)
 
 
 if __name__ == "__main__":

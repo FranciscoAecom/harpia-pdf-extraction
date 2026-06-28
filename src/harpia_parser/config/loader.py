@@ -32,6 +32,8 @@ class PipelineConfig:
     df_general_considerations_rules: pd.DataFrame
     df_conformity_statement_rules: pd.DataFrame
     df_validation_key_rules: pd.DataFrame
+    df_revision_reason_rules: pd.DataFrame
+    df_section_discovery_ignore_rules: pd.DataFrame
     df_results_extract_model: pd.DataFrame
     df_sample_output_model: pd.DataFrame
     df_client_output_model: pd.DataFrame
@@ -40,6 +42,7 @@ class PipelineConfig:
     df_general_considerations_model: pd.DataFrame
     df_conformity_statement_model: pd.DataFrame
     df_validation_key_model: pd.DataFrame
+    df_revision_reason_model: pd.DataFrame
     df_duplicate_audit_model: pd.DataFrame
     df_section_extraction_audit_model: pd.DataFrame
     df_field_extraction_audit_model: pd.DataFrame
@@ -283,6 +286,7 @@ def output_tabs_for_template(config: PipelineConfig, template_id: str) -> list[s
         "general_considerations",
         "conformity_statement",
         "validation_key",
+        "revision_reason",
         "table_extraction_audit",
         "section_extraction_audit",
         "field_extraction_audit",
@@ -304,6 +308,8 @@ def filter_config_for_template(config: PipelineConfig, template_id: str) -> Pipe
     df_general_considerations_rules = _filter_rules_dataframe(config.df_general_considerations_rules, template_id)
     df_conformity_statement_rules = _filter_rules_dataframe(config.df_conformity_statement_rules, template_id)
     df_validation_key_rules = _filter_rules_dataframe(config.df_validation_key_rules, template_id)
+    df_revision_reason_rules = _filter_rules_dataframe(config.df_revision_reason_rules, template_id)
+    df_section_discovery_ignore_rules = _filter_rules_dataframe(config.df_section_discovery_ignore_rules, template_id)
     df_table_extraction_rules = _filter_rules_dataframe(config.df_table_extraction_rules, template_id)
     df_header_alias_rules = _filter_rules_dataframe(config.df_header_alias_rules, template_id)
     df_continuation_rules = _filter_rules_dataframe(config.df_continuation_rules, template_id)
@@ -321,6 +327,8 @@ def filter_config_for_template(config: PipelineConfig, template_id: str) -> Pipe
         df_general_considerations_rules=df_general_considerations_rules,
         df_conformity_statement_rules=df_conformity_statement_rules,
         df_validation_key_rules=df_validation_key_rules,
+        df_revision_reason_rules=df_revision_reason_rules,
+        df_section_discovery_ignore_rules=df_section_discovery_ignore_rules,
         df_table_extraction_rules=df_table_extraction_rules,
         df_header_alias_rules=df_header_alias_rules,
         df_continuation_rules=df_continuation_rules,
@@ -375,6 +383,8 @@ def load_config(base_dir: Path, taxonomy_file: str = "config/taxonomy.xlsx") -> 
         df_general_considerations_rules=frames["general_considerations_rules"],
         df_conformity_statement_rules=frames["conformity_statement_rules"],
         df_validation_key_rules=frames["validation_key_rules"],
+        df_revision_reason_rules=frames["revision_reason_rules"],
+        df_section_discovery_ignore_rules=frames["section_discovery_ignore_rules"],
         df_results_extract_model=frames["results_extract_model"],
         df_sample_output_model=frames["sample_output_model"],
         df_client_output_model=frames["client_output_model"],
@@ -383,6 +393,7 @@ def load_config(base_dir: Path, taxonomy_file: str = "config/taxonomy.xlsx") -> 
         df_general_considerations_model=frames["general_considerations_model"],
         df_conformity_statement_model=frames["conformity_statement_model"],
         df_validation_key_model=frames["validation_key_model"],
+        df_revision_reason_model=frames["revision_reason_model"],
         df_duplicate_audit_model=frames["duplicate_audit_model"],
         df_section_extraction_audit_model=frames["section_extraction_audit_model"],
         df_field_extraction_audit_model=frames["field_extraction_audit_model"],

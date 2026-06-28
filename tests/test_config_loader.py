@@ -16,6 +16,7 @@ from harpia_parser.constants import (
     NOTES_COLUMNS,
     PACKAGING_PRESERVATIVES_COLUMNS,
     RESULTS_EXTRACT_COLUMNS,
+    REVISION_REASON_COLUMNS,
     SAMPLE_COLUMNS,
     SECTION_EXTRACTION_AUDIT_COLUMNS,
     VALIDATION_KEY_COLUMNS,
@@ -37,6 +38,7 @@ class ConfigLoaderTest(unittest.TestCase):
         self.assertEqual(config.df_general_considerations_model["campo"].tolist(), GENERAL_CONSIDERATIONS_COLUMNS)
         self.assertEqual(config.df_conformity_statement_model["campo"].tolist(), CONFORMITY_STATEMENT_COLUMNS)
         self.assertEqual(config.df_validation_key_model["campo"].tolist(), VALIDATION_KEY_COLUMNS)
+        self.assertEqual(config.df_revision_reason_model["campo"].tolist(), REVISION_REASON_COLUMNS)
         self.assertEqual(config.df_duplicate_audit_model["campo"].tolist(), DUPLICATE_AUDIT_COLUMNS)
         self.assertEqual(
             config.df_section_extraction_audit_model["campo"].tolist(),
@@ -222,6 +224,7 @@ class ConfigLoaderTest(unittest.TestCase):
                 "general_considerations",
                 "conformity_statement",
                 "validation_key",
+                "revision_reason",
                 "table_extraction_audit",
                 "section_extraction_audit",
                 "field_extraction_audit",

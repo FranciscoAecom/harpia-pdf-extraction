@@ -14,6 +14,7 @@ from ..constants import (
     NOTES_COLUMNS,
     PACKAGING_PRESERVATIVES_COLUMNS,
     RESULTS_EXTRACT_COLUMNS,
+    REVISION_REASON_COLUMNS,
     SAMPLE_COLUMNS,
     SECTION_EXTRACTION_AUDIT_COLUMNS,
     TABLE_EXTRACTION_AUDIT_COLUMNS,
@@ -97,6 +98,7 @@ def _empty_outputs() -> tuple[
     pd.DataFrame,
     pd.DataFrame,
     pd.DataFrame,
+    pd.DataFrame,
 ]:
     return (
         pd.DataFrame(columns=RESULTS_EXTRACT_COLUMNS),
@@ -111,6 +113,7 @@ def _empty_outputs() -> tuple[
         pd.DataFrame(columns=TABLE_EXTRACTION_AUDIT_COLUMNS),
         pd.DataFrame(columns=SECTION_EXTRACTION_AUDIT_COLUMNS),
         pd.DataFrame(columns=FIELD_EXTRACTION_AUDIT_COLUMNS),
+        pd.DataFrame(columns=REVISION_REASON_COLUMNS),
     )
 
 
@@ -222,6 +225,7 @@ def run_pipeline_document(pdf_path, config=None, pdf_content=None) -> tuple[
     pd.DataFrame,
     pd.DataFrame,
     pd.DataFrame,
+    pd.DataFrame,
 ]:
     pdf_path = Path(pdf_path)
     config = config or load_config(PROJECT_ROOT)
@@ -272,6 +276,13 @@ def run_pipeline_document(pdf_path, config=None, pdf_content=None) -> tuple[
         extraction_config.df_validation_key_rules,
         columns=VALIDATION_KEY_COLUMNS,
     )
+    revision_reason_df = extract_document_section(
+        paginas,
+        context,
+        metadata,
+        extraction_config.df_revision_reason_rules,
+        columns=REVISION_REASON_COLUMNS,
+    )
     section_audit_df = build_section_extraction_audit(
         paginas,
         context,
@@ -282,6 +293,7 @@ def run_pipeline_document(pdf_path, config=None, pdf_content=None) -> tuple[
             "general_considerations": general_considerations_df,
             "conformity_statement": conformity_statement_df,
             "validation_key": validation_key_df,
+            "revision_reason": revision_reason_df,
         },
         table_audit_df,
     )
@@ -302,6 +314,7 @@ def run_pipeline_document(pdf_path, config=None, pdf_content=None) -> tuple[
     general_considerations_df = general_considerations_df.reindex(columns=GENERAL_CONSIDERATIONS_COLUMNS)
     conformity_statement_df = conformity_statement_df.reindex(columns=CONFORMITY_STATEMENT_COLUMNS)
     validation_key_df = validation_key_df.reindex(columns=VALIDATION_KEY_COLUMNS)
+    revision_reason_df = revision_reason_df.reindex(columns=REVISION_REASON_COLUMNS)
     df, sample_df, client_df = normalize_outputs(df, sample_df, client_df, context)
     classification_audit_df = context.classification.to_dataframe(context.nome_do_arquivo)
 
@@ -319,6 +332,7 @@ def run_pipeline_document(pdf_path, config=None, pdf_content=None) -> tuple[
         table_audit_df,
         section_audit_df,
         field_audit_df,
+        revision_reason_df,
     )
 
 
@@ -359,6 +373,7 @@ def main(argv=None) -> int:
         table_audit_df,
         section_audit_df,
         field_audit_df,
+        revision_reason_df,
     ) = run_pipeline_document(pdf_path, config)
     if df.empty and sample_df.empty and client_df.empty:
         log.warning("Nenhum dado extraido. Verifique o PDF e as regras da taxonomy.")
@@ -382,6 +397,7 @@ def main(argv=None) -> int:
         general_considerations_df=general_considerations_df,
         conformity_statement_df=conformity_statement_df,
         validation_key_df=validation_key_df,
+        revision_reason_df=revision_reason_df,
     )
     log.info("Resultado salvo em: %s  (%d registros)", output_path, len(df))
     if not df.empty:

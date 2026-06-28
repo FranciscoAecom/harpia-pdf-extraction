@@ -357,6 +357,7 @@ def _write_json_output(
     general_considerations_df: pd.DataFrame | None,
     conformity_statement_df: pd.DataFrame | None,
     validation_key_df: pd.DataFrame | None,
+    revision_reason_df: pd.DataFrame | None,
     validation_errors: pd.DataFrame,
     sheets_to_write: list[str],
 ) -> None:
@@ -369,6 +370,7 @@ def _write_json_output(
         "general_considerations": general_considerations_df,
         "conformity_statement": conformity_statement_df,
         "validation_key": validation_key_df,
+        "revision_reason": revision_reason_df,
     }
     audit_sources: dict[str, pd.DataFrame | None] = {
         "classification_audit": classification_audit_df,
@@ -440,6 +442,7 @@ def salvar(
     general_considerations_df: pd.DataFrame | None = None,
     conformity_statement_df: pd.DataFrame | None = None,
     validation_key_df: pd.DataFrame | None = None,
+    revision_reason_df: pd.DataFrame | None = None,
 ) -> pd.DataFrame:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     ext = output_path.suffix.lower()
@@ -453,6 +456,7 @@ def salvar(
         "general_considerations",
         "conformity_statement",
         "validation_key",
+        "revision_reason",
         "table_extraction_audit",
         "section_extraction_audit",
         "field_extraction_audit",
@@ -473,6 +477,7 @@ def salvar(
     general_considerations_df = _with_extraction_timestamp(general_considerations_df, extraction_timestamp)
     conformity_statement_df = _with_extraction_timestamp(conformity_statement_df, extraction_timestamp)
     validation_key_df = _with_extraction_timestamp(validation_key_df, extraction_timestamp)
+    revision_reason_df = _with_extraction_timestamp(revision_reason_df, extraction_timestamp)
 
     validations = validate_outputs(
         df,
@@ -536,6 +541,9 @@ def salvar(
                 elif sheet_name == "validation_key" and validation_key_df is not None:
                     validation_key_df.to_excel(writer, sheet_name="validation_key", index=False)
                     written_sheets.append("validation_key")
+                elif sheet_name == "revision_reason" and revision_reason_df is not None:
+                    revision_reason_df.to_excel(writer, sheet_name="revision_reason", index=False)
+                    written_sheets.append("revision_reason")
                 elif sheet_name == "classification_audit" and classification_audit_df is not None:
                     classification_audit_df.to_excel(writer, sheet_name="classification_audit", index=False)
                     written_sheets.append("classification_audit")
@@ -578,6 +586,7 @@ def salvar(
             general_considerations_df,
             conformity_statement_df,
             validation_key_df,
+            revision_reason_df,
             validation_errors,
             sheets_to_write,
         )

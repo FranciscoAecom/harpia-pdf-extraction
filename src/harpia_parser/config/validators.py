@@ -15,6 +15,7 @@ from ..constants import (
     NOTES_COLUMNS,
     PACKAGING_PRESERVATIVES_COLUMNS,
     RESULTS_EXTRACT_COLUMNS,
+    REVISION_REASON_COLUMNS,
     SAMPLE_COLUMNS,
     SECTION_EXTRACTION_AUDIT_COLUMNS,
     VALIDATION_KEY_COLUMNS,
@@ -44,6 +45,8 @@ KNOWN_ITEM_TEMPLATE_SCHEMAS = {
     "general_considerations",
     "conformity_statement",
     "validation_key",
+    "revision_reason",
+    "section_discovery_ignore",
     "layout",
     "header_alias",
     "category_type",
@@ -167,6 +170,7 @@ def validate_contract_frames(frames: dict[str, pd.DataFrame], template_ids: set[
         CONFORMITY_STATEMENT_COLUMNS,
     )
     validate_output_model("validation_key", frames["validation_key_model"], VALIDATION_KEY_COLUMNS)
+    validate_output_model("revision_reason", frames["revision_reason_model"], REVISION_REASON_COLUMNS)
     validate_output_model("duplicate_audit", frames["duplicate_audit_model"], DUPLICATE_AUDIT_COLUMNS)
     validate_output_model(
         "section_extraction_audit",
@@ -191,6 +195,8 @@ def validate_contract_frames(frames: dict[str, pd.DataFrame], template_ids: set[
         "general_considerations_rules": frames["general_considerations_rules"],
         "conformity_statement_rules": frames["conformity_statement_rules"],
         "validation_key_rules": frames["validation_key_rules"],
+        "revision_reason_rules": frames["revision_reason_rules"],
+        "section_discovery_ignore_rules": frames["section_discovery_ignore_rules"],
         "sample_text_rules": frames["sample_text_rules"],
         "category_type_rules": frames["category_type_rules"],
         "category_alias_rules": frames["category_alias_rules"],
@@ -206,6 +212,7 @@ def validate_contract_frames(frames: dict[str, pd.DataFrame], template_ids: set[
         "general_considerations_model": frames["general_considerations_model"],
         "conformity_statement_model": frames["conformity_statement_model"],
         "validation_key_model": frames["validation_key_model"],
+        "revision_reason_model": frames["revision_reason_model"],
         "duplicate_audit_model": frames["duplicate_audit_model"],
         "section_extraction_audit_model": frames["section_extraction_audit_model"],
         "field_extraction_audit_model": frames["field_extraction_audit_model"],

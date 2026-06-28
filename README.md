@@ -229,7 +229,7 @@ Campos de cada aba/tabela de saida.
 
 ## Saidas
 
-O arquivo de extracao padrao e separado por tema em `output/<tipo_laudo>/extracted_data.xlsx`. As abas criadas sao definidas em `schema` e seus campos em `item_schema`. No estado atual, o template de agua gera `results_extract`, `sample`, `client`, `packaging_preservatives`, `notes`, `general_considerations`, `conformity_statement`, `validation_key`, `table_extraction_audit`, `section_extraction_audit`, `field_extraction_audit`, `classification_audit`, `duplicate_audit` e `validation_errors`.
+O arquivo de extracao padrao e separado por tema em `output/<tipo_laudo>/extracted_data.xlsx`. As abas criadas sao definidas em `schema` e seus campos em `item_schema`. No estado atual, o template de agua gera `results_extract`, `sample`, `client`, `packaging_preservatives`, `notes`, `general_considerations`, `conformity_statement`, `validation_key`, `revision_reason`, `table_extraction_audit`, `section_extraction_audit`, `field_extraction_audit`, `classification_audit`, `duplicate_audit` e `validation_errors`.
 
 Junto com o Excel, o processo tambem gera `output/<tipo_laudo>/extracted_data.json`. Esse arquivo tem o mesmo conteudo agrupado por PDF, pensado para carga em banco com coluna `jsonb`.
 
@@ -243,7 +243,7 @@ Estrutura principal do JSON:
 - `versao_formato`: Versao da estrutura JSON.
 - `documentos`: Lista de documentos processados.
 - `documentos[].arquivo`: Metadados do PDF, como `nome_do_arquivo`, `id_taxonomia`, `nome_taxonomia` e `versao_template`.
-- `documentos[].tabelas`: Dados extraidos, como `results_extract`, `sample`, `client`, `packaging_preservatives`, `notes`, `general_considerations`, `conformity_statement` e `validation_key`.
+- `documentos[].tabelas`: Dados extraidos, como `results_extract`, `sample`, `client`, `packaging_preservatives`, `notes`, `general_considerations`, `conformity_statement`, `validation_key` e `revision_reason`.
 - `documentos[].auditoria`: Dados de controle, como `classification_audit`, `table_extraction_audit`, `section_extraction_audit`, `field_extraction_audit`, `duplicate_audit` e `validation_errors`.
 
 ## Auditorias
@@ -456,6 +456,17 @@ Chave de validacao do laudo, quando informada no PDF.
 - `id_amostra`: Identificador da amostra.
 - `pagina`: Primeira pagina onde a chave foi encontrada.
 - `chave_validacao`: Chave de validacao extraida.
+
+### `revision_reason`
+Motivos de revisao informados no laudo. Repeticoes identicas entre paginas sao removidas, mas revisoes diferentes permanecem em linhas separadas.
+
+- `nome_do_arquivo`: Nome do PDF de origem da extracao.
+- `id_taxonomia`: Identificador da taxonomia reconhecida.
+- `nome_taxonomia`: Nome da taxonomia reconhecida.
+- `versao_template`: Versao do template/taxonomia usada na extracao.
+- `id_amostra`: Identificador da amostra.
+- `pagina`: Primeira pagina onde o motivo foi encontrado.
+- `motivo_revisao`: Texto original da revisao informado no PDF.
 
 ### `classification_audit`
 Auditoria da etapa de identificacao do template. Essa aba ajuda a validar se o PDF entrou no escopo correto antes da extracao.

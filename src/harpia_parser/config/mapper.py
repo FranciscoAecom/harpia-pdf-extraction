@@ -25,12 +25,13 @@ OUTPUT_ORDER = {
     "general_considerations": 6,
     "conformity_statement": 7,
     "validation_key": 8,
-    "table_extraction_audit": 9,
-    "section_extraction_audit": 10,
-    "field_extraction_audit": 11,
-    "classification_audit": 12,
-    "duplicate_audit": 13,
-    "validation_errors": 14,
+    "revision_reason": 9,
+    "table_extraction_audit": 10,
+    "section_extraction_audit": 11,
+    "field_extraction_audit": 12,
+    "classification_audit": 13,
+    "duplicate_audit": 14,
+    "validation_errors": 15,
 }
 
 CONFIG_ONLY_SCHEMAS = {
@@ -42,6 +43,7 @@ CONFIG_ONLY_SCHEMAS = {
     "header_alias",
     "layout",
     "subcategory_alias",
+    "section_discovery_ignore",
 }
 
 
@@ -87,6 +89,8 @@ def map_taxonomy_to_runtime_frames(workbook: TaxonomyWorkbook) -> dict[str, pd.D
         "general_considerations_rules": _text_rules(base_items, "general_considerations", include_description=True),
         "conformity_statement_rules": _text_rules(base_items, "conformity_statement", include_description=True),
         "validation_key_rules": _text_rules(base_items, "validation_key", include_description=True),
+        "revision_reason_rules": _text_rules(base_items, "revision_reason", include_description=True),
+        "section_discovery_ignore_rules": _text_rules(base_items, "section_discovery_ignore", include_description=True),
         "results_extract_model": _fields_from_item_schema(workbook.item_schema, "results_extract"),
         "sample_output_model": _fields_from_item_schema(workbook.item_schema, "sample"),
         "client_output_model": _fields_from_item_schema(workbook.item_schema, "client"),
@@ -95,6 +99,7 @@ def map_taxonomy_to_runtime_frames(workbook: TaxonomyWorkbook) -> dict[str, pd.D
         "general_considerations_model": _fields_from_item_schema(workbook.item_schema, "general_considerations"),
         "conformity_statement_model": _fields_from_item_schema(workbook.item_schema, "conformity_statement"),
         "validation_key_model": _fields_from_item_schema(workbook.item_schema, "validation_key"),
+        "revision_reason_model": _fields_from_item_schema(workbook.item_schema, "revision_reason"),
         "duplicate_audit_model": _fields_from_item_schema(workbook.item_schema, "duplicate_audit"),
         "section_extraction_audit_model": _fields_from_item_schema(workbook.item_schema, "section_extraction_audit"),
         "field_extraction_audit_model": _fields_from_item_schema(workbook.item_schema, "field_extraction_audit"),
