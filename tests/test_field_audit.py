@@ -63,6 +63,17 @@ class FieldExtractionAuditTest(unittest.TestCase):
         self.assertEqual(row["status"], "possivel_contaminacao")
         self.assertIn("condicoes_climaticas_nas_ultimas_24_horas", row["campos_detectados_no_valor"])
 
+    def test_does_not_treat_unlabelled_value_regex_as_contamination(self):
+        text = "Relatório Analítico 69225/2024.0.A\n"
+        audit = self._audit(text)
+        row = audit[
+            (audit["schema_origem"] == "metadata")
+            & (audit["campo"] == "codigo_laudo")
+        ].iloc[0]
+
+        self.assertEqual(row["status"], "ok")
+        self.assertTrue(pd.isna(row["campos_detectados_no_valor"]))
+
 
 if __name__ == "__main__":
     unittest.main()

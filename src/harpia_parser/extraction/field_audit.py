@@ -42,7 +42,9 @@ def build_field_extraction_audit(
             regex = str(value_or_none(rule, "regex") or "").strip()
             if field and regex and regex != "DERIVADO_DO_NOME_DO_PDF":
                 label_end = regex.find(r":\s*")
-                label_regex = regex[: label_end + 1] if label_end >= 0 else regex
+                if label_end < 0:
+                    continue
+                label_regex = regex[: label_end + 1]
                 compiled_rules.append(
                     (schema_name, field, re.compile(label_regex, re.IGNORECASE | re.DOTALL))
                 )

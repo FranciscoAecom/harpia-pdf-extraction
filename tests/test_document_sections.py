@@ -18,11 +18,11 @@ class DocumentSectionsTest(unittest.TestCase):
         )
         rules = pd.DataFrame([{
             "campo": "motivo_revisao",
-            "regex": r"Motivo\s+da\s+Revis.o\s*:?\s*\n\s*(Revis.o\s+\d+\s*-\s*[^\n]+)",
+            "regex": r"Motivo\s+da\s+Revis.o\s*:?\s*\n\s*(Revis.o\s+\d+\s*(?:-|:)\s*[^\n]+)",
         }])
         pages = [
             ("Motivo da Revisão\nRevisão 1 - Correção do resultado.", []),
-            ("Motivo da Revisão\nRevisão 1 - Correção do resultado.\nMotivo da Revisão\nRevisão 2 - Correção da unidade.", []),
+            ("Motivo da Revisão\nRevisão 1 - Correção do resultado.\nMotivo da Revisão\nRevisão 2: Correção da unidade.", []),
         ]
 
         df = extract_document_section(
@@ -31,7 +31,7 @@ class DocumentSectionsTest(unittest.TestCase):
 
         self.assertEqual(df["motivo_revisao"].tolist(), [
             "Revisão 1 - Correção do resultado.",
-            "Revisão 2 - Correção da unidade.",
+            "Revisão 2: Correção da unidade.",
         ])
 
     def test_notes_capture_multiline_normative_text_until_document_footer(self):
