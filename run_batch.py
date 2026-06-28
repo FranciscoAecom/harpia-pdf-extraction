@@ -211,10 +211,27 @@ def extract_batch(input_dirs: list[Path], output_dir: Path, workers: int = 5, pr
     pdfs = list_pdfs(input_dirs)
     cache = BatchCache(output_dir / ".cache", ROOT, SRC)
     log.info("Calculando hashes binarios com %d workers...", workers)
-    file_hashes, cached_hashes = cache.file_hashes(pdfs, workers)
+    file_hashes, cached_hashes, hash_failures = cache.file_hashes(pdfs, workers)
+    available_pdfs = [pdf for pdf in pdfs if str(pdf) in file_hashes]
     taxonomy_hash = cache.runtime_signature(config.taxonomy_path, Path(__file__))
-    pdfs_to_extract, exact_duplicates = exact_duplicate_plan(pdfs, file_hashes)
+    pdfs_to_extract, exact_duplicates = exact_duplicate_plan(available_pdfs, file_hashes)
     extraction_timestamp = _timestamp_text()
+    for path_text, error in hash_failures.items():
+        path = Path(path_text)
+        summary.append({
+            "arquivo": path.name,
+            "caminho": path_text,
+            "status": "erro",
+            "id_taxonomia": None,
+            "nome_taxonomia": None,
+            "versao_template": None,
+            ACM_EXTRACTION_TIMESTAMP_COLUMN: extraction_timestamp,
+            "results_rows": 0,
+            "sample_rows": 0,
+            "client_rows": 0,
+            "erro": error,
+        })
+        error_log.error("[ERRO HASH] %s | %s", path_text, error)
     log.info("=" * 70)
     log.info("EXTRACAO DE DOCUMENTOS")
     log.info("Inicio: %s", extraction_timestamp)
@@ -223,6 +240,7 @@ def extract_batch(input_dirs: list[Path], output_dir: Path, workers: int = 5, pr
     log.info("PDFs encontrados: %d", len(pdfs))
     log.info("Duplicados binarios ignorados antes da extracao: %d", len(exact_duplicates))
     log.info("PDFs enviados ao parser: %d", len(pdfs_to_extract))
+    log.info("PDFs indisponiveis durante hash: %d", len(hash_failures))
     log.info("Hashes reutilizados do cache: %d", cached_hashes)
     log.info("=" * 70)
 
@@ -535,7 +553,7 @@ def main(argv=None) -> int:
     parser.add_argument(
         "--classify-pages",
         type=int,
-        default=5,
+        default=3,
         help="Numero de paginas lidas por PDF no modo classify. Use 0 para ler todas.",
     )
     parser.add_argument(
@@ -547,7 +565,7 @@ def main(argv=None) -> int:
     parser.add_argument(
         "--workers",
         type=int,
-        default=3,
+        default=5,
         help="Numero de workers para hash e extracao. Use 1 para processamento sequencial.",
     )
     args = parser.parse_args(argv)

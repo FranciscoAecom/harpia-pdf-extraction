@@ -15,7 +15,7 @@ class BatchCache:
         self.project_root = project_root
         self.source_root = source_root
 
-    def file_hashes(self, pdfs: list[Path], workers: int) -> tuple[dict[str, str], int]:
+    def file_hashes(self, pdfs: list[Path], workers: int) -> tuple[dict[str, str], int, dict[str, str]]:
         cache_path = self.cache_dir / "file_hashes.json"
         try:
             cache = json.loads(cache_path.read_text(encoding="utf-8"))
@@ -24,26 +24,45 @@ class BatchCache:
         hashes: dict[str, str] = {}
         pending: list[Path] = []
         refreshed: dict[str, dict] = {}
+        failures: dict[str, str] = {}
+        cache_hits = 0
         for path in pdfs:
             key = str(path)
-            stat = path.stat()
+            try:
+                stat = path.stat()
+            except OSError as exc:
+                failures[key] = f"{type(exc).__name__}: {exc}"
+                continue
             cached = cache.get(key, {})
             if cached.get("size") == stat.st_size and cached.get("mtime_ns") == stat.st_mtime_ns and cached.get("sha256"):
                 hashes[key] = str(cached["sha256"])
+                cache_hits += 1
             else:
                 pending.append(path)
             refreshed[key] = {"size": stat.st_size, "mtime_ns": stat.st_mtime_ns}
         if pending:
+            def safe_hash(path: Path) -> tuple[Path, str | None, str | None]:
+                try:
+                    return path, file_sha256(path), None
+                except OSError as exc:
+                    return path, None, f"{type(exc).__name__}: {exc}"
+
             with ThreadPoolExecutor(max_workers=max(1, workers)) as executor:
-                pending_hashes = list(executor.map(file_sha256, pending))
-            hashes.update({str(path): pending_hashes[index] for index, path in enumerate(pending)})
+                hash_results = list(executor.map(safe_hash, pending))
+            for path, digest, error in hash_results:
+                key = str(path)
+                if digest is not None:
+                    hashes[key] = digest
+                else:
+                    failures[key] = error or "Falha desconhecida ao calcular hash."
+                    refreshed.pop(key, None)
         for key, metadata in refreshed.items():
             metadata["sha256"] = hashes[key]
         cache_path.parent.mkdir(parents=True, exist_ok=True)
         temporary = cache_path.with_suffix(".tmp")
         temporary.write_text(json.dumps(refreshed, ensure_ascii=False), encoding="utf-8")
         temporary.replace(cache_path)
-        return hashes, len(pdfs) - len(pending)
+        return hashes, cache_hits, failures
 
     def runtime_signature(self, taxonomy_path: Path, runner_path: Path) -> str:
         digest = hashlib.sha256()
@@ -85,4 +104,3 @@ def exact_duplicate_plan(pdfs: list[Path], file_hashes: dict[str, str]) -> tuple
         for duplicate in ordered[1:]:
             duplicate_to_canonical[str(duplicate)] = ordered[0]
     return sorted(canonical_paths, key=lambda path: str(path).lower()), duplicate_to_canonical
-
