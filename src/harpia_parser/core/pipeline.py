@@ -221,6 +221,7 @@ def run_pipeline_document(pdf_path, config=None, pdf_content=None) -> tuple[
     pd.DataFrame,
     pd.DataFrame,
     pd.DataFrame,
+    pd.DataFrame,
 ]:
     pdf_path = Path(pdf_path)
     config = config or load_config(PROJECT_ROOT)
@@ -318,7 +319,6 @@ def run_pipeline_document(pdf_path, config=None, pdf_content=None) -> tuple[
         table_audit_df,
         section_audit_df,
         field_audit_df,
-        field_audit_df,
     )
 
 
@@ -358,6 +358,7 @@ def main(argv=None) -> int:
         classification_audit_df,
         table_audit_df,
         section_audit_df,
+        field_audit_df,
     ) = run_pipeline_document(pdf_path, config)
     if df.empty and sample_df.empty and client_df.empty:
         log.warning("Nenhum dado extraido. Verifique o PDF e as regras da taxonomy.")
