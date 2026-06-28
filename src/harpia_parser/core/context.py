@@ -1,17 +1,17 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
+from typing import NamedTuple
 
 import pandas as pd
 
 
-@dataclass(frozen=True)
-class TemplateScore:
+class TemplateScore(NamedTuple):
     template_id: str
     score: float
     score_minimo: float
     prioridade: int
     status: str
-    matched_rules: list[str] = field(default_factory=list)
+    matched_rules: list[str]
 
 
 @dataclass(frozen=True)

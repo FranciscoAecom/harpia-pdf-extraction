@@ -1,4 +1,3 @@
-from dataclasses import replace
 from pathlib import Path
 
 from .context import ClassificationResult, TemplateScore
@@ -69,7 +68,7 @@ def classify_document(texto: str, config, pdf_path: str | Path | None = None) ->
 
     template_id = max(candidates)[2]
     scores = [
-        replace(score, status="winner") if score.template_id == template_id and score.status == "candidate" else score
+        score._replace(status="winner") if score.template_id == template_id and score.status == "candidate" else score
         for score in scores
     ]
     tipo_laudo = detect_tipo_laudo(texto, pdf_path or "", config, template_id)
