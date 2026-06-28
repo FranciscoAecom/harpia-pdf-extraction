@@ -248,6 +248,30 @@ FIELD_EXTRACTION_AUDIT_COLUMNS = [
     "observacao",
 ]
 
+DOCUMENT_RECONCILIATION_AUDIT_COLUMNS = [
+    "nome_do_arquivo",
+    "id_taxonomia",
+    "nome_taxonomia",
+    "versao_template",
+    ACM_EXTRACTION_TIMESTAMP_COLUMN,
+    "id_amostra",
+    "resultados_extraidos",
+    "registros_sample",
+    "registros_client",
+    "embalagens_extraidas",
+    "tabelas_auditadas",
+    "secoes_auditadas",
+    "alertas_tabela",
+    "alertas_secao",
+    "alertas_campo",
+    "erros_validacao",
+    "parametros_sem_nome",
+    "parametros_com_unidades_divergentes",
+    "coerencia_temporal",
+    "status",
+    "observacao",
+]
+
 LAYOUT_FIELD_KEYS = [
     "resultado_col",
     "unidade_col",

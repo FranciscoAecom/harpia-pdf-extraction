@@ -440,13 +440,10 @@ class OutputWriterTest(unittest.TestCase):
             self.assertEqual(document["tabelas"]["sample"][0]["identificacao_amostra"], "687944 - ECR 01R - P50")
             self.assertEqual(document["tabelas"]["sample"][0]["data_coleta"], "01/02/2025 08:30:00")
             self.assertEqual(document["tabelas"]["sample"][0]["data_publicacao"], "03/02/2025 00:00:00")
-            self.assertEqual(document["auditoria"]["table_extraction_audit"][0]["status"], "ok")
-            self.assertEqual(document["auditoria"]["duplicate_audit"][0]["status"], "unico")
-            self.assertIn("acm_data_hora_extracao", document["auditoria"]["validation_errors"][0])
-            self.assertIn("validation_errors", document["auditoria"])
+            self.assertNotIn("auditoria", document)
 
 
-    def test_section_extraction_audit_is_written_to_excel_and_json(self):
+    def test_section_extraction_audit_is_written_only_to_excel(self):
         df = pd.DataFrame([_valid_row()], columns=RESULTS_EXTRACT_COLUMNS)
         section_audit_df = pd.DataFrame([{
             "nome_do_arquivo": "a.pdf",
@@ -478,10 +475,9 @@ class OutputWriterTest(unittest.TestCase):
             self.assertEqual(workbook["section_extraction_audit"].cell(row=2, column=15).value, "ok")
 
             document = json.loads(output_path.with_suffix(".jsonl").read_text(encoding="utf-8").splitlines()[0])
-            audit = document["auditoria"]["section_extraction_audit"][0]
-            self.assertEqual(audit["status"], "ok")
+            self.assertNotIn("auditoria", document)
 
-    def test_field_extraction_audit_is_written_to_excel_and_json(self):
+    def test_field_extraction_audit_is_written_only_to_excel(self):
         df = pd.DataFrame([_valid_row()], columns=RESULTS_EXTRACT_COLUMNS)
         field_audit_df = pd.DataFrame([{
             "nome_do_arquivo": "a.pdf",
@@ -511,8 +507,7 @@ class OutputWriterTest(unittest.TestCase):
             self.assertEqual(workbook["field_extraction_audit"].cell(row=2, column=13).value, "ok")
 
             document = json.loads(output_path.with_suffix(".jsonl").read_text(encoding="utf-8").splitlines()[0])
-            audit = document["auditoria"]["field_extraction_audit"][0]
-            self.assertEqual(audit["status"], "ok")
+            self.assertNotIn("auditoria", document)
 
 
 if __name__ == "__main__":

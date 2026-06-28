@@ -119,14 +119,12 @@ def _indices_by_file(frame: pd.DataFrame | None) -> dict[str, Any]:
 def write_jsonl(
     output_path: Path,
     table_sources: dict[str, pd.DataFrame | None],
-    audit_sources: dict[str, pd.DataFrame | None],
     sheets: list[str],
 ) -> None:
     table_indices = {name: _indices_by_file(frame) for name, frame in table_sources.items()}
-    audit_indices = {name: _indices_by_file(frame) for name, frame in audit_sources.items()}
     file_names = {
         str(value)
-        for frame in [*table_sources.values(), *audit_sources.values()]
+        for frame in table_sources.values()
         if frame is not None and not frame.empty and "nome_do_arquivo" in frame.columns
         for value in frame["nome_do_arquivo"].dropna()
     } or {""}
@@ -139,16 +137,10 @@ def write_jsonl(
                     records = _records(frame, table_indices[name].get(file_name, table_indices[name].get("")))
                     tables[name] = records
                     identity_records.extend(records)
-            audits = {}
-            for name, frame in audit_sources.items():
-                if name in sheets:
-                    records = _records(frame, audit_indices[name].get(file_name, audit_indices[name].get("")))
-                    audits[name] = records
-                    identity_records.extend(records)
             identity = {"nome_do_arquivo": file_name, "id_taxonomia": None, "nome_taxonomia": None, "versao_template": None}
             for record in identity_records:
                 for field in ("id_taxonomia", "nome_taxonomia", "versao_template"):
                     if identity[field] is None and record.get(field) is not None:
                         identity[field] = record[field]
-            json.dump({"arquivo": identity, "tabelas": tables, "auditoria": audits}, handle, ensure_ascii=False, use_decimal=True, separators=(",", ":"))
+            json.dump({"arquivo": identity, "tabelas": tables}, handle, ensure_ascii=False, use_decimal=True, separators=(",", ":"))
             handle.write("\n")

@@ -231,6 +231,7 @@ class ConfigLoaderTest(unittest.TestCase):
                 "classification_audit",
                 "duplicate_audit",
                 "validation_errors",
+                "document_reconciliation_audit",
             ],
         )
         self.assertNotIn("template_detection", config.output_tabs["template_laudo_agua_v1"])

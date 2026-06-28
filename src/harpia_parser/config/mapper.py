@@ -32,6 +32,7 @@ OUTPUT_ORDER = {
     "classification_audit": 13,
     "duplicate_audit": 14,
     "validation_errors": 15,
+    "document_reconciliation_audit": 16,
 }
 
 CONFIG_ONLY_SCHEMAS = {

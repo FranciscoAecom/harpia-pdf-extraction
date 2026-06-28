@@ -8,6 +8,7 @@ from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 
 from ..constants import ACM_EXTRACTION_TIMESTAMP_COLUMN
+from ..audit.document_reconciliation import build_document_reconciliation_audit
 from ..validation.schemas import VALIDATION_ERROR_COLUMNS, validate_outputs
 from .jsonl_writer import write_jsonl
 from .excel_writer import write_excel
@@ -223,18 +224,12 @@ def _write_jsonl_output(
     df: pd.DataFrame,
     sample_df: pd.DataFrame | None,
     client_df: pd.DataFrame | None,
-    classification_audit_df: pd.DataFrame | None,
-    table_extraction_audit_df: pd.DataFrame | None,
-    section_extraction_audit_df: pd.DataFrame | None,
-    field_extraction_audit_df: pd.DataFrame | None,
-    duplicate_audit_df: pd.DataFrame | None,
     packaging_preservatives_df: pd.DataFrame | None,
     notes_df: pd.DataFrame | None,
     general_considerations_df: pd.DataFrame | None,
     conformity_statement_df: pd.DataFrame | None,
     validation_key_df: pd.DataFrame | None,
     revision_reason_df: pd.DataFrame | None,
-    validation_errors: pd.DataFrame,
     sheets_to_write: list[str],
 ) -> None:
     table_sources: dict[str, pd.DataFrame | None] = {
@@ -248,15 +243,7 @@ def _write_jsonl_output(
         "validation_key": validation_key_df,
         "revision_reason": revision_reason_df,
     }
-    audit_sources: dict[str, pd.DataFrame | None] = {
-        "classification_audit": classification_audit_df,
-        "table_extraction_audit": table_extraction_audit_df,
-        "section_extraction_audit": section_extraction_audit_df,
-        "field_extraction_audit": field_extraction_audit_df,
-        "duplicate_audit": duplicate_audit_df,
-        "validation_errors": validation_errors,
-    }
-    write_jsonl(output_path, table_sources, audit_sources, sheets_to_write)
+    write_jsonl(output_path, table_sources, sheets_to_write)
 
 
 def salvar(
@@ -297,6 +284,8 @@ def salvar(
         "duplicate_audit",
         "validation_errors",
     ]
+    if "document_reconciliation_audit" not in sheets_to_write:
+        sheets_to_write = [*sheets_to_write, "document_reconciliation_audit"]
     df = _with_required_extraction_timestamp(df, extraction_timestamp)
     sample_df = _with_extraction_timestamp(sample_df, extraction_timestamp)
     client_df = _with_extraction_timestamp(client_df, extraction_timestamp)
@@ -326,6 +315,20 @@ def salvar(
         else pd.DataFrame(columns=VALIDATION_ERROR_COLUMNS)
     )
     validation_errors = _with_required_extraction_timestamp(validation_errors, extraction_timestamp)
+    document_reconciliation_audit_df = build_document_reconciliation_audit(
+        df,
+        sample_df,
+        client_df,
+        packaging_preservatives_df,
+        table_extraction_audit_df,
+        section_extraction_audit_df,
+        field_extraction_audit_df,
+        validation_errors,
+    )
+    document_reconciliation_audit_df = _with_required_extraction_timestamp(
+        document_reconciliation_audit_df,
+        extraction_timestamp,
+    )
     json_output_path = output_path.with_suffix(".jsonl")
 
     if ext == ".csv":
@@ -356,6 +359,7 @@ def salvar(
             "section_extraction_audit": section_extraction_audit_df,
             "field_extraction_audit": field_extraction_audit_df,
             "duplicate_audit": duplicate_audit_df, "validation_errors": validation_errors,
+            "document_reconciliation_audit": document_reconciliation_audit_df,
         }
         write_excel(
             output_path, sheets_to_write, frames,
@@ -367,18 +371,12 @@ def salvar(
             df,
             sample_df,
             client_df,
-            classification_audit_df,
-            table_extraction_audit_df,
-            section_extraction_audit_df,
-            field_extraction_audit_df,
-            duplicate_audit_df,
             packaging_preservatives_df,
             notes_df,
             general_considerations_df,
             conformity_statement_df,
             validation_key_df,
             revision_reason_df,
-            validation_errors,
             sheets_to_write,
         )
     return validation_errors
