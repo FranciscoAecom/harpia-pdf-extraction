@@ -92,17 +92,26 @@ Durante a extracao, o terminal mostra apenas progresso periodico, alertas releva
 
 Os arquivos sao recriados a cada execucao para representar somente o lote atual.
 
-Por padrao, hashes e PDFs sao processados com tres workers e um buffer limitado de tarefas. Para ajustar:
+Por padrao, hashes e PDFs sao processados com cinco workers e um buffer limitado de tarefas. Para ajustar:
 
 ```powershell
 py .\run_batch.py extract --workers 2
 ```
 
-Use `--workers 1` para execucao sequencial. Em unidade de rede, aumentos acima de 3 ou 4 workers devem ser testados com cuidado, pois podem gerar disputa de leitura.
+Use `--workers 1` para execucao sequencial. Em unidade de rede, reduza o valor se houver disputa de leitura.
+
+Antes da leitura completa, as primeiras tres paginas sao usadas para pre-classificacao. Para alterar ou desativar:
+
+```powershell
+py .\run_batch.py extract --preclassify-pages 5
+py .\run_batch.py extract --preclassify-pages 0
+```
+
+Hashes e resultados de extracao sao armazenados em `output/.cache`. Arquivos inalterados reutilizam o cache; mudancas no PDF ou na `taxonomy.xlsx` invalidam automaticamente a entrada correspondente.
 
 Antes da extracao, o lote calcula hashes binarios e nao envia copias exatas ao parser. Duplicados textuais tambem sao descartados assim que identificados. Ambos continuam registrados em `duplicate_audit` e no resumo do lote.
 
-O JSON consolidado e gravado de forma incremental e compacta, documento por documento, preservando a mesma estrutura e reduzindo memoria e tamanho do arquivo.
+O JSONL consolidado e gravado de forma incremental, com um documento por linha, preservando casas decimais e permitindo consulta sem carregar o arquivo inteiro.
 
 Por padrão, as saídas são salvas em arquivos por tema:
 
@@ -231,20 +240,17 @@ Campos de cada aba/tabela de saida.
 
 O arquivo de extracao padrao e separado por tema em `output/<tipo_laudo>/extracted_data.xlsx`. As abas criadas sao definidas em `schema` e seus campos em `item_schema`. No estado atual, o template de agua gera `results_extract`, `sample`, `client`, `packaging_preservatives`, `notes`, `general_considerations`, `conformity_statement`, `validation_key`, `revision_reason`, `table_extraction_audit`, `section_extraction_audit`, `field_extraction_audit`, `classification_audit`, `duplicate_audit` e `validation_errors`.
 
-Junto com o Excel, o processo tambem gera `output/<tipo_laudo>/extracted_data.json`. Esse arquivo tem o mesmo conteudo agrupado por PDF, pensado para carga em banco com coluna `jsonb`.
+Junto com o Excel, o processo gera `output/<tipo_laudo>/extracted_data.jsonl`. Cada linha e um documento JSON independente, adequado para leitura incremental e carga em banco com coluna `jsonb` sem carregar todo o lote na memoria.
 
 Campo comum das abas de saida:
 
 - `acm_data_hora_extracao`: Data e horario em que o arquivo de extracao foi gerado. O mesmo valor e aplicado aos registros de todas as abas daquele arquivo.
 
-Estrutura principal do JSON:
+Estrutura de cada linha do JSONL:
 
-- `formato`: Identificador do formato de exportacao.
-- `versao_formato`: Versao da estrutura JSON.
-- `documentos`: Lista de documentos processados.
-- `documentos[].arquivo`: Metadados do PDF, como `nome_do_arquivo`, `id_taxonomia`, `nome_taxonomia` e `versao_template`.
-- `documentos[].tabelas`: Dados extraidos, como `results_extract`, `sample`, `client`, `packaging_preservatives`, `notes`, `general_considerations`, `conformity_statement`, `validation_key` e `revision_reason`.
-- `documentos[].auditoria`: Dados de controle, como `classification_audit`, `table_extraction_audit`, `section_extraction_audit`, `field_extraction_audit`, `duplicate_audit` e `validation_errors`.
+- `arquivo`: Metadados do PDF, como `nome_do_arquivo`, `id_taxonomia`, `nome_taxonomia` e `versao_template`.
+- `tabelas`: Dados extraidos, como `results_extract`, `sample`, `client`, `packaging_preservatives`, `notes`, `general_considerations`, `conformity_statement`, `validation_key` e `revision_reason`.
+- `auditoria`: Dados de controle, como `classification_audit`, `table_extraction_audit`, `section_extraction_audit`, `field_extraction_audit`, `duplicate_audit` e `validation_errors`.
 
 ## Auditorias
 

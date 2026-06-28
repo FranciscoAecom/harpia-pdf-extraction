@@ -418,13 +418,11 @@ class OutputWriterTest(unittest.TestCase):
                 }]).reindex(columns=DUPLICATE_AUDIT_COLUMNS),
             )
 
-            json_path = output_path.with_suffix(".json")
+            json_path = output_path.with_suffix(".jsonl")
             self.assertTrue(json_path.exists())
             json_text = json_path.read_text(encoding="utf-8")
-            payload = json.loads(json_text)
-            document = payload["documentos"][0]
+            document = json.loads(json_text.splitlines()[0])
 
-            self.assertEqual(payload["formato"], "harpia_extracao_documento")
             self.assertEqual(document["arquivo"]["nome_do_arquivo"], "a.pdf")
             self.assertIn('"acm_resultado_tratado":7.100', json_text)
             self.assertIn('"acm_lq_minimo":2.00', json_text)
@@ -473,8 +471,8 @@ class OutputWriterTest(unittest.TestCase):
             self.assertIn("section_extraction_audit", workbook.sheetnames)
             self.assertEqual(workbook["section_extraction_audit"].cell(row=2, column=15).value, "ok")
 
-            payload = json.loads(output_path.with_suffix(".json").read_text(encoding="utf-8"))
-            audit = payload["documentos"][0]["auditoria"]["section_extraction_audit"][0]
+            document = json.loads(output_path.with_suffix(".jsonl").read_text(encoding="utf-8").splitlines()[0])
+            audit = document["auditoria"]["section_extraction_audit"][0]
             self.assertEqual(audit["status"], "ok")
 
     def test_field_extraction_audit_is_written_to_excel_and_json(self):
@@ -506,8 +504,8 @@ class OutputWriterTest(unittest.TestCase):
             self.assertIn("field_extraction_audit", workbook.sheetnames)
             self.assertEqual(workbook["field_extraction_audit"].cell(row=2, column=13).value, "ok")
 
-            payload = json.loads(output_path.with_suffix(".json").read_text(encoding="utf-8"))
-            audit = payload["documentos"][0]["auditoria"]["field_extraction_audit"][0]
+            document = json.loads(output_path.with_suffix(".jsonl").read_text(encoding="utf-8").splitlines()[0])
+            audit = document["auditoria"]["field_extraction_audit"][0]
             self.assertEqual(audit["status"], "ok")
 
 

@@ -2,7 +2,11 @@ import argparse
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
+import gzip
+import hashlib
+import json
 import logging
+import pickle
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -160,6 +164,34 @@ def _file_hashes(pdfs: list[Path], workers: int) -> dict[str, str]:
         return {str(path): hashes[index] for index, path in enumerate(pdfs)}
 
 
+def _cached_file_hashes(pdfs: list[Path], workers: int, cache_path: Path) -> tuple[dict[str, str], int]:
+    try:
+        cache = json.loads(cache_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError, TypeError):
+        cache = {}
+    hashes: dict[str, str] = {}
+    pending: list[Path] = []
+    refreshed: dict[str, dict] = {}
+    for path in pdfs:
+        key = str(path)
+        stat = path.stat()
+        cached = cache.get(key, {})
+        if cached.get("size") == stat.st_size and cached.get("mtime_ns") == stat.st_mtime_ns and cached.get("sha256"):
+            hashes[key] = str(cached["sha256"])
+        else:
+            pending.append(path)
+        refreshed[key] = {"size": stat.st_size, "mtime_ns": stat.st_mtime_ns}
+    if pending:
+        hashes.update(_file_hashes(pending, workers))
+    for key, metadata in refreshed.items():
+        metadata["sha256"] = hashes[key]
+    cache_path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = cache_path.with_suffix(".tmp")
+    temporary.write_text(json.dumps(refreshed, ensure_ascii=False), encoding="utf-8")
+    temporary.replace(cache_path)
+    return hashes, len(pdfs) - len(pending)
+
+
 def _exact_duplicate_plan(pdfs: list[Path], file_hashes: dict[str, str]) -> tuple[list[Path], dict[str, Path]]:
     groups: dict[str, list[Path]] = {}
     for pdf in pdfs:
@@ -184,13 +216,47 @@ def _read_pdf_text(pdf_path: Path, max_pages: int | None = None) -> str:
     return "\n".join(texts)
 
 
-def _extract_pdf_once(pdf: Path, config) -> tuple[Path, str | None, tuple | None, Exception | None]:
+def _extraction_cache_path(cache_dir: Path, taxonomy_hash: str, file_hash: str) -> Path:
+    return cache_dir / "extractions" / taxonomy_hash / f"{file_hash}.pkl.gz"
+
+
+def _runtime_cache_signature(taxonomy_path: Path) -> str:
+    digest = hashlib.sha256()
+    for path in [taxonomy_path, *sorted(SRC.rglob("*.py")), Path(__file__)]:
+        digest.update(str(path.relative_to(ROOT) if path.is_relative_to(ROOT) else path).encode("utf-8"))
+        digest.update(path.read_bytes())
+    return digest.hexdigest()
+
+
+def _extract_pdf_once(
+    pdf: Path,
+    config,
+    file_hash: str,
+    taxonomy_hash: str,
+    cache_dir: Path,
+    preclassify_pages: int,
+) -> tuple[Path, str | None, tuple | None, Exception | None, bool]:
     try:
-        texto, paginas = read_pdf(pdf)
-        outputs = run_pipeline_document(pdf, config, pdf_content=(texto, paginas))
-        return pdf, texto, outputs, None
+        cache_path = _extraction_cache_path(cache_dir, taxonomy_hash, file_hash)
+        if cache_path.exists():
+            with gzip.open(cache_path, "rb") as handle:
+                texto, outputs = pickle.load(handle)
+            return pdf, texto, outputs, None, True
+        preview = _read_pdf_text(pdf, max_pages=preclassify_pages) if preclassify_pages > 0 else ""
+        if preview and not classify_document(preview, config, pdf).template_id:
+            outputs = run_pipeline_document(pdf, config, pdf_content=(preview, [(preview, [])]))
+            texto = preview
+        else:
+            texto, paginas = read_pdf(pdf)
+            outputs = run_pipeline_document(pdf, config, pdf_content=(texto, paginas))
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        temporary = cache_path.with_suffix(".tmp")
+        with gzip.open(temporary, "wb", compresslevel=3) as handle:
+            pickle.dump((texto, outputs), handle, protocol=pickle.HIGHEST_PROTOCOL)
+        temporary.replace(cache_path)
+        return pdf, texto, outputs, None, False
     except Exception as exc:
-        return pdf, None, None, exc
+        return pdf, None, None, exc, False
 
 
 def classify_batch(input_dirs: list[Path], output_path: Path, max_pages: int | None = 3) -> None:
@@ -234,7 +300,7 @@ def classify_batch(input_dirs: list[Path], output_path: Path, max_pages: int | N
     log.info("Auditoria de classificacao salva em: %s", output_path)
 
 
-def extract_batch(input_dirs: list[Path], output_dir: Path, workers: int = 3) -> None:
+def extract_batch(input_dirs: list[Path], output_dir: Path, workers: int = 5, preclassify_pages: int = 3) -> None:
     started_at = monotonic()
     config = load_config(ROOT)
     all_results: dict[str, list[pd.DataFrame]] = {}
@@ -258,8 +324,10 @@ def extract_batch(input_dirs: list[Path], output_dir: Path, workers: int = 3) ->
     extracted_documents: dict[str, list[dict]] = {}
     summary = []
     pdfs = _list_pdfs(input_dirs)
+    cache_dir = output_dir / ".cache"
     log.info("Calculando hashes binarios com %d workers...", workers)
-    file_hashes = _file_hashes(pdfs, workers)
+    file_hashes, cached_hashes = _cached_file_hashes(pdfs, workers, cache_dir / "file_hashes.json")
+    taxonomy_hash = _runtime_cache_signature(config.taxonomy_path)
     pdfs_to_extract, exact_duplicates = _exact_duplicate_plan(pdfs, file_hashes)
     extraction_timestamp = _timestamp_text()
     log.info("=" * 70)
@@ -270,15 +338,20 @@ def extract_batch(input_dirs: list[Path], output_dir: Path, workers: int = 3) ->
     log.info("PDFs encontrados: %d", len(pdfs))
     log.info("Duplicados binarios ignorados antes da extracao: %d", len(exact_duplicates))
     log.info("PDFs enviados ao parser: %d", len(pdfs_to_extract))
+    log.info("Hashes reutilizados do cache: %d", cached_hashes)
     log.info("=" * 70)
 
     extraction_executor = ThreadPoolExecutor(max_workers=max(1, workers))
     extraction_results = extraction_executor.map(
-        lambda pdf: _extract_pdf_once(pdf, config),
+        lambda pdf: _extract_pdf_once(
+            pdf, config, file_hashes[str(pdf)], taxonomy_hash, cache_dir, preclassify_pages
+        ),
         pdfs_to_extract,
         buffersize=max(2, workers * 2),
     )
-    for index, (pdf, texto, pipeline_outputs, extraction_error) in enumerate(extraction_results, start=1):
+    cached_extractions = 0
+    for index, (pdf, texto, pipeline_outputs, extraction_error, from_cache) in enumerate(extraction_results, start=1):
+        cached_extractions += int(from_cache)
         try:
             if extraction_error is not None:
                 raise extraction_error
@@ -559,6 +632,7 @@ def extract_batch(input_dirs: list[Path], output_dir: Path, workers: int = 3) ->
     log.info("Fora do escopo: %d", statuses["fora_escopo"])
     log.info("Duplicados nao persistidos: %d", statuses["duplicado_nao_persistido"])
     log.info("Com erro: %d", statuses["erro"])
+    log.info("Extracoes reutilizadas do cache: %d", cached_extractions)
     log.info("Resumo: %s", summary_path)
     log.info("Log: %s", output_dir / "extraction.log")
     log.info("Erros: %s", output_dir / "extraction_errors.log")
@@ -588,8 +662,14 @@ def main(argv=None) -> int:
     parser.add_argument(
         "--classify-pages",
         type=int,
-        default=3,
+        default=5,
         help="Numero de paginas lidas por PDF no modo classify. Use 0 para ler todas.",
+    )
+    parser.add_argument(
+        "--preclassify-pages",
+        type=int,
+        default=3,
+        help="Paginas usadas na pre-classificacao. Use 0 para desativar.",
     )
     parser.add_argument(
         "--workers",
@@ -604,7 +684,12 @@ def main(argv=None) -> int:
         max_pages = args.classify_pages if args.classify_pages > 0 else None
         classify_batch(args.input, args.output / "template_classification_audit.xlsx", max_pages=max_pages)
     else:
-        extract_batch(args.input, args.output, workers=max(1, args.workers))
+        extract_batch(
+            args.input,
+            args.output,
+            workers=max(1, args.workers),
+            preclassify_pages=max(0, args.preclassify_pages),
+        )
     return 0
 
 

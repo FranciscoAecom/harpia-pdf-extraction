@@ -391,10 +391,7 @@ def _write_json_output(
         file_names.add("")
 
     with output_path.open("w", encoding="utf-8") as handle:
-        handle.write('{"formato":"harpia_extracao_documento","versao_formato":1,"documentos":[')
-        for document_index, file_name in enumerate(sorted(file_names)):
-            if document_index:
-                handle.write(",")
+        for file_name in sorted(file_names):
             identity_records: list[dict[str, Any]] = []
             tables = {}
             for table_name, frame in table_sources.items():
@@ -423,7 +420,7 @@ def _write_json_output(
                 use_decimal=True,
                 separators=(",", ":"),
             )
-        handle.write("]}")
+            handle.write("\n")
 
 
 def salvar(
@@ -493,7 +490,7 @@ def salvar(
         else pd.DataFrame(columns=VALIDATION_ERROR_COLUMNS)
     )
     validation_errors = _with_required_extraction_timestamp(validation_errors, extraction_timestamp)
-    json_output_path = output_path.with_suffix(".json")
+    json_output_path = output_path.with_suffix(".jsonl")
 
     if ext == ".csv":
         df.to_csv(output_path, index=False, encoding="utf-8-sig")
