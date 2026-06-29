@@ -84,16 +84,16 @@ def _temporal_consistency(sample: pd.DataFrame) -> tuple[str, str | None]:
 
 
 def _unit_divergence_count(results: pd.DataFrame) -> int:
-    if results.empty or "parametro" not in results.columns:
+    if results.empty or "parameter" not in results.columns:
         return 0
     unit_column = "acm_unidade" if "acm_unidade" in results.columns else "unidade_resultado"
     if unit_column not in results.columns:
         return 0
-    pairs = results[["parametro", unit_column]].dropna()
-    pairs = pairs[(pairs["parametro"].astype(str).str.strip() != "") & (pairs[unit_column].astype(str).str.strip() != "")]
+    pairs = results[["parameter", unit_column]].dropna()
+    pairs = pairs[(pairs["parameter"].astype(str).str.strip() != "") & (pairs[unit_column].astype(str).str.strip() != "")]
     if pairs.empty:
         return 0
-    counts = pairs.groupby("parametro")[unit_column].nunique()
+    counts = pairs.groupby("parameter")[unit_column].nunique()
     return int((counts > 1).sum())
 
 
@@ -162,8 +162,8 @@ def build_document_reconciliation_audit(
             issues.append(f"Alertas de campo: {field_alerts}.")
 
         missing_parameters = 0
-        if not result_rows.empty and "parametro" in result_rows.columns:
-            missing_parameters = int(result_rows["parametro"].fillna("").astype(str).str.strip().eq("").sum())
+        if not result_rows.empty and "parameter" in result_rows.columns:
+            missing_parameters = int(result_rows["parameter"].fillna("").astype(str).str.strip().eq("").sum())
             if missing_parameters:
                 issues.append(f"Resultados sem parametro: {missing_parameters}.")
         unit_divergences = _unit_divergence_count(result_rows)

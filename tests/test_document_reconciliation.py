@@ -15,8 +15,8 @@ class DocumentReconciliationAuditTest(unittest.TestCase):
             "id_amostra": 10,
         }
         results = pd.DataFrame([
-            {**common, "parametro": "pH", "acm_unidade": None},
-            {**common, "parametro": "Ferro", "acm_unidade": "mg/L"},
+            {**common, "parameter": "pH", "acm_unidade": None},
+            {**common, "parameter": "Ferro", "acm_unidade": "mg/L"},
         ])
         sample = pd.DataFrame([{
             **common,
@@ -59,7 +59,7 @@ class DocumentReconciliationAuditTest(unittest.TestCase):
             "id_amostra": 10,
         }
         audit = build_document_reconciliation_audit(
-            pd.DataFrame([{**common, "parametro": "Ferro", "acm_unidade": "mg/L"}]),
+            pd.DataFrame([{**common, "parameter": "Ferro", "acm_unidade": "mg/L"}]),
             pd.DataFrame([{**common, "data_coleta": "01/01/2025", "data_recebimento": "02/01/2025", "data_publicacao": "03/01/2025"}]),
             pd.DataFrame([common]), pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame(),
             pd.DataFrame([{"id_amostra": 10, "message": "valor deve ser numerico"}]),
@@ -68,6 +68,43 @@ class DocumentReconciliationAuditTest(unittest.TestCase):
         self.assertEqual(row["status"], "alerta")
         self.assertEqual(row["erros_validacao"], 1)
         self.assertIn("Erros de validacao", str(row["observacao"]))
+
+    def test_missing_parameter_is_reported(self):
+        common = {
+            "nome_do_arquivo": "a.pdf", "id_taxonomia": 1,
+            "nome_taxonomia": "Agua Superficial", "versao_template": 1,
+            "id_amostra": 10,
+        }
+        results = pd.DataFrame([
+            {**common, "parameter": "", "acm_unidade": "mg/L"},
+        ])
+        audit = build_document_reconciliation_audit(
+            results, pd.DataFrame([{**common, "data_coleta": "01/01/2025"}]),
+            pd.DataFrame([common]), pd.DataFrame(), pd.DataFrame(), pd.DataFrame(),
+            pd.DataFrame(), pd.DataFrame(),
+        )
+        row = audit.iloc[0]
+        self.assertEqual(row["parametros_sem_nome"], 1)
+        self.assertEqual(row["status"], "alerta")
+
+    def test_parameter_with_divergent_units_is_reported(self):
+        common = {
+            "nome_do_arquivo": "a.pdf", "id_taxonomia": 1,
+            "nome_taxonomia": "Agua Superficial", "versao_template": 1,
+            "id_amostra": 10,
+        }
+        results = pd.DataFrame([
+            {**common, "parameter": "Ferro", "acm_unidade": "mg/L"},
+            {**common, "parameter": "Ferro", "acm_unidade": "ug/L"},
+        ])
+        audit = build_document_reconciliation_audit(
+            results, pd.DataFrame([{**common, "data_coleta": "01/01/2025"}]),
+            pd.DataFrame([common]), pd.DataFrame(), pd.DataFrame(), pd.DataFrame(),
+            pd.DataFrame(), pd.DataFrame(),
+        )
+        row = audit.iloc[0]
+        self.assertEqual(row["parametros_com_unidades_divergentes"], 1)
+        self.assertEqual(row["status"], "alerta")
 
 
 if __name__ == "__main__":
